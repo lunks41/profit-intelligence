@@ -1,5 +1,6 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type {
+  PeriodPreset,
   OrderDetailResponse,
   OrderListQuery,
   OrderListResponse,
@@ -52,7 +53,7 @@ export class ProfitabilityService {
     try {
       const range = resolveRange(
         q as {
-          preset: '7d' | '14d' | '30d' | '60d' | '90d' | 'custom';
+          preset: PeriodPreset;
           from?: string;
           to?: string;
         },

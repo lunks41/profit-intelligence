@@ -3,6 +3,8 @@ import type { OverviewQuery, OverviewResponse, ProfitSummary } from '@pi/contrac
 import {
   getAdSpend,
   getDailyTotals,
+  getOrdersByChannel,
+  getRevenueByChannelDaily,
   getMissingCogsThreshold,
   getOrderAttention,
   getProfitAggregate,
@@ -18,7 +20,6 @@ import {
   roundToCurrency,
   summarizeFromTotals,
   summarizePeriod,
-  totalAdSpend,
   toStored,
 } from '@pi/profit-engine';
 import type { CoverageInput, Summary } from '@pi/profit-engine';
@@ -26,6 +27,9 @@ import { EntitlementsService } from '../billing/entitlements.service.js';
 import { SyncService } from '../sync/sync.service.js';
 import { DB } from '../tokens.js';
 import { buildAlerts } from './alerts.js';
+import { buildIssues, dataQualityOf } from './issues.js';
+import { groupChannels } from './channels.js';
+import { buildTrend, intervalFor } from './trend.js';
 import { availableCurrencies, convertDaily, rateProvider } from './currency.js';
 import { InvalidRangeError, eachDay, previousRange, resolveRange } from './range.js';
 
@@ -92,6 +96,8 @@ export class DashboardService {
       adNow,
       adPrev,
       exp,
+      channelDays,
+      channelOrders,
     ] = await Promise.all([
       getProfitAggregate(this.db, scope, range),
       getProfitAggregate(this.db, scope, prevQuery),
@@ -103,6 +109,8 @@ export class DashboardService {
       getAdSpend(this.db, scope, range),
       getAdSpend(this.db, scope, prevQuery),
       loadExpenses(this.db, scope),
+      getRevenueByChannelDaily(this.db, scope, range),
+      getOrdersByChannel(this.db, scope, range),
     ]);
 
     // Display currency: convert day by day, or fall back to the shop currency and say why.
@@ -139,10 +147,23 @@ export class DashboardService {
       const c = convertMoney(amount, shopCurrency, code, date, rateProvider);
       return c.status === 'missing' ? amount : toStored(c.amount);
     };
-    const adDaily = new Map<string, string>();
-    for (const d of adNow.daily) {
-      adDaily.set(d.date, toStored(dec(adDaily.get(d.date) ?? '0').plus(dec(d.spend))));
-    }
+    // Advertising is converted day by day (the rate of the day it was spent) and then added up, for
+    // the headline figure and the chart alike, so the two always agree.
+    const adByDay = (ad: Awaited<ReturnType<typeof getAdSpend>>) => {
+      const days = new Map<string, string>();
+      for (const d of ad.daily) {
+        days.set(d.date, toStored(dec(days.get(d.date) ?? '0').plus(dec(d.spend))));
+      }
+      return days;
+    };
+    const adDaily = adByDay(adNow);
+    const adDisplayedTotal = (ad: Awaited<ReturnType<typeof getAdSpend>>) =>
+      toStored(
+        [...adByDay(ad)].reduce(
+          (acc, [date, spend]) => acc.plus(dec(display(spend, date))),
+          dec('0'),
+        ),
+      );
     const expenseInputs = exp.expenses.map((e) => ({
       id: e.id,
       categoryId: e.categoryId,
@@ -172,7 +193,7 @@ export class DashboardService {
           ads: {
             configured: ad.hasAccounts,
             hasData: ad.hasData,
-            spend: display(totalAdSpend(ad.byAccount), r.to),
+            spend: adDisplayedTotal(ad),
           },
           operatingExpenses: opexFor(r),
         }),
@@ -183,26 +204,46 @@ export class DashboardService {
     const previous = summaryOf(totalsPrev, aggPrev, adPrev, prevQuery);
 
     const byDate = new Map(trendDays.map((d) => [d.date, d]));
-    const trend = eachDay(range.from, range.to).map((date) => {
+    const trendDaily = eachDay(range.from, range.to).map((date) => {
       const day = byDate.get(date);
       const s = summarizeFromTotals(day?.totals ?? {}, {
         orderCount: day?.orders ?? 0,
         coverage: NO_COVERAGE,
         anyMissing: false,
       });
+      const profit = dec(s.contributionProfit).minus(
+        dec(display(adDaily.get(date) ?? '0.0000', date)),
+      );
       return {
         date,
         revenue: s.revenue,
-        contributionProfit: toStored(
-          dec(s.contributionProfit).minus(dec(display(adDaily.get(date) ?? '0.0000', date))),
-        ),
+        costs: toStored(dec(s.revenue).minus(profit)),
+        contributionProfit: toStored(profit),
         orders: day?.orders ?? 0,
       };
     });
 
+    const { interval: trendInterval, points: trend } = buildTrend(
+      trendDaily,
+      query.interval === 'auto' ? intervalFor(range.days) : query.interval,
+    );
+
+    // Profit is compared like for like. When advertising data exists in only one of the two periods
+    // the comparison leaves advertising out of both, and says so.
+    const adsKnown = (p: ProfitSummary) => p.statuses.advertising === 'confirmed';
+    const beforeAds = comparable && adsKnown(summary) !== adsKnown(previous);
+    const marginOf = (p: ProfitSummary) => {
+      if (!beforeAds) return p.contributionMargin;
+      return dec(p.revenue).isZero()
+        ? null
+        : toStored(dec(p.contributionBeforeAds).div(dec(p.revenue)).toDecimalPlaces(4));
+    };
+    const dataQuality = dataQualityOf(aggNow.coverage, summary);
+    const marginNow = marginOf(summary);
+    const marginBefore = marginOf(previous);
     const marginPoints =
-      summary.contributionMargin !== null && previous.contributionMargin !== null
-        ? (Number(summary.contributionMargin) - Number(previous.contributionMargin)) * 100
+      marginNow !== null && marginBefore !== null
+        ? (Number(marginNow) - Number(marginBefore)) * 100
         : null;
 
     return {
@@ -219,16 +260,36 @@ export class DashboardService {
       previous,
       deltas: {
         revenue: relative(summary.revenue, previous.revenue),
-        contributionProfit: relative(summary.contributionProfit, previous.contributionProfit),
+        costs: beforeAds
+          ? relative(
+              toStored(dec(summary.revenue).minus(dec(summary.contributionBeforeAds))),
+              toStored(dec(previous.revenue).minus(dec(previous.contributionBeforeAds))),
+            )
+          : relative(summary.totalCosts, previous.totalCosts),
+        contributionProfit: beforeAds
+          ? relative(summary.contributionBeforeAds, previous.contributionBeforeAds)
+          : relative(summary.contributionProfit, previous.contributionProfit),
         orders: relative(String(summary.orders), String(previous.orders)),
         averageOrderValue:
           summary.averageOrderValue && previous.averageOrderValue
             ? relative(summary.averageOrderValue, previous.averageOrderValue)
             : null,
         marginPoints,
+        basis: beforeAds ? ('before_advertising' as const) : ('contribution' as const),
+        basisNote: beforeAds
+          ? 'Advertising data exists in only one of the two periods, so the change is shown before advertising.'
+          : null,
       },
+      trendInterval,
       trend,
+      channels: groupChannels(channelDays, display, summary.revenue, channelOrders),
       awaitingPayment: { count: attention.awaitingPayment.count, amount: awaitingAmount },
+      dataQuality: dataQuality,
+      issues: buildIssues({
+        quality: dataQuality,
+        missingCostThresholdPct: threshold,
+        sync: syncStatus,
+      }),
       alerts: buildAlerts({
         summary,
         attention: {

@@ -18,6 +18,7 @@ describe('resolveRange presets', () => {
     ['30d', '2026-09-10', 30],
     ['60d', '2026-08-11', 60],
     ['90d', '2026-07-12', 90],
+    ['365d', '2025-10-10', 365],
   ] as const)('%s is the %i days up to and including today', (preset, from, days) => {
     expect(resolveRange({ preset }, 'UTC', NOW)).toEqual({ from, to: '2026-10-09', days, preset });
   });
@@ -32,7 +33,7 @@ describe('resolveRange presets', () => {
   });
 
   it('a period always spans exactly the number of days it claims (across month and year ends)', () => {
-    for (const preset of ['7d', '14d', '30d', '60d', '90d'] as const) {
+    for (const preset of ['7d', '14d', '30d', '60d', '90d', '365d'] as const) {
       const r = resolveRange({ preset }, 'UTC', new Date('2026-01-03T10:00:00Z'));
       expect(inclusiveDays(r.from, r.to)).toBe(r.days);
     }

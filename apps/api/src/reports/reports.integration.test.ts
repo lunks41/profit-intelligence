@@ -894,6 +894,18 @@ describe('the same period gives the same totals on every screen', () => {
     expect(p.total('Contribution profit')).toBe(o.contributionProfit);
     expect(m.totals.profitAfterAds).toBe(o.contributionProfit);
     expect(products.totalRows.at(-1)![8]).toBe(o.contributionProfit);
+    // the lines that build revenue, exactly as the dashboard breakdown shows them
+    expect(p.total('Sales before discounts')).toBe(o.grossSales);
+    expect(p.total('Discounts')).toBe(neg(o.discounts));
+    expect(p.total('Refunds')).toBe(neg(o.productRefunds));
+    expect(p.total('Shipping charged (net of refunds)')).toBe(o.shippingRevenue);
+    expect(
+      cents(o.grossSales) - cents(o.discounts) - cents(o.productRefunds) + cents(o.shippingRevenue),
+    ).toBe(cents(o.revenue));
+    // shipping cost is unknown on every order here, so both screens say so instead of a zero
+    expect(o.statuses.shippingCost).toBe('missing');
+    if (Number(o.missingShares.shippingCost) >= 1) expect(p.total('Shipping cost')).toBe('Missing');
+    else expect(p.total('Shipping cost')).toBe(neg(o.shippingCost));
     // costs
     expect(p.total('Product cost')).toBe(neg(o.cogs));
     expect(p.total('Payment fees')).toBe(neg(o.paymentFees));

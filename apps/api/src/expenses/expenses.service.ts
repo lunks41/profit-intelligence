@@ -155,20 +155,37 @@ export class ExpensesService {
     const names = new Map(expenses.map((e) => [e.categoryId, e.categoryName]));
     const thisMonthRange = { from: monthStart(today), to: lastOfMonth(today) };
 
-    const months = Array.from({ length: 6 }, (_, i) => addMonths(monthStart(today), i - 5)).map(
-      (m) => {
-        const r = expensesForPeriod(inputs, overrides, { from: m, to: lastOfMonth(m) }, currency);
-        return {
-          month: m,
-          total: r.total,
-          byCategory: Object.entries(r.byCategory)
-            .map(([id, amount]) => ({ category: names.get(id) ?? 'Other', amount }))
-            .sort((a, b) => Number(b.amount) - Number(a.amount)),
-        };
-      },
-    );
-    const current = expensesForPeriod(inputs, overrides, thisMonthRange, currency);
     const oneTimeIds = new Set(expenses.filter((e) => e.kind === 'one_time').map((e) => e.id));
+    const monthStarts = Array.from({ length: 6 }, (_, i) => addMonths(monthStart(today), i - 5));
+    const monthRevenue = await Promise.all(
+      monthStarts.map(async (m) => {
+        const agg = await getProfitAggregate(this.db, scope, { from: m, to: lastOfMonth(m) });
+        return summarizeFromTotals(agg.totals, {
+          orderCount: agg.orderCount,
+          coverage: agg.coverage,
+          anyMissing: agg.anyMissing,
+        }).revenue;
+      }),
+    );
+    const months = monthStarts.map((m, i) => {
+      const r = expensesForPeriod(inputs, overrides, { from: m, to: lastOfMonth(m) }, currency);
+      const oneTimeAmount = r.slices
+        .filter((sl) => oneTimeIds.has(sl.expenseId))
+        .reduce((a, sl) => a.plus(dec(sl.amount)), new D(0));
+      return {
+        month: m,
+        total: r.total,
+        oneTime: toStored(oneTimeAmount),
+        recurring: toStored(dec(r.total).minus(oneTimeAmount)),
+        shareOfRevenue: dec(monthRevenue[i]!).isZero()
+          ? null
+          : dec(r.total).div(dec(monthRevenue[i]!)).toDecimalPlaces(4).toFixed(4),
+        byCategory: Object.entries(r.byCategory)
+          .map(([id, amount]) => ({ category: names.get(id) ?? 'Other', amount }))
+          .sort((a, b) => Number(b.amount) - Number(a.amount)),
+      };
+    });
+    const current = expensesForPeriod(inputs, overrides, thisMonthRange, currency);
     const oneTime = current.slices
       .filter((s) => oneTimeIds.has(s.expenseId))
       .reduce((a, s) => a.plus(dec(s.amount)), new D(0));

@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import type { LeakageResponse } from '@pi/contracts';
+import type { LeakageResponse, PeriodPreset } from '@pi/contracts';
 import { getLeakageSettings, getShopOverview } from '@pi/db';
 import type { Db } from '@pi/db';
 import { businessDate } from '@pi/profit-engine';
@@ -18,7 +18,7 @@ export class LeakageService {
 
   async findings(
     scope: TenantContext,
-    q: { preset: '7d' | '14d' | '30d' | '60d' | '90d' | 'custom'; from?: string; to?: string },
+    q: { preset: PeriodPreset; from?: string; to?: string },
   ): Promise<LeakageResponse> {
     const shop = await getShopOverview(this.db, scope);
     if (!shop) throw new BadRequestException({ code: 'shop_not_found', message: 'Shop not found' });

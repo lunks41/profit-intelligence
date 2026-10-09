@@ -556,6 +556,32 @@ describe('expenses', () => {
     }
   });
 
+  it('each month splits into recurring and one-time, and has its own share of revenue', async () => {
+    await calculateAll(a);
+    await addExpense({ amount: '1200' });
+    await addExpense({
+      name: 'Photos',
+      kind: 'one_time',
+      frequency: undefined,
+      amount: '300',
+      startDate: '2026-09-10',
+    });
+    const s = expenseSummaryResponseSchema.parse((await json('GET', '/expenses/summary')).body);
+    for (const m of s.months) {
+      expect(cents(m.recurring) + cents(m.oneTime)).toBe(cents(m.total));
+      if (m.shareOfRevenue !== null) expect(Number(m.shareOfRevenue)).toBeGreaterThanOrEqual(0);
+    }
+    const sept = s.months.find((m) => m.month.startsWith('2026-09'));
+    if (sept) {
+      expect(sept.oneTime).toBe('300.0000');
+      expect(sept.recurring).toBe('1200.0000');
+    }
+    // this month's card figures are the last point of the month series
+    const last = s.months.at(-1)!;
+    expect(last.total).toBe(s.thisMonth);
+    expect(last.oneTime).toBe(s.oneTimeThisMonth);
+  });
+
   it('records who did what in a readable history', async () => {
     const id = (await addExpense()).body.id;
     await call('PUT', `/expenses/${id}/months/2026-09-01`, 'id-exp-a', { amount: '800' });

@@ -1,5 +1,10 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type { AdProvidersResponse, AdSpendBody, MarketingResponse } from '@pi/contracts';
+import type {
+  AdProvidersResponse,
+  AdSpendBody,
+  MarketingResponse,
+  PeriodPreset,
+} from '@pi/contracts';
 import {
   archiveAdAccount,
   createAdAccount,
@@ -61,7 +66,7 @@ export class MarketingService {
 
   async overview(
     scope: TenantContext,
-    q: { preset: '7d' | '14d' | '30d' | '60d' | '90d' | 'custom'; from?: string; to?: string },
+    q: { preset: PeriodPreset; from?: string; to?: string },
   ): Promise<MarketingResponse> {
     const shop = await getShopOverview(this.db, scope);
     if (!shop) throw new BadRequestException({ code: 'shop_not_found', message: 'Shop not found' });

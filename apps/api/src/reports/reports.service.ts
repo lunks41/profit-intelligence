@@ -1,5 +1,6 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type {
+  PeriodPreset,
   CreateScheduleBody,
   ExportRowResponse,
   NotificationListResponse,
@@ -45,7 +46,7 @@ const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
 /** Rows shown on screen; the downloaded file always has them all. */
 const PREVIEW_ROWS = 500;
 
-type Preset = '7d' | '14d' | '30d' | '60d' | '90d' | 'custom';
+type Preset = PeriodPreset;
 
 const toExportRow = (e: ExportRow): ExportRowResponse => ({
   id: e.id,

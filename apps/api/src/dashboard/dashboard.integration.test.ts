@@ -198,7 +198,9 @@ describe('GET /api/v1/dashboard/overview', () => {
     expect(res.statusCode).toBe(200);
     const parsed = overviewResponseSchema.parse(body);
     expect(parsed.period).toMatchObject({ preset: '30d', days: 30, timezone: 'UTC' });
-    expect(parsed.trend).toHaveLength(30);
+    // 30 days is longer than 14, so the chart is weekly by default: 4 blocks of 7 days and one of 2
+    expect(parsed.trendInterval).toBe('week');
+    expect(parsed.trend).toHaveLength(5);
     expect(parsed.currency).toMatchObject({ code: 'USD', shopCode: 'USD', converted: false });
   });
 
@@ -214,7 +216,11 @@ describe('GET /api/v1/dashboard/overview', () => {
       cents(o.summary.contributionProfit),
     );
     expect(o.trend.reduce((s, d) => s + d.orders, 0)).toBe(o.summary.orders);
-    expect(o.trend).toHaveLength(o.period.days);
+    // 282 days is longer than 90, so the chart is weekly: 40 blocks of 7 days and one of 2
+    expect(o.trendInterval).toBe('week');
+    expect(o.trend).toHaveLength(Math.ceil(o.period.days / 7));
+    expect(o.trend[0]!.date).toBe(o.period.from);
+    expect(o.trend.at(-1)!.to).toBe(o.period.to);
     // costs missing for some variants and no shipping rule: profit is partial, confidence is not high
     expect(o.summary.partial).toBe(true);
     expect(o.summary.confidence.band).not.toBe('high');
@@ -281,9 +287,12 @@ describe('GET /api/v1/dashboard/overview', () => {
     expect(o.deltas).toEqual({
       revenue: null,
       contributionProfit: null,
+      costs: null,
       orders: null,
       averageOrderValue: null,
       marginPoints: null,
+      basis: 'contribution',
+      basisNote: null,
     });
     expect(JSON.stringify(body)).not.toMatch(/NaN|Infinity/);
   });
@@ -300,7 +309,7 @@ describe('GET /api/v1/dashboard/overview', () => {
 
 describe('validation', () => {
   it.each([
-    ['unknown preset', '?preset=yesterday'],
+    ['unknown preset', '?preset=fortnight'],
     ['custom without dates', '?preset=custom'],
     ['reversed dates', '?preset=custom&from=2026-09-30&to=2026-09-01'],
     ['impossible date', '?preset=custom&from=2026-02-31&to=2026-03-05'],
@@ -331,7 +340,7 @@ describe('display currency', () => {
     expect(aed.currency.note).toContain('peg');
     expect(aed.currency.available).toEqual(['USD', 'AED']);
     // within a cent of the exact conversion for each day that has activity
-    const days = usd.trend.filter((d) => Number(d.revenue) !== 0 || d.orders > 0).length;
+    const days = usd.period.days;
     expect(
       Math.abs(Number(aed.summary.revenue) - Number(usd.summary.revenue) * 3.6725),
     ).toBeLessThan(0.01 * days + 0.01);
@@ -347,5 +356,327 @@ describe('display currency', () => {
     const implicit = (await overview(ALL)).body;
     const explicit = (await overview(`${ALL}&currency=USD`)).body;
     expect(explicit).toEqual(implicit);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+// Advertising, currency and comparisons agree between the headline figure and the chart
+// ---------------------------------------------------------------------------------------------
+
+const post = (url: string, payload: unknown, token = 'id-dash-a') =>
+  app.inject({
+    method: 'POST',
+    url: `/api/v1${url}`,
+    headers: { authorization: `Bearer ${token}` },
+    payload: payload as object,
+  });
+const centsOf = (s: string) => Math.round(Number(s) * 100);
+
+async function addSpend(rows: Array<{ date: string; spend: string }>, name = 'M') {
+  const created = await post('/marketing/accounts', { provider: 'manual', name });
+  const id = created.json().id as string;
+  const res = await post(`/marketing/accounts/${id}/spend`, { rows });
+  expect(res.statusCode).toBeLessThan(300);
+  return id;
+}
+
+describe('advertising in the headline figure and the chart', () => {
+  it('the chart adds up to contribution profit once advertising exists (shop currency)', async () => {
+    await calculateAll(a);
+    await addSpend([
+      { date: '2026-09-05', spend: '250.50' },
+      { date: '2026-09-06', spend: '10.01' },
+      { date: '2026-10-02', spend: '99.99' },
+    ]);
+    const o = overviewResponseSchema.parse((await overview(ALL)).body);
+    expect(o.summary.statuses.advertising).toBe('confirmed');
+    expect(o.summary.adSpend).toBe('360.5000');
+    expect(o.trend.reduce((s, d) => s + centsOf(d.contributionProfit), 0)).toBe(
+      centsOf(o.summary.contributionProfit),
+    );
+    expect(centsOf(o.summary.contributionBeforeAds) - centsOf(o.summary.adSpend!)).toBe(
+      centsOf(o.summary.contributionProfit),
+    );
+  });
+
+  it('with a display currency the chart still adds up to the headline, advertising included', async () => {
+    await calculateAll(a);
+    // two accounts spending on the same day, amounts that do not convert to whole cents
+    await addSpend([{ date: '2026-09-05', spend: '10.01' }], 'A');
+    await addSpend([{ date: '2026-09-05', spend: '20.03' }], 'B');
+    await addSpend([{ date: '2026-10-02', spend: '33.33' }], 'C');
+    const aed = overviewResponseSchema.parse((await overview(`${ALL}&currency=AED`)).body);
+    expect(aed.currency.converted).toBe(true);
+    expect(aed.trend.reduce((s, d) => s + centsOf(d.contributionProfit), 0)).toBe(
+      centsOf(aed.summary.contributionProfit),
+    );
+    expect(aed.trend.reduce((s, d) => s + centsOf(d.revenue), 0)).toBe(
+      centsOf(aed.summary.revenue),
+    );
+    // advertising on the day is converted once per day, so the headline and the chart share it
+    expect(centsOf(aed.summary.contributionBeforeAds) - centsOf(aed.summary.adSpend!)).toBe(
+      centsOf(aed.summary.contributionProfit),
+    );
+    // within a cent per spending day of the exact peg conversion of 63.37 USD
+    expect(Math.abs(Number(aed.summary.adSpend) - 63.37 * 3.6725)).toBeLessThan(0.05);
+  });
+});
+
+describe('profit change is compared like for like', () => {
+  it('compares contribution profit when advertising status is the same in both periods', async () => {
+    await calculateAll(a);
+    const o = overviewResponseSchema.parse(
+      (await overview('?preset=custom&from=2026-09-01&to=2026-09-30')).body,
+    );
+    expect(o.deltas.basis).toBe('contribution');
+    expect(o.deltas.basisNote).toBeNull();
+  });
+
+  it('compares before advertising when only one of the two periods has advertising data', async () => {
+    await calculateAll(a);
+    await addSpend([{ date: '2026-09-05', spend: '500.00' }]); // September has spend, August does not
+    const o = overviewResponseSchema.parse(
+      (await overview('?preset=custom&from=2026-09-01&to=2026-09-30')).body,
+    );
+    expect(o.summary.statuses.advertising).toBe('confirmed');
+    expect(o.previous.statuses.advertising).not.toBe('confirmed');
+    expect(o.deltas.basis).toBe('before_advertising');
+    expect(o.deltas.basisNote).toMatch(/before advertising/);
+    // the change must not include the 500.00 of spend
+    const expected =
+      Number(o.previous.contributionBeforeAds) === 0
+        ? null
+        : (Number(o.summary.contributionBeforeAds) - Number(o.previous.contributionBeforeAds)) /
+          Math.abs(Number(o.previous.contributionBeforeAds));
+    if (expected === null) expect(o.deltas.contributionProfit).toBeNull();
+    else expect(o.deltas.contributionProfit).toBeCloseTo(expected, 6);
+  });
+
+  it('a zero baseline gives no percentage, never infinity', async () => {
+    await calculateAll(a);
+    // the first orders are in the spring: the 30 days before them have nothing
+    const o = overviewResponseSchema.parse(
+      (await overview('?preset=custom&from=2026-01-01&to=2026-01-31')).body,
+    );
+    if (Number(o.previous.revenue) === 0) expect(o.deltas.revenue).toBeNull();
+    for (const v of Object.values(o.deltas)) {
+      if (typeof v === 'number') expect(Number.isFinite(v)).toBe(true);
+    }
+  });
+});
+
+describe('calendar periods through the API', () => {
+  it.each(['today', 'yesterday', 'this_month', 'previous_month'] as const)(
+    '%s returns a consistent period with an equivalent previous period',
+    async (preset) => {
+      await calculateAll(a);
+      const o = overviewResponseSchema.parse((await overview(`?preset=${preset}`)).body);
+      expect(o.period.preset).toBe(preset);
+      // the points cover the period from its first day to its last, with no gap
+      expect(o.trend[0]!.date).toBe(o.period.from);
+      expect(o.trend.at(-1)!.to).toBe(o.period.to);
+      expect(o.previousPeriod.to < o.period.from).toBe(true);
+      if (preset === 'today' || preset === 'yesterday') {
+        expect(o.period.days).toBe(1);
+        expect(o.previousPeriod.from).toBe(o.previousPeriod.to);
+      }
+      if (preset === 'previous_month') {
+        expect(o.period.from.endsWith('-01')).toBe(true);
+        expect(o.previousPeriod.from.endsWith('-01')).toBe(true);
+      }
+    },
+  );
+});
+
+describe('data completeness and issues', () => {
+  it('reports each input with its counts and every issue once, with a working destination', async () => {
+    await calculateAll(a);
+    const o = overviewResponseSchema.parse((await overview(ALL)).body);
+    const q = o.dataQuality;
+
+    // product cost: shares of sales value that add up to the whole
+    expect(q.cost).not.toBeNull();
+    const parts = [q.cost!.confirmed, q.cost!.estimated, q.cost!.missing].map(Number);
+    expect(Math.abs(parts[0]! + parts[1]! + parts[2]! - 1)).toBeLessThan(0.001);
+    // the issue and the summary describe the same share
+    expect(o.summary.confidence.components.cost?.shares.missing).toBe(q.cost!.missing);
+
+    // fees and shipping: counts of orders; every counted order is in exactly one bucket
+    for (const c of [q.fees, q.shipping]) {
+      if (c) expect(c.confirmed + c.estimated + c.missing).toBeGreaterThan(0);
+    }
+    // the fixture has no shipping rule and no advertising or expenses
+    expect(q.shipping!.missing).toBeGreaterThan(0);
+    expect(q.advertising).toBe('not_configured');
+    expect(q.operatingExpenses).toBe('not_configured');
+
+    const ids = o.issues.map((i) => i.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids).toEqual(
+      expect.arrayContaining([
+        'missing_shipping_cost',
+        'advertising_not_set_up',
+        'expenses_not_set_up',
+      ]),
+    );
+    const shipping = o.issues.find((i) => i.id === 'missing_shipping_cost')!;
+    expect(shipping.title).toContain(`${q.shipping!.missing} of`);
+    for (const i of o.issues) {
+      expect(i.action.href).toMatch(/^(#sync|\/(settings|marketing|expenses)(\?.*)?)$/);
+    }
+    // most severe first
+    const rank = { critical: 0, warning: 1, info: 2 } as const;
+    const order = o.issues.map((i) => rank[i.severity]);
+    expect(order).toEqual([...order].sort());
+  });
+
+  it('issues change with the inputs: advertising and expenses disappear once they exist', async () => {
+    await calculateAll(a);
+    await addSpend([{ date: '2026-09-05', spend: '10.00' }]);
+    const cat = (
+      await app.inject({
+        method: 'GET',
+        url: '/api/v1/expenses/categories',
+        headers: { authorization: 'Bearer id-dash-a' },
+      })
+    ).json().categories[0].id;
+    await post('/expenses', {
+      name: 'Rent',
+      categoryId: cat,
+      amount: '1000',
+      kind: 'recurring',
+      frequency: 'monthly',
+      startDate: '2026-01-01',
+    });
+    const o = overviewResponseSchema.parse((await overview(ALL)).body);
+    expect(o.dataQuality.advertising).toBe('confirmed');
+    expect(o.dataQuality.operatingExpenses).toBe('confirmed');
+    const ids = o.issues.map((i) => i.id);
+    expect(ids).not.toContain('advertising_not_set_up');
+    expect(ids).not.toContain('expenses_not_set_up');
+    expect(ids).toContain('missing_shipping_cost'); // still unresolved
+  });
+
+  it('an empty shop still lists what is not set up', async () => {
+    const o = overviewResponseSchema.parse((await overview('?preset=7d', 'id-dash-b')).body);
+    expect(o.summary.orders).toBe(0);
+    expect(o.dataQuality.cost).toBeNull();
+    expect(o.dataQuality.fees).toBeNull();
+    expect(o.issues.map((i) => i.id)).toEqual(
+      expect.arrayContaining(['advertising_not_set_up', 'expenses_not_set_up']),
+    );
+  });
+});
+
+describe('the trend series', () => {
+  it('is daily for a period of 14 days or less, one point per day', async () => {
+    await calculateAll(a);
+    const o = overviewResponseSchema.parse(
+      (await overview('?preset=custom&from=2026-07-01&to=2026-07-14')).body,
+    ); // 14 days
+    expect(o.period.days).toBe(14);
+    expect(o.trendInterval).toBe('day');
+    expect(o.trend).toHaveLength(14);
+    expect(o.trend.every((p) => p.date === p.to)).toBe(true);
+  });
+
+  it('is weekly beyond 14 days, and the points still add up to the headline figures', async () => {
+    await calculateAll(a);
+    await addSpend([
+      { date: '2026-03-03', spend: '120.25' },
+      { date: '2026-09-05', spend: '80.10' },
+    ]);
+    for (const qs of [ALL, `${ALL}&currency=AED`]) {
+      const o = overviewResponseSchema.parse((await overview(qs)).body);
+      expect(o.trendInterval).toBe('week');
+      expect(o.trend.reduce((s, p) => s + centsOf(p.revenue), 0)).toBe(centsOf(o.summary.revenue));
+      expect(o.trend.reduce((s, p) => s + centsOf(p.contributionProfit), 0)).toBe(
+        centsOf(o.summary.contributionProfit),
+      );
+      expect(o.trend.reduce((s, p) => s + p.orders, 0)).toBe(o.summary.orders);
+      // blocks are contiguous: each starts the day after the previous one ended
+      for (let i = 1; i < o.trend.length; i++) {
+        const prevEnd = new Date(`${o.trend[i - 1]!.to}T00:00:00Z`).getTime() + 86_400_000;
+        expect(new Date(`${o.trend[i]!.date}T00:00:00Z`).getTime()).toBe(prevEnd);
+      }
+    }
+  });
+
+  it('a day without orders is a real zero, not a gap and not invented', async () => {
+    await calculateAll(a);
+    const o = overviewResponseSchema.parse(
+      (await overview('?preset=custom&from=2026-01-01&to=2026-01-20')).body,
+    );
+    const quiet = o.trend.filter((p) => p.orders === 0);
+    expect(quiet.length).toBeGreaterThan(0);
+    for (const p of quiet) expect(Number(p.revenue)).toBe(0);
+  });
+});
+
+describe('costs and channels', () => {
+  it('costs are revenue less contribution profit, on the card, the chart and the days', async () => {
+    await calculateAll(a);
+    await addSpend([{ date: '2026-09-05', spend: '77.77' }]);
+    for (const qs of [ALL, `${ALL}&currency=AED`]) {
+      const o = overviewResponseSchema.parse((await overview(qs)).body);
+      expect(centsOf(o.summary.revenue) - centsOf(o.summary.contributionProfit)).toBe(
+        centsOf(o.summary.totalCosts),
+      );
+      // each point of the chart is revenue less profit too, and the points add up to the card
+      for (const p of o.trend) {
+        expect(centsOf(p.revenue) - centsOf(p.contributionProfit)).toBe(centsOf(p.costs));
+      }
+      expect(o.trend.reduce((s, p) => s + centsOf(p.costs), 0)).toBe(centsOf(o.summary.totalCosts));
+      // costs are product cost + fees + shipping + advertising
+      const parts =
+        centsOf(o.summary.cogs) +
+        centsOf(o.summary.paymentFees) +
+        centsOf(o.summary.shippingCost) +
+        centsOf(o.summary.adSpend!);
+      expect(Math.abs(parts - centsOf(o.summary.totalCosts))).toBeLessThanOrEqual(
+        qs === ALL ? 0 : 5, // converted amounts can differ by a rounding cent per day
+      );
+    }
+  });
+
+  it('the channels add up to the headline revenue exactly, in either currency', async () => {
+    await calculateAll(a);
+    for (const qs of [ALL, `${ALL}&currency=AED`]) {
+      const o = overviewResponseSchema.parse((await overview(qs)).body);
+      expect(o.channels.length).toBeGreaterThan(0);
+      expect(o.channels.reduce((s, c) => s + centsOf(c.revenue), 0)).toBe(
+        centsOf(o.summary.revenue),
+      );
+      const keys = o.channels.map((c) => c.key);
+      expect(new Set(keys).size).toBe(keys.length);
+      // largest first
+      const amounts = o.channels.map((c) => centsOf(c.revenue));
+      expect(amounts).toEqual([...amounts].sort((x, y) => y - x));
+      if (Number(o.summary.revenue) > 0) {
+        const shares = o.channels.reduce((s, c) => s + Number(c.share), 0);
+        expect(Math.abs(shares - 1)).toBeLessThan(0.001);
+      }
+    }
+  });
+
+  it('the orders of the channels add up to the order count of the period', async () => {
+    await calculateAll(a);
+    const o = overviewResponseSchema.parse((await overview(ALL)).body);
+    expect(o.channels.reduce((s, c) => s + c.orders, 0)).toBe(o.summary.orders);
+  });
+
+  it('a shorter period has channels that add up to its own revenue', async () => {
+    await calculateAll(a);
+    const o = overviewResponseSchema.parse(
+      (await overview('?preset=custom&from=2026-07-01&to=2026-07-31')).body,
+    );
+    expect(o.channels.reduce((s, c) => s + centsOf(c.revenue), 0)).toBe(centsOf(o.summary.revenue));
+  });
+
+  it('an empty shop has no channels', async () => {
+    const o = overviewResponseSchema.parse((await overview('?preset=7d', 'id-dash-b')).body);
+    expect(o.channels).toEqual([]);
+    expect(o.summary.totalCosts).toBe('0.0000');
+    expect(o.deltas.costs).toBeNull();
   });
 });

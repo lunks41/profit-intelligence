@@ -246,7 +246,7 @@ describe('profit leakage findings', () => {
   it('requires a session and a valid period', async () => {
     expect((await app.inject({ method: 'GET', url: '/api/v1/leakage' })).statusCode).toBe(401);
     expect((await call('GET', '/leakage?preset=custom')).statusCode).toBe(400);
-    expect((await call('GET', '/leakage?preset=yesterday')).statusCode).toBe(400);
+    expect((await call('GET', '/leakage?preset=fortnight')).statusCode).toBe(400);
     expect(
       (await call('GET', '/leakage?preset=custom&from=2026-09-30&to=2026-09-01')).statusCode,
     ).toBe(400);

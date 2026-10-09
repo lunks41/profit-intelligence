@@ -270,9 +270,12 @@ describe('billing on, no subscription: the free plan is enforced on the server',
     expect(o.deltas).toEqual({
       revenue: null,
       contributionProfit: null,
+      costs: null,
       orders: null,
       averageOrderValue: null,
       marginPoints: null,
+      basis: 'contribution',
+      basisNote: null,
     });
     expect(o.previous.orders).toBe(0);
   });
