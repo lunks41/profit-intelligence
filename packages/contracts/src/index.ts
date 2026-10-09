@@ -80,7 +80,19 @@ export type SyncStatusResponse = z.infer<typeof syncStatusResponseSchema>;
 const money = z.string(); // exact decimal string, 4 decimals
 const ratio = z.string().nullable(); // exact decimal string (0.3705 = 37.05%), null when undefined
 
-export const periodPresetSchema = z.enum(['7d', '14d', '30d', '60d', '90d', 'custom']);
+export const periodPresetSchema = z.enum([
+  'today',
+  'yesterday',
+  '7d',
+  '14d',
+  '30d',
+  '60d',
+  '90d',
+  '365d',
+  'this_month',
+  'previous_month',
+  'custom',
+]);
 export type PeriodPreset = z.infer<typeof periodPresetSchema>;
 
 export const periodSchema = z.object({
@@ -121,6 +133,8 @@ export const profitSummarySchema = z.object({
   adSpend: money.nullable(),
   contributionBeforeAds: money,
   contributionProfit: money,
+  /** revenue - contribution profit: product cost, fees, shipping and advertising (when set up) */
+  totalCosts: money,
   operatingExpenses: money.nullable(),
   estimatedNetProfit: money.nullable(),
   netProfitBasis: z.enum(['full', 'contribution_only']),
@@ -172,6 +186,31 @@ export const alertSchema = z.object({
 });
 export type Alert = z.infer<typeof alertSchema>;
 
+/** Share of sales value, or count of orders, whose cost is confirmed, estimated or missing. */
+const orderCounts = z.object({ confirmed: z.number(), estimated: z.number(), missing: z.number() });
+
+export const dataQualitySchema = z.object({
+  /** product cost, as shares (0 to 1, 4 places) of sales value */
+  cost: z.object({ confirmed: z.string(), estimated: z.string(), missing: z.string() }).nullable(),
+  /** payment fees, as counts of orders */
+  fees: orderCounts.nullable(),
+  /** shipping cost, as counts of orders */
+  shipping: orderCounts.nullable(),
+  advertising: figureStatusSchema,
+  operatingExpenses: figureStatusSchema,
+});
+export type DataQuality = z.infer<typeof dataQualitySchema>;
+
+export const issueSchema = z.object({
+  id: z.string(),
+  severity: z.enum(['critical', 'warning', 'info']),
+  title: z.string(),
+  /** what is wrong and what it does to the figures */
+  detail: z.string(),
+  action: z.object({ label: z.string(), href: z.string() }),
+});
+export type Issue = z.infer<typeof issueSchema>;
+
 export const overviewQuerySchema = z.object({
   preset: periodPresetSchema.default('30d'),
   from: z
@@ -187,6 +226,8 @@ export const overviewQuerySchema = z.object({
     .string()
     .regex(/^[A-Z]{3}$/)
     .optional(),
+  /** how the chart groups days; "auto" is daily up to 90 days and weekly beyond */
+  interval: z.enum(['auto', 'day', 'week', 'month']).default('auto'),
 });
 export type OverviewQuery = z.infer<typeof overviewQuerySchema>;
 
@@ -208,15 +249,50 @@ export const overviewResponseSchema = z.object({
   deltas: z.object({
     revenue: z.number().nullable(),
     contributionProfit: z.number().nullable(),
+    /** change in total costs; on the same basis as contributionProfit */
+    costs: z.number().nullable(),
     orders: z.number().nullable(),
     averageOrderValue: z.number().nullable(),
     /** margin change in percentage points (2.5 = +2.5 pp); null when either margin is undefined */
     marginPoints: z.number().nullable(),
+    /**
+     * What the profit and margin changes compare. "before_advertising" when advertising data
+     * exists in only one of the two periods, so the change is not distorted by it.
+     */
+    basis: z.enum(['contribution', 'before_advertising']),
+    basisNote: z.string().nullable(),
   }),
+  /** one point per day, per 7 days or per calendar month; the points add up to the period */
+  trendInterval: z.enum(['day', 'week', 'month']),
   trend: z.array(
-    z.object({ date: z.string(), revenue: money, contributionProfit: money, orders: z.number() }),
+    z.object({
+      /** first day the point covers */
+      date: z.string(),
+      /** last day the point covers (same as date for a single day) */
+      to: z.string(),
+      revenue: money,
+      /** revenue - contribution profit for the point */
+      costs: money,
+      contributionProfit: money,
+      orders: z.number(),
+    }),
+  ),
+  /** revenue by sales channel; adds up to summary.revenue exactly */
+  channels: z.array(
+    z.object({
+      key: z.string(),
+      label: z.string(),
+      revenue: money,
+      /** counted orders from the channel */
+      orders: z.number(),
+      share: z.string().nullable(),
+    }),
   ),
   awaitingPayment: z.object({ count: z.number(), amount: money }),
+  /** completeness of the inputs behind the figures, with explicit denominators */
+  dataQuality: dataQualitySchema,
+  /** every unresolved data problem once, most important first */
+  issues: z.array(issueSchema),
   alerts: z.array(alertSchema),
   freshness: z.object({
     syncState: syncStateSchema,
@@ -706,6 +782,12 @@ export const expenseSummaryResponseSchema = z.object({
     z.object({
       month: z.string(),
       total: money,
+      /** the part of the total from recurring expenses */
+      recurring: money,
+      /** the part of the total from one-time expenses */
+      oneTime: money,
+      /** the total over that month's revenue, null when the month had no revenue */
+      shareOfRevenue: ratio,
       byCategory: z.array(z.object({ category: z.string(), amount: money })),
     }),
   ),
