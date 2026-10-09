@@ -5,7 +5,7 @@ import { SettingsPreview } from '../../../components/preview/SettingsScreen';
 export default function Page() {
   if (process.env.NODE_ENV === 'production') notFound();
   return (
-    <s-page heading="Settings (design)">
+    <s-page inlineSize="large" heading="Settings (design)">
       <SettingsPreview />
     </s-page>
   );

@@ -8,6 +8,7 @@ import { apiDelete, apiGet, apiPost, apiPut } from '../../lib/api';
 import { formatMoney, longDate } from '../../lib/format';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormError, Saved, isAmount, todayLocal, useAction } from './shared';
+import { readParam } from '../../lib/url-params';
 
 const QUALITY = {
   actual: { label: 'Entered by you', tone: 'success' },
@@ -17,6 +18,10 @@ const QUALITY = {
 
 export function CostsTab({ onChanged }: { onChanged: () => void }) {
   const [filter, setFilter] = useState('all');
+  useEffect(() => {
+    const f = readParam('filter', ['all', 'missing', 'estimated', 'entered'] as const);
+    if (f) setFilter(f);
+  }, []);
   const [sort, setSort] = useState('attention');
   const [search, setSearch] = useState('');
   const [applied, setApplied] = useState('');
@@ -67,7 +72,7 @@ export function CostsTab({ onChanged }: { onChanged: () => void }) {
       <s-section heading="Product costs">
         <s-stack gap="base">
           <s-grid
-            gridTemplateColumns="repeat(auto-fit, minmax(170px, 1fr))"
+            gridTemplateColumns="repeat(auto-fit, minmax(10.625rem, 1fr))"
             gap="base"
             alignItems="end"
           >
@@ -119,7 +124,7 @@ export function CostsTab({ onChanged }: { onChanged: () => void }) {
                 opacity: loading ? 0.6 : 1,
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 16,
+                gap: '1rem',
               }}
             >
               <s-stack gap="base">
@@ -283,7 +288,7 @@ function CostEditor({
             : ''}
         </s-text>
         <s-grid
-          gridTemplateColumns="repeat(auto-fit, minmax(170px, 1fr))"
+          gridTemplateColumns="repeat(auto-fit, minmax(10.625rem, 1fr))"
           gap="base"
           alignItems="end"
         >

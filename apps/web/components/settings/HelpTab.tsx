@@ -9,7 +9,7 @@ import { longDate } from '../../lib/format';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormError, useAction } from './shared';
 
-const GRID = 'repeat(auto-fit, minmax(220px, 1fr))';
+const GRID = 'repeat(auto-fit, minmax(13.75rem, 1fr))';
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const KIND = {
@@ -56,7 +56,7 @@ export function HelpTab() {
         <s-stack gap="base">
           {FAQ.map(([q, a]) => (
             <details key={q}>
-              <summary style={{ cursor: 'pointer', padding: '4px 0' }}>
+              <summary style={{ cursor: 'pointer', padding: '0.25rem 0' }}>
                 <s-text type="strong">{q}</s-text>
               </summary>
               <s-text>{a}</s-text>

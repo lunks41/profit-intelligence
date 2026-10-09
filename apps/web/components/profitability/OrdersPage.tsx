@@ -9,6 +9,7 @@ import { buildListQuery } from '../../lib/query';
 import { FilterBar, type Filters } from '../overview/OverviewView';
 import { ErrorBanner, Loading, QualityBadge, RuleNote, SortControls, useApi } from './shared';
 import { LabelValueRow } from '../common';
+import { readParam } from '../../lib/url-params';
 
 type Sort = 'date' | 'name' | 'revenue' | 'cogs' | 'profit' | 'margin';
 const SORTS: Array<{ value: Sort; label: string }> = [
@@ -32,6 +33,10 @@ export function OrdersPage() {
   const [sort, setSort] = useState<Sort>('date');
   const [dir, setDir] = useState<'asc' | 'desc'>('desc');
   const [filter, setFilter] = useState('all');
+  useEffect(() => {
+    const f = readParam('filter', ['all', 'loss', 'missing_cost', 'refunded', 'excluded'] as const);
+    if (f) setFilter(f);
+  }, []);
   const [search, setSearch] = useState('');
   const [applied, setApplied] = useState('');
   const [page, setPage] = useState(1);

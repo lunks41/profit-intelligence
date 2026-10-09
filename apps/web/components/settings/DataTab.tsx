@@ -4,13 +4,22 @@ import { useState } from 'react';
 import type { AuditResponse } from '@pi/contracts';
 import { apiPost } from '../../lib/api';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
-import { SyncCard } from '../SyncCard';
+import { SyncNotice } from '../sync/SyncNotice';
+import { SyncSection } from '../sync/SyncSection';
+import { useSyncStatus } from '../sync/useSyncStatus';
 import { FormError, useAction } from './shared';
 
 export function DataTab({ reloadKey }: { reloadKey: number }) {
+  const sync = useSyncStatus();
   return (
     <>
-      <SyncCard />
+      <SyncNotice status={sync.status} />
+      <SyncSection
+        status={sync.status}
+        error={sync.error}
+        starting={sync.starting}
+        onResync={() => void sync.resync()}
+      />
       <Recalculate />
       <History reloadKey={reloadKey} />
     </>

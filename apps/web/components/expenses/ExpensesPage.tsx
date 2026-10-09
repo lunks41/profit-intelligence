@@ -15,14 +15,14 @@ import { formatMoney, formatPercent, longDate } from '../../lib/format';
 import { SampleBars } from '../preview/ui';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormError, isAmount, todayLocal, useAction } from '../settings/shared';
-import { StatCard, StatGrid } from '../common';
+import { Kpi } from '../common/kpi';
 
 type Tab = 'all' | 'recurring' | 'categories' | 'history';
 
 const COLORS = ['#005bd3', '#047b5d', '#b98900', '#8a3ffc', '#c4295c', '#007f9f'];
 const monthName = (m: string) =>
   new Date(`${m}T00:00:00Z`).toLocaleString('en-US', { month: 'short', timeZone: 'UTC' });
-const FILTER_GRID = 'repeat(auto-fit, minmax(170px, 1fr))';
+const FILTER_GRID = 'repeat(auto-fit, minmax(10.625rem, 1fr))';
 
 export function ExpensesPage() {
   const [tab, setTab] = useState<Tab>('all');
@@ -99,21 +99,46 @@ function Summary({
     ),
   }));
   const cur = data.currency;
+  const series = (f: (m: ExpenseSummaryResponse['months'][number]) => string) =>
+    data.months.map((m) => Number(f(m)));
   return (
     <>
-      <StatGrid>
-        <StatCard label="Expenses this month" value={formatMoney(data.thisMonth, cur)} />
-        <StatCard
+      <s-grid gridTemplateColumns="repeat(auto-fit, minmax(15rem, 1fr))" gap="base">
+        <Kpi
+          icon="wallet"
+          label="Expenses this month"
+          value={formatMoney(data.thisMonth, cur)}
+          info="All operating expenses that fall in the current month."
+          change={<s-text color="subdued">Last 6 months</s-text>}
+          spark={series((m) => m.total)}
+        />
+        <Kpi
+          icon="calendar"
           label="Recurring per month"
           value={formatMoney(data.recurringPerMonth, cur)}
-          note={`${data.recurringCount} active`}
+          info="Active recurring expenses, with yearly ones divided by 12."
+          change={<s-text color="subdued">{data.recurringCount} active</s-text>}
+          spark={series((m) => m.recurring)}
         />
-        <StatCard label="One-time this month" value={formatMoney(data.oneTimeThisMonth, cur)} />
-        <StatCard
+        <Kpi
+          icon="receipt"
+          label="One-time this month"
+          value={formatMoney(data.oneTimeThisMonth, cur)}
+          info="One-time expenses dated in the current month."
+          change={<s-text color="subdued">Last 6 months</s-text>}
+          spark={series((m) => m.oneTime)}
+        />
+        <Kpi
+          icon="target"
           label="Share of revenue (30 days)"
           value={data.shareOfRevenue === null ? '—' : formatPercent(data.shareOfRevenue)}
+          info="Expenses in the last 30 days divided by revenue in the same days. The line shows each of the last 6 months; a month with no revenue is a gap."
+          change={<s-text color="subdued">Line: by month</s-text>}
+          spark={data.months.map((m) =>
+            m.shareOfRevenue === null ? null : Number(m.shareOfRevenue),
+          )}
         />
-      </StatGrid>
+      </s-grid>
       {names.length > 0 && (
         <s-section heading="Expenses by month">
           <SampleBars
@@ -294,7 +319,7 @@ function List({
                 opacity: loading ? 0.6 : 1,
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 16,
+                gap: '1rem',
               }}
             >
               <s-table>

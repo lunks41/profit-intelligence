@@ -5,7 +5,7 @@ import { ReportsPreview } from '../../../components/preview/Screens';
 export default function Page() {
   if (process.env.NODE_ENV === 'production') notFound();
   return (
-    <s-page heading="Reports (design)">
+    <s-page inlineSize="large" heading="Reports (design)">
       <ReportsPreview />
     </s-page>
   );

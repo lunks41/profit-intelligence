@@ -5,7 +5,7 @@ import type { RulesResponse } from '@pi/contracts';
 import { apiPut } from '../../lib/api';
 import { FormError, useAction } from './shared';
 
-const GRID = 'repeat(auto-fit, minmax(220px, 1fr))';
+const GRID = 'repeat(auto-fit, minmax(13.75rem, 1fr))';
 const pct = (v: string, max: number) => /^\d{1,4}(\.\d{1,2})?$/.test(v.trim()) && Number(v) <= max;
 const clean = (v: string) => String(Number(v));
 

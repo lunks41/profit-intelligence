@@ -1,16 +1,16 @@
-import { PageBody } from '../components/PageBody';
 import { ConnectionStatus } from '../components/ConnectionStatus';
+import { PageNotices } from '../components/notices/Notice';
+import { PageBody } from '../components/PageBody';
 import { OverviewPage } from '../components/overview/OverviewPage';
 import { UnreadBanner } from '../components/reports/UnreadBanner';
-import { SyncCard } from '../components/SyncCard';
 
 export default function Overview() {
   return (
-    <s-page heading="Overview">
+    <s-page inlineSize="large" heading="Overview">
+      <PageNotices />
       <PageBody>
         <ConnectionStatus />
         <UnreadBanner />
-        <SyncCard />
         <OverviewPage />
       </PageBody>
     </s-page>

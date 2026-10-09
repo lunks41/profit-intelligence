@@ -9,6 +9,7 @@ import { formatMoney, formatPercent, longDate, periodLabel } from '../../lib/for
 import { buildListQuery } from '../../lib/query';
 import { FilterBar, type Filters } from '../overview/OverviewView';
 import { ErrorBanner, Loading, QualityBadge, RuleNote, SortControls, useApi } from './shared';
+import { readParam } from '../../lib/url-params';
 
 type Sort = 'profit' | 'revenue' | 'margin' | 'units' | 'cogs' | 'title';
 const SORTS: Array<{ value: Sort; label: string }> = [
@@ -32,6 +33,10 @@ export function ProductsPage() {
   const [sort, setSort] = useState<Sort>('profit');
   const [dir, setDir] = useState<'asc' | 'desc'>('desc');
   const [filter, setFilter] = useState('all');
+  useEffect(() => {
+    const f = readParam('filter', ['all', 'missing_cost', 'loss'] as const);
+    if (f) setFilter(f);
+  }, []);
   const [search, setSearch] = useState('');
   const [applied, setApplied] = useState('');
   const [page, setPage] = useState(1);

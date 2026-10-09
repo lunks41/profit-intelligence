@@ -1,20 +1,14 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import type { Alert, OverviewResponse, PeriodPreset } from '@pi/contracts';
-import {
-  describeBand,
-  describeDelta,
-  describePoints,
-  formatCount,
-  formatMoney,
-  formatPercent,
-  periodLabel,
-  type Delta,
-} from '../../lib/format';
+import type { OverviewResponse, PeriodPreset } from '@pi/contracts';
+import { periodLabel } from '../../lib/format';
 import { CurrencyDropdown, PeriodDropdown } from '../dropdown';
-import { LabelValueRow, QualifiersBanner, StatCard, StatGrid } from '../common';
-import { TrendChart } from './TrendChart';
+import { CostBreakdownCard } from './CostBreakdownCard';
+import { DataQualityCard } from './DataQualityCard';
+import { KpiCards } from './KpiCards';
+import { ProfitBreakdown } from './ProfitBreakdown';
+import { TrendSection } from './TrendCard';
 
 export interface Filters {
   preset: PeriodPreset;
@@ -38,7 +32,7 @@ export function FilterBar({
   return (
     <s-section>
       <s-grid
-        gridTemplateColumns="repeat(auto-fit, minmax(170px, 1fr))"
+        gridTemplateColumns="repeat(auto-fit, minmax(10.625rem, 1fr))"
         gap="base"
         alignItems="end"
       >
@@ -73,107 +67,21 @@ export function FilterBar({
   );
 }
 
-function DeltaText({ delta, goodWhenUp = true }: { delta: Delta; goodWhenUp?: boolean }) {
-  const tone =
-    delta.direction === 'none' || delta.direction === 'flat'
-      ? 'subdued'
-      : (delta.direction === 'up') === goodWhenUp
-        ? 'success'
-        : 'critical';
-  const arrow = delta.direction === 'up' ? '▲ ' : delta.direction === 'down' ? '▼ ' : '';
-  return (
-    <s-text tone={tone === 'subdued' ? 'neutral' : tone}>
-      {arrow}
-      {delta.text}
-      {delta.direction !== 'none' ? ' vs previous period' : ''}
-    </s-text>
-  );
-}
-
-function Kpi({
-  label,
-  value,
-  delta,
-  note,
+export function OverviewView({
+  data,
+  topSelling,
+  recentOrders,
+  after,
 }: {
-  label: string;
-  value: string;
-  delta: Delta;
-  note?: string | null;
+  data: OverviewResponse;
+  /** lists loaded beside the overview (kept out of this component so it needs only `data`) */
+  topSelling?: ReactNode;
+  recentOrders?: ReactNode;
+  /** what follows the breakdown: opportunities, secondary figures */
+  after?: ReactNode;
 }) {
-  return (
-    <StatCard label={label} value={value}>
-      <DeltaText delta={delta} />
-      {note && <s-badge tone="caution">{note}</s-badge>}
-    </StatCard>
-  );
-}
-
-function ConfidenceCard({ data }: { data: OverviewResponse }) {
-  const { confidence } = data.summary;
-  const band = describeBand(confidence.band);
-  const rows: Array<{ key: 'cost' | 'fees' | 'shipping'; label: string }> = [
-    { key: 'cost', label: 'Product costs' },
-    { key: 'fees', label: 'Payment fees' },
-    { key: 'shipping', label: 'Shipping costs' },
-  ];
-  return (
-    <s-section heading="Profit confidence">
-      <s-stack gap="base">
-        <s-stack direction="inline" gap="small" alignItems="center">
-          <s-badge tone={band.tone}>{band.label}</s-badge>
-          {confidence.score !== null && (
-            <s-text color="subdued">score {formatPercent(confidence.score, 0)}</s-text>
-          )}
-        </s-stack>
-        <s-text color="subdued">
-          Confidence shows how much of this profit rests on costs you have confirmed, rather than
-          estimates or gaps.
-        </s-text>
-        {rows.map(({ key, label }) => {
-          const c = confidence.components[key];
-          if (!c) {
-            return (
-              <s-text key={key} color="subdued">
-                {label}: not tracked yet
-              </s-text>
-            );
-          }
-          return (
-            <s-stack key={key} gap="small-300">
-              <s-text type="strong">{label}</s-text>
-              <s-text>
-                Confirmed {formatPercent(c.shares.actual, 0)} · Estimated{' '}
-                {formatPercent(c.shares.estimated, 0)} · Missing{' '}
-                {formatPercent(c.shares.missing, 0)}
-              </s-text>
-            </s-stack>
-          );
-        })}
-      </s-stack>
-    </s-section>
-  );
-}
-
-const SEVERITY_TONE = { critical: 'critical', warning: 'warning', info: 'info' } as const;
-
-function AlertItem({ alert }: { alert: Alert }) {
-  return (
-    <s-banner tone={SEVERITY_TONE[alert.severity]} heading={alert.title}>
-      <s-stack gap="small-300">
-        <s-text>{alert.evidence}</s-text>
-        <s-text color="subdued">Why it matters: {alert.why}</s-text>
-        {alert.action && <s-link href={alert.action.href}>{alert.action.label}</s-link>}
-      </s-stack>
-    </s-banner>
-  );
-}
-
-export function OverviewView({ data }: { data: OverviewResponse }) {
-  const cur = data.currency.code;
-  const { summary, deltas } = data;
+  const { summary } = data;
   const empty = summary.orders === 0;
-  const marginNote = summary.partial ? 'Partial: some costs missing' : null;
   const periodText = periodLabel(data.period.from, data.period.to);
 
   return (
@@ -183,102 +91,69 @@ export function OverviewView({ data }: { data: OverviewResponse }) {
           <s-paragraph>{data.currency.note}</s-paragraph>
         </s-banner>
       )}
-      {data.alerts.length > 0 && (
-        <s-section heading="Needs attention">
-          <s-stack gap="base">
-            {data.alerts.map((a) => (
-              <AlertItem key={a.id} alert={a} />
-            ))}
-          </s-stack>
-        </s-section>
-      )}
-
       {empty ? (
-        <s-section>
-          <s-empty-state heading="No paid orders in this period">
-            <s-paragraph>
-              {periodText}. Try a longer period, or re-sync if you expected orders here.
-            </s-paragraph>
-          </s-empty-state>
-        </s-section>
+        <>
+          <s-section>
+            <s-empty-state heading="No paid orders in this period">
+              <s-paragraph>
+                {periodText}. Try a longer period, or re-sync if you expected orders here.
+              </s-paragraph>
+            </s-empty-state>
+          </s-section>
+          {data.issues.length > 0 && (
+            <DataQualityCard quality={data.dataQuality} issues={data.issues} />
+          )}
+        </>
       ) : (
         <>
-          <QualifiersBanner qualifiers={summary.qualifiers} />
-          <StatGrid minWidth={220}>
-            <Kpi
-              label="Revenue"
-              value={formatMoney(summary.revenue, cur)}
-              delta={describeDelta(deltas.revenue)}
-            />
-            <Kpi
-              label="Contribution profit"
-              value={formatMoney(summary.contributionProfit, cur)}
-              delta={describeDelta(deltas.contributionProfit)}
-              note={marginNote}
-            />
-            <Kpi
-              label="Contribution margin"
-              value={formatPercent(summary.contributionMargin)}
-              delta={describePoints(deltas.marginPoints)}
-              note={marginNote}
-            />
-            <Kpi
-              label="Orders"
-              value={formatCount(summary.orders)}
-              delta={describeDelta(deltas.orders)}
-            />
-            <Kpi
-              label="Average order value"
-              value={formatMoney(summary.averageOrderValue, cur)}
-              delta={describeDelta(deltas.averageOrderValue)}
-            />
-          </StatGrid>
+          <KpiCards data={data} />
 
-          <s-section heading="Revenue and contribution profit">
-            <TrendChart trend={data.trend} currency={cur} />
-          </s-section>
+          <TrendSection page={data} />
 
-          <s-grid gridTemplateColumns="repeat(auto-fit, minmax(300px, 1fr))" gap="base">
-            <ConfidenceCard data={data} />
-            <s-section heading="Where the money goes">
-              <s-stack gap="small-300">
-                <LabelValueRow label="Revenue" value={formatMoney(summary.revenue, cur)} />
-                <LabelValueRow label="Product costs" value={formatMoney(summary.cogs, cur)} />
-                <LabelValueRow label="Payment fees" value={formatMoney(summary.paymentFees, cur)} />
-                <LabelValueRow
-                  label="Shipping costs"
-                  value={formatMoney(summary.shippingCost, cur)}
-                />
-                <LabelValueRow
-                  label="Contribution profit"
-                  value={formatMoney(summary.contributionProfit, cur)}
-                  strong
-                />
-                <LabelValueRow label="Refund rate" value={formatPercent(summary.refundRate)} />
-              </s-stack>
-            </s-section>
-          </s-grid>
+          {/* three cards of the same height; they wrap to fewer columns on a narrower page */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 21.25rem), 1fr))',
+              gap: '1rem',
+              alignItems: 'stretch',
+            }}
+          >
+            {topSelling}
+            {recentOrders}
+            <CostBreakdownCard page={data} />
+          </div>
+
+          <DataQualityCard quality={data.dataQuality} issues={data.issues} />
+          <ProfitBreakdown data={data} />
+          {after}
         </>
-      )}
-
-      {data.awaitingPayment.count > 0 && (
-        <s-text color="subdued">
-          {formatCount(data.awaitingPayment.count)} unpaid{' '}
-          {data.awaitingPayment.count === 1 ? 'order' : 'orders'} (
-          {formatMoney(data.awaitingPayment.amount, cur)}) are not counted until they are paid.
-        </s-text>
       )}
     </>
   );
 }
 
+/** Placeholder cards while the first figures load, so no zero is shown before the real number. */
 export function OverviewSkeleton() {
   return (
-    <s-section>
-      <s-stack direction="inline" gap="small" alignItems="center">
-        <s-spinner accessibilityLabel="Loading overview" />
-        <s-text>Loading your profit overview…</s-text>
-      </s-stack>
-    </s-section>
+    <s-stack gap="base">
+      <s-text color="subdued" accessibilityVisibility="exclusive">
+        Loading your profit overview…
+      </s-text>
+      <s-grid gridTemplateColumns="repeat(auto-fit, minmax(13.75rem, 1fr))" gap="base">
+        {['Revenue', 'Costs', 'Contribution profit', 'Contribution margin'].map((label) => (
+          <s-section key={label}>
+            <s-stack gap="small-300">
+              <s-text color="subdued">{label}</s-text>
+              <s-box background="strong" borderRadius="base" blockSize="22px" inlineSize="60%" />
+              <s-box background="subdued" borderRadius="base" blockSize="13px" inlineSize="80%" />
+            </s-stack>
+          </s-section>
+        ))}
+      </s-grid>
+      <s-section>
+        <s-box background="subdued" borderRadius="base" blockSize="176px" />
+      </s-section>
+    </s-stack>
   );
 }

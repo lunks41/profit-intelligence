@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import type { SessionResponse } from '@pi/contracts';
 import { ApiRequestError, apiGet } from '../lib/api';
 import { GetStarted } from './GetStarted';
+import { Notice } from './notices/Notice';
 
 type State =
   | { kind: 'loading' }
@@ -35,35 +36,24 @@ export function ConnectionStatus() {
     };
   }, []);
 
-  if (state.kind === 'loading') {
-    return (
-      <s-section heading="Connecting to your store">
-        <s-spinner accessibilityLabel="Connecting" />
-      </s-section>
-    );
-  }
+  // nothing while connecting: a notice that flashes in and out would push the page around
+  if (state.kind === 'loading') return null;
 
   if (state.kind === 'error') {
     return (
-      <s-banner tone="critical" heading="Could not connect your store">
-        <s-paragraph>{state.message}</s-paragraph>
+      <Notice tone="critical">
+        <s-text type="strong">Could not connect your store.</s-text>
+        <s-text>{state.message}</s-text>
         {state.code !== 'not_embedded' && (
-          <s-button onClick={() => window.location.reload()}>Try again</s-button>
+          <s-button variant="tertiary" onClick={() => window.location.reload()}>
+            Try again
+          </s-button>
         )}
-      </s-banner>
+      </Notice>
     );
   }
 
-  const { shop, onboarding } = state.session;
-  return (
-    <>
-      <s-banner tone="success" heading="Store connected">
-        <s-paragraph>
-          {shop.name} ({shop.domain}) is connected. Currency {shop.currency}, time zone{' '}
-          {shop.timezone}.
-        </s-paragraph>
-      </s-banner>
-      <GetStarted steps={onboarding.steps} />
-    </>
-  );
+  // The store name, period and currency are in the dashboard header; there is no "connected"
+  // banner. Only the setup checklist (while there is something left to do) is shown here.
+  return <GetStarted steps={state.session.onboarding.steps} />;
 }

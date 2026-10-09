@@ -107,7 +107,7 @@ export function FeesTab({ rules, onChanged }: { rules: RulesResponse; onChanged:
           )}
           <s-text type="strong">Add a rule</s-text>
           <s-grid
-            gridTemplateColumns="repeat(auto-fit, minmax(170px, 1fr))"
+            gridTemplateColumns="repeat(auto-fit, minmax(10.625rem, 1fr))"
             gap="base"
             alignItems="end"
           >
@@ -227,7 +227,7 @@ export function ShippingTab({ rules, onChanged }: { rules: RulesResponse; onChan
           )}
           <s-text type="strong">Add a rule</s-text>
           <s-grid
-            gridTemplateColumns="repeat(auto-fit, minmax(170px, 1fr))"
+            gridTemplateColumns="repeat(auto-fit, minmax(10.625rem, 1fr))"
             gap="base"
             alignItems="end"
           >

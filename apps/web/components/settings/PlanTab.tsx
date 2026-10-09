@@ -6,7 +6,7 @@ import { apiPost } from '../../lib/api';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormError, useAction } from './shared';
 
-const GRID = 'repeat(auto-fit, minmax(240px, 1fr))';
+const GRID = 'repeat(auto-fit, minmax(15rem, 1fr))';
 
 function Usage({ label, used, limit }: { label: string; used: number; limit: number }) {
   const full = limit > 0 && used >= limit;
@@ -131,7 +131,7 @@ export function PlanTab() {
                   </s-stack>
                   <s-heading>{p.priceUsd === 0 ? 'Free' : `$${p.priceUsd} / month`}</s-heading>
                   <s-text color="subdued">{p.summary}</s-text>
-                  <ul style={{ margin: 0, paddingInlineStart: 20 }}>
+                  <ul style={{ margin: 0, paddingInlineStart: '1.25rem' }}>
                     <li>Last {p.entitlements.historyDays} days of history</li>
                     <li>{p.entitlements.exportsPerMonth} reports a month</li>
                     <li>{p.entitlements.pdfExports ? 'CSV and PDF reports' : 'CSV reports'}</li>

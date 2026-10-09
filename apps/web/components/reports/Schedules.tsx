@@ -10,7 +10,7 @@ import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormError, useAction } from '../settings/shared';
 import { REPORTS } from './catalog';
 
-const GRID = 'repeat(auto-fit, minmax(170px, 1fr))';
+const GRID = 'repeat(auto-fit, minmax(10.625rem, 1fr))';
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

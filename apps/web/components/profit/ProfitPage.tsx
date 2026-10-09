@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type {
   FindingResponse,
   LeakageResponse,
@@ -8,14 +8,16 @@ import type {
   PeriodPreset,
   ReportTableResponse,
 } from '@pi/contracts';
-import { formatMoney, formatPercent } from '../../lib/format';
+import { describeDelta, describePoints, formatMoney, formatPercent } from '../../lib/format';
+import { sparkSeries } from '../../lib/series';
 import { buildListQuery } from '../../lib/query';
 import { FilterBar, type Filters } from '../overview/OverviewView';
 import { QualifiersBanner } from '../common';
 import { SampleBars } from '../preview/ui';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { ReportTable } from '../reports/ReportTable';
-import { StatCard, StatGrid } from '../common';
+import { Change, Kpi } from '../common/kpi';
+import { readParam } from '../../lib/url-params';
 
 type Tab = 'statement' | 'trend' | 'leakage' | 'quality';
 const today = () => new Date().toISOString().slice(0, 10);
@@ -29,6 +31,10 @@ export function ProfitPage() {
     currency: null,
   });
   const [tab, setTab] = useState<Tab>('statement');
+  useEffect(() => {
+    const t = readParam('tab', ['statement', 'trend', 'leakage', 'quality'] as const);
+    if (t) setTab(t);
+  }, []);
   const query = buildListQuery(filters, {});
 
   const overview = useApi<OverviewResponse>(`/dashboard/overview?${query}`);
@@ -107,27 +113,66 @@ export function ProfitPage() {
 function Kpis({ data }: { data: OverviewResponse }) {
   const s = data.summary;
   const cur = data.currency.code;
+  const spark = sparkSeries(data.trend);
+  const beforeAds = data.deltas.basis === 'before_advertising';
+  const suffix = beforeAds ? 'before advertising' : null;
   return (
-    <StatGrid>
-      <StatCard label="Revenue" value={formatMoney(s.revenue, cur)} />
-      <StatCard
+    <s-grid gridTemplateColumns="repeat(auto-fit, minmax(15rem, 1fr))" gap="base">
+      <Kpi
+        icon="cart"
+        label="Revenue"
+        value={formatMoney(s.revenue, cur)}
+        info="Sales after discounts and product refunds, plus shipping charged (net of shipping refunds). Tax is not included."
+        change={
+          <Change delta={describeDelta(data.deltas.revenue)} previous={data.previousPeriod} />
+        }
+        spark={spark.revenue}
+      />
+      <Kpi
+        icon="chart-vertical"
         label="Contribution profit"
         value={formatMoney(s.contributionProfit, cur)}
-        note={s.partial ? 'Partial: some costs missing' : undefined}
+        info="Revenue minus product cost, payment fees, shipping cost and advertising (when set up). Operating expenses are not taken off."
+        change={
+          <Change
+            delta={describeDelta(data.deltas.contributionProfit)}
+            previous={data.previousPeriod}
+            suffix={suffix}
+          />
+        }
+        notes={s.partial ? <s-badge tone="caution">Partial: some costs missing</s-badge> : null}
+        spark={spark.profit}
       />
-      <StatCard label="Contribution margin" value={formatPercent(s.contributionMargin)} />
-      <StatCard
+      <Kpi
+        icon="discount"
+        label="Contribution margin"
+        value={formatPercent(s.contributionMargin)}
+        info="Contribution profit divided by revenue."
+        change={
+          <Change
+            delta={describePoints(data.deltas.marginPoints)}
+            previous={data.previousPeriod}
+            suffix={suffix}
+          />
+        }
+        spark={spark.margin}
+      />
+      <Kpi
+        icon="target"
         label="Estimated net profit"
         value={s.estimatedNetProfit === null ? '—' : formatMoney(s.estimatedNetProfit, cur)}
-        note={
-          s.estimatedNetProfit === null
-            ? 'Add operating expenses to see it'
-            : s.statuses?.estimatedNetProfit === 'estimated'
-              ? 'Estimate: some inputs are missing or estimated'
-              : 'After advertising and expenses'
+        info="Contribution profit minus operating expenses. Shown only when operating expenses are set up, and called an estimate unless every input is confirmed."
+        change={
+          <s-text color="subdued">
+            {s.estimatedNetProfit === null
+              ? 'Add operating expenses to see it'
+              : s.statuses?.estimatedNetProfit === 'estimated'
+                ? 'Estimate: some inputs are missing or estimated'
+                : 'After advertising and expenses'}
+          </s-text>
         }
       />
-    </StatGrid>
+    </s-grid>
   );
 }
 

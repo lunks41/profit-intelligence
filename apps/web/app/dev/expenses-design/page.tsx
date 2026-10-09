@@ -5,7 +5,7 @@ import { ExpensesPreview } from '../../../components/preview/Screens';
 export default function Page() {
   if (process.env.NODE_ENV === 'production') notFound();
   return (
-    <s-page heading="Expenses (design)">
+    <s-page inlineSize="large" heading="Expenses (design)">
       <ExpensesPreview />
     </s-page>
   );

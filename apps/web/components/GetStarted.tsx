@@ -1,106 +1,53 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { SessionResponse } from '@pi/contracts';
+import { Notice } from './notices/Notice';
 
 type Step = SessionResponse['onboarding']['steps'][number];
-const KEY = 'pi.getStarted.hidden';
-
-function read(): boolean {
-  try {
-    return window.localStorage.getItem(KEY) === '1';
-  } catch {
-    return false;
-  }
-}
-function write(v: boolean) {
-  try {
-    window.localStorage.setItem(KEY, v ? '1' : '0');
-  } catch {
-    /* storage may be blocked; the choice then lasts only for this visit */
-  }
-}
 
 /**
- * The setup checklist. It says what is left, where to do it and why it matters. Once every required
- * step is done it folds into one line, and the merchant can hide it.
+ * The setup notice, shown at the top of every screen while a required step is open: one slim row
+ * with the progress, the next step and its link, expandable into the full list. Once every
+ * required step is done it disappears; optional steps (such as expenses) are reported with the
+ * other data issues instead.
  */
 export function GetStarted({ steps }: { steps: Step[] }) {
-  const [hidden, setHidden] = useState(false);
-  useEffect(() => setHidden(read()), []);
-
+  const [open, setOpen] = useState(false);
   const required = steps.filter((s) => !s.optional);
-  const todo = steps.filter((s) => s.status === 'pending');
-  const requiredDone = required.every((s) => s.status === 'done');
+  const done = required.filter((s) => s.status === 'done').length;
   const next = required.find((s) => s.status === 'pending');
-
-  if (hidden) {
-    return (
-      <s-button
-        variant="tertiary"
-        onClick={() => {
-          setHidden(false);
-          write(false);
-        }}
-      >
-        Show setup checklist
-      </s-button>
-    );
-  }
-
-  if (requiredDone && todo.length === 0) {
-    return (
-      <s-banner tone="success" heading="Setup complete">
-        <s-stack direction="inline" gap="small" alignItems="center">
-          <s-text>Everything is set up, so your profit figures use confirmed data.</s-text>
-          <s-button
-            variant="tertiary"
-            onClick={() => {
-              setHidden(true);
-              write(true);
-            }}
-          >
-            Hide
-          </s-button>
-        </s-stack>
-      </s-banner>
-    );
-  }
+  if (!next) return null;
 
   return (
-    <s-section heading="Get started">
-      <s-stack gap="base">
-        <s-text color="subdued">
-          {next
-            ? `Next: ${next.label.toLowerCase()}. ${required.filter((s) => s.status === 'done').length} of ${required.length} required steps done.`
-            : 'All required steps are done. The rest is optional.'}
-        </s-text>
-        {steps.map((step) => (
-          <s-stack key={step.id} gap="small-300">
-            <s-stack direction="inline" gap="small" alignItems="center">
-              <s-badge tone={step.status === 'done' ? 'success' : 'neutral'}>
-                {step.status === 'done' ? 'Done' : step.optional ? 'Optional' : 'To do'}
-              </s-badge>
-              <s-text type={step.status === 'pending' ? 'strong' : undefined}>{step.label}</s-text>
-              {step.status === 'pending' && step.href && <s-link href={step.href}>Open</s-link>}
-            </s-stack>
-            {step.status === 'pending' && <s-text color="subdued">{step.why}</s-text>}
+    <Notice>
+      <s-text type="strong">
+        Finish setting up: {done} of {required.length} steps done
+      </s-text>
+      <s-text>
+        Next: <s-text type="strong">{next.label}</s-text>. {next.why}
+      </s-text>
+      {next.href && <s-link href={next.href}>Open</s-link>}
+      <s-button variant="tertiary" onClick={() => setOpen((v) => !v)}>
+        {open ? 'Hide steps' : 'Show all steps'}
+      </s-button>
+      {open && (
+        <div style={{ flexBasis: '100%', padding: '0.25rem 0 0.5rem' }}>
+          <s-stack gap="small-300">
+            {steps.map((step) => (
+              <s-stack key={step.id} direction="inline" gap="small" alignItems="center">
+                <s-badge tone={step.status === 'done' ? 'success' : 'neutral'}>
+                  {step.status === 'done' ? 'Done' : step.optional ? 'Optional' : 'To do'}
+                </s-badge>
+                <s-text type={step.status === 'pending' ? 'strong' : undefined}>
+                  {step.label}
+                </s-text>
+                {step.status === 'pending' && step.href && <s-link href={step.href}>Open</s-link>}
+              </s-stack>
+            ))}
           </s-stack>
-        ))}
-        {requiredDone && (
-          <div>
-            <s-button
-              variant="tertiary"
-              onClick={() => {
-                setHidden(true);
-                write(true);
-              }}
-            >
-              Hide this checklist
-            </s-button>
-          </div>
-        )}
-      </s-stack>
-    </s-section>
+        </div>
+      )}
+    </Notice>
   );
 }

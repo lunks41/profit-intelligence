@@ -2,19 +2,21 @@
 
 import { Dropdown } from '../dropdown';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { AdProvidersResponse, MarketingResponse, PeriodPreset } from '@pi/contracts';
 import { apiDelete, apiPost } from '../../lib/api';
 import { formatMoney, longDate, periodLabel } from '../../lib/format';
 import { buildListQuery } from '../../lib/query';
 import { parseSpendLines } from '../../lib/spend';
+import { Notice } from '../notices/Notice';
 import { FilterBar, type Filters } from '../overview/OverviewView';
 import { SampleLines } from '../preview/ui';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormError, isAmount, todayLocal, useAction } from '../settings/shared';
 import { StatCard, StatGrid } from '../common';
+import { readParam } from '../../lib/url-params';
 
-const GRID = 'repeat(auto-fit, minmax(170px, 1fr))';
+const GRID = 'repeat(auto-fit, minmax(10.625rem, 1fr))';
 const today = () => new Date().toISOString().slice(0, 10);
 
 export function MarketingPage() {
@@ -25,6 +27,10 @@ export function MarketingPage() {
     currency: null,
   });
   const [tab, setTab] = useState<'channels' | 'campaigns' | 'accounts'>('channels');
+  useEffect(() => {
+    const t = readParam('tab', ['channels', 'campaigns', 'accounts'] as const);
+    if (t) setTab(t);
+  }, []);
   const [version, setVersion] = useState(0);
   const q = `${buildListQuery(filters, {})}&_=${version}`;
   const { data, error, loading, reload } = useApi<MarketingResponse>(`/marketing/overview?${q}`);
@@ -38,24 +44,27 @@ export function MarketingPage() {
       {data && (
         <div
           aria-busy={loading}
-          style={{ opacity: loading ? 0.6 : 1, display: 'flex', flexDirection: 'column', gap: 16 }}
+          style={{
+            opacity: loading ? 0.6 : 1,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1rem',
+          }}
         >
           <s-stack gap="base">
             {!data.totals.hasData && (
-              <s-banner
-                tone="info"
-                heading={
-                  data.totals.hasAccounts
-                    ? 'No advertising spend was imported for this period'
-                    : 'Advertising is not set up'
-                }
-              >
-                <s-paragraph>
+              <Notice>
+                <s-text type="strong">
+                  {data.totals.hasAccounts
+                    ? 'No advertising spend was imported for this period.'
+                    : 'Advertising is not set up.'}
+                </s-text>
+                <s-text>
                   {data.totals.hasAccounts
                     ? 'Spend is unknown for this period, not zero. Enter or import it on the Accounts tab. Until then profit excludes advertising.'
                     : 'Add an account and enter your daily spend on the Accounts tab to see profit after ads. Until then profit excludes advertising.'}
-                </s-paragraph>
-              </s-banner>
+                </s-text>
+              </Notice>
             )}
             <Kpis data={data} />
             {data.totals.hasData && (

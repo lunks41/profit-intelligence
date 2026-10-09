@@ -13,6 +13,9 @@ export interface DropdownOption {
  *
  * The list is a Polaris popover drawn inside the page, not the browser's own select list (which
  * ignores the page's styling and can draw an oversized blank panel).
+ *
+ * `compact` drops the label above and shows only the button (the label is still read aloud), for
+ * the small filters in a card's header.
  */
 export function Dropdown({
   label,
@@ -20,21 +23,23 @@ export function Dropdown({
   options,
   onChange,
   disabled,
+  compact,
 }: {
   label: string;
   value: string;
   options: DropdownOption[];
   onChange: (value: string) => void;
   disabled?: boolean;
+  compact?: boolean;
 }) {
   const id = `dd-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   const current = options.find((o) => o.value === value);
 
   return (
     <s-stack gap="small-300">
-      <s-text>{label}</s-text>
+      {!compact && <s-text>{label}</s-text>}
       <s-button
-        inlineSize="fill"
+        inlineSize={compact ? 'auto' : 'fill'}
         variant="secondary"
         disabled={disabled}
         commandFor={id}
@@ -43,7 +48,7 @@ export function Dropdown({
       >
         {`${current?.label ?? 'Select'}  ▾`}
       </s-button>
-      <s-popover id={id} minInlineSize="220px" maxBlockSize="320px">
+      <s-popover id={id} minInlineSize="160px" maxBlockSize="256px">
         <s-stack gap="none" padding="small-300">
           {options.map((o) => (
             <s-button

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { RulesResponse } from '@pi/contracts';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { CostsTab } from './CostsTab';
@@ -9,6 +9,7 @@ import { HelpTab } from './HelpTab';
 import { PlanTab } from './PlanTab';
 import { AlertsTab } from './AlertsTab';
 import { FeesTab, ShippingTab } from './RulesTabs';
+import { readParam } from '../../lib/url-params';
 
 type Tab = 'costs' | 'fees' | 'shipping' | 'alerts' | 'data' | 'plan' | 'help';
 
@@ -24,6 +25,13 @@ const TABS: Array<{ id: Tab; label: string }> = [
 
 export function SettingsPage() {
   const [tab, setTab] = useState<Tab>('costs');
+  useEffect(() => {
+    const t = readParam(
+      'tab',
+      TABS.map((x) => x.id),
+    );
+    if (t) setTab(t);
+  }, []);
   // Bumped after any change so the history list and rules reload.
   const [version, setVersion] = useState(0);
   const rules = useApi<RulesResponse>(`/settings/rules?_=${version}`);
