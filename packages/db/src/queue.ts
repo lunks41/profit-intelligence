@@ -37,8 +37,16 @@ export async function installQueueSchema(adminUrl: string): Promise<boolean> {
 
 // ---- runtime queue client (used by the api to enqueue and by the worker to process) ---------
 
-/** How much order history the app keeps and syncs (an entitlement later; fixed for now). */
-export const HISTORY_DAYS = 90;
+/**
+ * How much order history the app keeps and syncs (an entitlement later). 90 days unless
+ * ORDER_HISTORY_DAYS says otherwise: a development-only setting so seeded history older than 90
+ * days can be imported. Leave it unset in production.
+ */
+export function historyDaysFromEnv(value: string | undefined): number {
+  const n = Number(value);
+  return value && Number.isInteger(n) && n >= 1 && n <= 3650 ? n : 90;
+}
+export const HISTORY_DAYS = historyDaysFromEnv(process.env.ORDER_HISTORY_DAYS);
 export const SYNC_QUEUE = 'sync.shop';
 export const SYNC_RETRY_LIMIT = 5;
 export const WEBHOOK_QUEUE = 'webhook.process';

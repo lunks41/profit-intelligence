@@ -107,6 +107,64 @@ export async function getProfitAggregate(
   });
 }
 
+export interface ChannelDay {
+  date: string;
+  /** the order's Shopify source name, or null when Shopify did not give one */
+  channel: string | null;
+  /** signed revenue (sales, discounts, product refunds, shipping and shipping refunds) in shop currency */
+  revenue: string;
+}
+
+/**
+ * Revenue per day and sales channel, from the same ledger entries and dates as the headline revenue,
+ * so the channels always add up to it. A refund counts on its own day for the channel of its order.
+ */
+export async function getRevenueByChannelDaily(
+  db: Db,
+  scope: ShopScope,
+  r: DateRange,
+): Promise<ChannelDay[]> {
+  return withTenant(db, scope.tenantId, async (tx) => {
+    const rows = await tx.execute(sql`
+      select e.entry_date::text as d, o.source_name as channel, sum(e.amount)::text as revenue
+        from f_profit_entry e join t_order o on o.id = e.order_id
+       where e.shop_id = ${scope.shopId} and e.entry_date between ${range(r)}
+         and e.component in ('gross_sales', 'discounts', 'product_refund', 'shipping_revenue', 'shipping_refund')
+       group by e.entry_date, o.source_name
+       order by e.entry_date`);
+    return (rows.rows as { d: string; channel: string | null; revenue: string }[]).map((x) => ({
+      date: x.d,
+      channel: x.channel,
+      revenue: x.revenue,
+    }));
+  });
+}
+
+export interface ChannelOrders {
+  channel: string | null;
+  /** counted orders in the period, by order date (the count the Orders card uses) */
+  orders: number;
+}
+
+/** Counted orders per sales channel for the period. */
+export async function getOrdersByChannel(
+  db: Db,
+  scope: ShopScope,
+  r: DateRange,
+): Promise<ChannelOrders[]> {
+  return withTenant(db, scope.tenantId, async (tx) => {
+    const rows = await tx.execute(sql`
+      select o.source_name as channel, count(*)::int as n
+        from f_order_profit p join t_order o on o.id = p.order_id
+       where p.shop_id = ${scope.shopId} and p.recognized and p.order_date between ${range(r)}
+       group by o.source_name`);
+    return (rows.rows as { channel: string | null; n: number }[]).map((x) => ({
+      channel: x.channel,
+      orders: x.n,
+    }));
+  });
+}
+
 export interface DailyTotals {
   date: string;
   totals: Record<string, string>;
