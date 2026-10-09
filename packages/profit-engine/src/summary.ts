@@ -89,6 +89,12 @@ export interface Summary {
   contributionBeforeAds: string;
   /** contributionBeforeAds minus advertising when advertising data exists, otherwise equal to it */
   contributionProfit: string;
+  /**
+   * Everything taken off revenue to reach contribution profit: product cost, payment fees, shipping
+   * cost and (when data exists) advertising. Equal to revenue - contributionProfit, to the cent.
+   * Operating expenses are not part of it.
+   */
+  totalCosts: string;
   operatingExpenses: string | null;
   estimatedNetProfit: string | null;
   /** "full": operating expenses entered; "contribution_only": they were not */
@@ -348,6 +354,7 @@ export function summarizeFromTotals(totals: ComponentTotals, opts: TotalsSummary
     adSpend: q(adSpend),
     contributionBeforeAds: toStored(beforeAds),
     contributionProfit: toStored(contribution),
+    totalCosts: toStored(revenue.minus(contribution)),
     operatingExpenses: q(expenses),
     estimatedNetProfit: expenses ? toStored(contribution.minus(expenses)) : null,
     netProfitBasis: expenses ? 'full' : 'contribution_only',
