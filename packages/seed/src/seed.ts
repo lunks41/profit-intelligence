@@ -1,9 +1,26 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { assignCosts, cents, generatePlan } from './plan.js';
+import {
+  CUSTOMER_TAG,
+  SCENARIOS,
+  assignCosts,
+  cents,
+  customerPool,
+  generateDailyPlan,
+  generateMonthPlan,
+  generatePlan,
+  monthsBetween,
+} from './plan.js';
 import type { CatalogVariant, PlannedOrder } from './plan.js';
 import { sleep } from './shopify.js';
 import type { Json, ShopifyClient } from './shopify.js';
+
+/** First day of the one-year history (see seedHistory). */
+export const HISTORY_FROM = '2025-08-01';
+
+export function historyOptions(seed: number, now: Date, catalog: CatalogVariant[]) {
+  return { seed, from: HISTORY_FROM, to: now.toISOString().slice(0, 10), now, catalog };
+}
 
 export interface SeedOptions {
   orders: number;
@@ -190,14 +207,21 @@ function orderInput(o: PlannedOrder) {
           ]
         : [],
     ...(discountCode ? { discountCode } : {}),
-    ...(o.customer ? { email: o.customer.email, customer: { toUpsert: { ...o.customer } } } : {}),
+    ...(o.customer
+      ? { email: o.customer.email, customer: { toUpsert: { ...o.customer, tags: [CUSTOMER_TAG] } } }
+      : {}),
     transactions,
-    tags: ['pi-seed', ...o.scenarios.map((s) => `pi-${s}`), ...o.modifiers.map((m) => `pi-${m}`)],
+    tags: [
+      'pi-seed',
+      ...o.scenarios.map((s) => `pi-${s}`),
+      ...o.modifiers.map((m) => `pi-${m}`),
+      ...o.tags,
+    ],
     note: `Seeded test order ${o.sourceId}`,
   };
 }
 
-const ORDER_FIELDS = `id name sourceIdentifier processedAt cancelledAt displayFinancialStatus taxesIncluded
+const ORDER_FIELDS = `id name sourceIdentifier tags processedAt cancelledAt displayFinancialStatus taxesIncluded
   subtotalPriceSet { shopMoney { amount } } totalDiscountsSet { shopMoney { amount } }
   totalShippingPriceSet { shopMoney { amount } } totalTaxSet { shopMoney { amount } }
   totalPriceSet { shopMoney { amount currencyCode } presentmentMoney { amount currencyCode } }
@@ -205,14 +229,17 @@ const ORDER_FIELDS = `id name sourceIdentifier processedAt cancelledAt displayFi
   lineItems(first: 20) { nodes { id quantity } }
   refunds { id createdAt totalRefundedSet { shopMoney { amount } } }`;
 
-async function existingOrders(client: ShopifyClient): Promise<Map<string, Json>> {
+async function existingOrders(
+  client: ShopifyClient,
+  search = 'tag:pi-seed',
+): Promise<Map<string, Json>> {
   const map = new Map<string, Json>();
   let cursor: string | null = null;
   do {
     const data: Json = await client.gql(
-      `query($c: String) { orders(first: 50, after: $c, query: "tag:pi-seed") {
+      `query($c: String, $q: String) { orders(first: 50, after: $c, query: $q) {
          pageInfo { hasNextPage endCursor } nodes { ${ORDER_FIELDS} } } }`,
-      { c: cursor },
+      { c: cursor, q: search },
     );
     for (const o of data.orders.nodes) if (o.sourceIdentifier) map.set(o.sourceIdentifier, o);
     cursor = data.orders.pageInfo.hasNextPage ? data.orders.pageInfo.endCursor : null;
@@ -295,8 +322,12 @@ async function refundOrder(
     { id: shopOrder.id, items, ship: refundShipping },
   );
   const s = sug.order.suggestedRefund;
+  // a refund is never dated in the future (matters for orders created minutes ago)
   const refundAt = new Date(
-    new Date(o.processedAt).getTime() + refund.daysAfter * 86_400_000 + 3_600_000,
+    Math.min(
+      Date.now(),
+      new Date(o.processedAt).getTime() + refund.daysAfter * 86_400_000 + 3_600_000,
+    ),
   );
   const res: Json = await client.gql(
     `mutation($input: RefundInput!, $key: String!) {
@@ -353,6 +384,58 @@ async function cancelOrder(
   return true;
 }
 
+export type Stage = SeedOptions['stages'] extends Set<infer S> ? S : never;
+
+/** Creates the planned orders that are missing, then their refunds and cancellations. Resumable. */
+export async function processOrders(
+  client: ShopifyClient,
+  plan: PlannedOrder[],
+  stages: Set<Stage>,
+  dryRun: boolean,
+  search = 'tag:pi-seed',
+): Promise<{ created: number; skipped: number; failed: number }> {
+  const opts = { dryRun };
+  const existing = await existingOrders(client, search);
+  console.log(`existing seeded orders in store: ${existing.size}`);
+  const locationId = await firstLocation(client);
+  let created = 0;
+  let skipped = 0;
+  let failed = 0;
+  let refunded = 0;
+  let cancelled = 0;
+
+  for (const o of plan) {
+    let shopOrder = existing.get(o.sourceId);
+    if (!shopOrder && stages.has('orders')) {
+      if (opts.dryRun) {
+        console.log(
+          `  [dry-run] would create #${o.index} ${o.scenarios[0]} ${o.processedAt.slice(0, 10)} total ${cents(o.expected.totalCents)}`,
+        );
+        continue;
+      }
+      shopOrder = await createOrder(client, o);
+      if (!shopOrder) {
+        failed++;
+        continue;
+      }
+      created++;
+      if (created % 10 === 0) console.log(`  created ${created} order(s)...`);
+    } else if (shopOrder) skipped++;
+    if (!shopOrder || !stages.has('refunds') || opts.dryRun) continue;
+
+    if (o.refund && shopOrder.refunds.length === 0) {
+      if (await refundOrder(client, o, shopOrder, locationId)) refunded++;
+    }
+    if (o.cancel && !shopOrder.cancelledAt) {
+      if (await cancelOrder(client, shopOrder, o)) cancelled++;
+    }
+  }
+  console.log(
+    `orders: created ${created}, already present ${skipped}, failed ${failed}; refunds ${refunded}; cancellations ${cancelled}`,
+  );
+  return { created, skipped, failed };
+}
+
 export async function runSeed(client: ShopifyClient, opts: SeedOptions): Promise<void> {
   const stages = opts.stages;
   const catalog = await fetchCatalog(client);
@@ -376,57 +459,27 @@ export async function runSeed(client: ShopifyClient, opts: SeedOptions): Promise
   console.log(`plan: ${plan.length} order(s)`);
 
   if (stages.has('orders') || stages.has('refunds')) {
-    const existing = await existingOrders(client);
-    console.log(`existing seeded orders in store: ${existing.size}`);
-    const locationId = await firstLocation(client);
-    let created = 0;
-    let skipped = 0;
-    let failed = 0;
-    let refunded = 0;
-    let cancelled = 0;
-
-    for (const o of plan) {
-      let shopOrder = existing.get(o.sourceId);
-      if (!shopOrder && stages.has('orders')) {
-        if (opts.dryRun) {
-          console.log(
-            `  [dry-run] would create #${o.index} ${o.scenarios[0]} ${o.processedAt.slice(0, 10)} total ${cents(o.expected.totalCents)}`,
-          );
-          continue;
-        }
-        shopOrder = await createOrder(client, o);
-        if (!shopOrder) {
-          failed++;
-          continue;
-        }
-        created++;
-        if (created % 10 === 0) console.log(`  created ${created} order(s)...`);
-      } else if (shopOrder) skipped++;
-      if (!shopOrder || !stages.has('refunds') || opts.dryRun) continue;
-
-      if (o.refund && shopOrder.refunds.length === 0) {
-        if (await refundOrder(client, o, shopOrder, locationId)) refunded++;
-      }
-      if (o.cancel && !shopOrder.cancelledAt) {
-        if (await cancelOrder(client, shopOrder, o)) cancelled++;
-      }
-    }
-    console.log(
-      `orders: created ${created}, already present ${skipped}, failed ${failed}; refunds ${refunded}; cancellations ${cancelled}`,
-    );
+    await processOrders(client, plan, stages, opts.dryRun);
   }
 
   if (stages.has('manifest') && !opts.dryRun) {
     await sleep(3000); // let async cancellations settle
     const seeded = [...(await existingOrders(client)).values()];
+    const now = new Date();
+    const history = monthsBetween(HISTORY_FROM, now.toISOString().slice(0, 10)).flatMap((m) =>
+      generateMonthPlan(m, historyOptions(opts.seed, now, costed)),
+    );
     const planBySource = new Map(
-      generatePlan({
-        seed: opts.seed,
-        orders: opts.orders,
-        days: opts.days,
-        now: new Date(),
-        catalog: costed,
-      }).map((p) => [p.sourceId, p]),
+      [
+        ...generatePlan({
+          seed: opts.seed,
+          orders: opts.orders,
+          days: opts.days,
+          now,
+          catalog: costed,
+        }),
+        ...history,
+      ].map((p) => [p.sourceId, p] as const),
     );
     const rows = seeded.map((s) => {
       const p = planBySource.get(s.sourceIdentifier);
@@ -435,8 +488,12 @@ export async function runSeed(client: ShopifyClient, opts: SeedOptions): Promise
         shopifyId: s.id,
         name: s.name,
         sourceId: s.sourceIdentifier,
-        scenario: p?.scenarios[0] ?? null,
+        scenario:
+          p?.scenarios[0] ??
+          SCENARIOS.find((x) => (s.tags as string[]).includes(`pi-${x}`)) ??
+          null,
         modifiers: p?.modifiers ?? [],
+        tags: s.tags as string[],
         processedAt: s.processedAt,
         status: s.displayFinancialStatus,
         cancelled: Boolean(s.cancelledAt),
@@ -513,4 +570,91 @@ export async function runSeed(client: ShopifyClient, opts: SeedOptions): Promise
       `manifest: ${rows.length} order(s) written to packages/seed/out/manifest.json; ${mismatched.length} total(s) differ from the generator's plan`,
     );
   }
+}
+
+// ---- customers, history, daily --------------------------------------------------------------
+
+/** Creates (or updates) the fake customers, tagged pi-seed. Idempotent: keyed by email. */
+export async function seedCustomers(
+  client: ShopifyClient,
+  count: number,
+  dryRun: boolean,
+): Promise<void> {
+  const people = customerPool(count);
+  if (dryRun) {
+    console.log(`customers: ${people.length} would be upserted (dry run)`);
+    return;
+  }
+  let done = 0;
+  for (const p of people) {
+    for (let attempt = 0; ; attempt++) {
+      const res: Json = await client.gql(
+        `mutation($input: CustomerSetInput!, $id: CustomerSetIdentifiers!) {
+           customerSet(input: $input, identifier: $id) { customer { id } userErrors { field message } } }`,
+        { input: { ...p, tags: [CUSTOMER_TAG] }, id: { email: p.email } },
+      );
+      const errs = res.customerSet.userErrors;
+      if (!errs.length) break;
+      const text = JSON.stringify(errs);
+      if (attempt < 5 && /limit|too many|exceed|throttl/i.test(text)) {
+        console.log(`  customers rate limited, waiting 60s`);
+        await sleep(60_000);
+        continue;
+      }
+      throw new Error(`Customer ${p.email} rejected: ${text}`);
+    }
+    if (++done % 50 === 0) console.log(`  customers: ${done} of ${people.length}`);
+  }
+  console.log(`customers: ${done} upserted (tag ${CUSTOMER_TAG})`);
+}
+
+const stamp = () => new Date().toISOString();
+
+/**
+ * One year of orders, one month at a time. Each month looks up only its own orders (tag
+ * pi-m-YYYY-MM), so a crash or a long rate-limit stall resumes at the first missing order.
+ */
+export async function seedHistory(
+  client: ShopifyClient,
+  opts: { seed: number; months?: string[]; stages: Set<Stage>; dryRun: boolean },
+): Promise<void> {
+  const catalog = assignCosts(await fetchCatalog(client), opts.seed);
+  if (catalog.length === 0) throw new Error('No active products with prices found in the store');
+  const now = new Date();
+  const ho = historyOptions(opts.seed, now, catalog);
+  const months = opts.months ?? monthsBetween(ho.from, ho.to);
+  let total = 0;
+  for (const month of months) {
+    const plan = generateMonthPlan(month, ho);
+    total += plan.length;
+    console.log(`[${stamp()}] ${month}: ${plan.length} planned order(s)`);
+    const r = await processOrders(client, plan, opts.stages, opts.dryRun, `tag:pi-m-${month}`);
+    console.log(
+      `[${stamp()}] ${month}: done (created ${r.created}, already present ${r.skipped}, failed ${r.failed})`,
+    );
+  }
+  console.log(`[${stamp()}] history: ${total} order(s) planned over ${months.length} month(s)`);
+}
+
+/** 10 to 15 orders dated now for today (UTC date). Running it twice on a day adds nothing. */
+export async function seedDaily(
+  client: ShopifyClient,
+  opts: { seed: number; stages: Set<Stage>; dryRun: boolean; day?: string },
+): Promise<void> {
+  const catalog = assignCosts(await fetchCatalog(client), opts.seed);
+  if (catalog.length === 0) throw new Error('No active products with prices found in the store');
+  const now = new Date();
+  const day = opts.day ?? now.toISOString().slice(0, 10);
+  const plan = generateDailyPlan({ seed: opts.seed, day, now, catalog });
+  console.log(`[${stamp()}] daily ${day}: ${plan.length} planned order(s)`);
+  const r = await processOrders(
+    client,
+    plan,
+    opts.stages,
+    opts.dryRun,
+    `tag:pi-daily-${day.replace(/-/g, '')}`,
+  );
+  console.log(
+    `[${stamp()}] daily ${day}: done (created ${r.created}, already present ${r.skipped}, failed ${r.failed})`,
+  );
 }

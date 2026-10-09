@@ -95,7 +95,9 @@ export interface PlannedOrder {
   financialStatus: 'PAID' | 'PENDING' | 'AUTHORIZED' | 'PARTIALLY_PAID';
   cancel: boolean;
   refund: PlannedRefund | null;
-  customer: { email: string; firstName: string; lastName: string } | null;
+  customer: SeedCustomer | null;
+  /** Extra Shopify tags (batch markers such as pi-m-2025-08) so a batch can be looked up cheaply. */
+  tags: string[];
   currency: 'USD' | 'EUR';
   /** Expected totals computed by the generator (Shopify's response is the final truth). */
   expected: { subtotalCents: number; discountCents: number; taxCents: number; totalCents: number };
@@ -170,11 +172,49 @@ export function assignCosts(catalog: CatalogVariant[], seed: number): CatalogVar
   return costed;
 }
 
-const CUSTOMERS = Array.from({ length: 25 }, (_, i) => ({
-  email: `seed.customer${i + 1}@example.com`,
-  firstName: ['Ava', 'Noah', 'Mia', 'Liam', 'Zoe'][i % 5]!,
-  lastName: `Tester${i + 1}`,
-}));
+export interface SeedCustomer {
+  email: string;
+  firstName: string;
+  lastName: string;
+}
+
+const FIRST_NAMES = [
+  'Ava',
+  'Noah',
+  'Mia',
+  'Liam',
+  'Zoe',
+  'Ethan',
+  'Isla',
+  'Lucas',
+  'Nora',
+  'Owen',
+  'Ruby',
+  'Leo',
+  'Ella',
+  'Jack',
+  'Hana',
+  'Omar',
+  'Lena',
+  'Ravi',
+  'Sara',
+  'Theo',
+];
+
+/**
+ * Clearly fake customers on the reserved example.com domain. Deterministic: customer n is always
+ * the same person. These exist only in the Shopify test store; the app never stores them.
+ */
+export function customerPool(count = CUSTOMER_COUNT): SeedCustomer[] {
+  return Array.from({ length: count }, (_, i) => ({
+    email: `seed.customer${i + 1}@example.com`,
+    firstName: FIRST_NAMES[i % FIRST_NAMES.length]!,
+    lastName: `Tester${i + 1}`,
+  }));
+}
+export const CUSTOMER_COUNT = 300;
+export const CUSTOMER_TAG = 'pi-seed';
+const CUSTOMERS = customerPool();
 
 function pickDay(r: Rng, days: number): number {
   // More orders recently (growth) and more on weekends. Rejection sampling over day offsets.
@@ -198,11 +238,194 @@ function scenarioFor(index: number, r: Rng): Scenario {
   return 'normal';
 }
 
+interface BuildContext {
+  catalog: CatalogVariant[];
+  roles: ProductRoles;
+  customers: SeedCustomer[];
+  now: Date;
+  r: Rng;
+}
+
+/** Builds one order. The order in which `r` is consumed is part of the seed contract: keep it. */
+function buildOrder(
+  c: BuildContext,
+  index: number,
+  sourceId: string,
+  scenario: Scenario,
+  when: Date,
+  progress: number,
+  tags: string[] = [],
+): PlannedOrder {
+  const { catalog, roles, now, r } = c;
+  const byProduct = (id: string) => catalog.filter((v) => v.productId === id);
+  // lines
+  let variants: CatalogVariant[];
+  if (scenario === 'negative_profit') variants = [pick(r, byProduct(roles.lowMarginProductId))];
+  else if (scenario === 'multi_item')
+    variants = Array.from({ length: int(r, 2, 4) }, () => pick(r, catalog));
+  else variants = Array.from({ length: r() < 0.7 ? 1 : 2 }, () => pick(r, catalog));
+  variants = [...new Map(variants.map((v) => [v.id, v])).values()];
+
+  const lines: PlannedLine[] = variants.map((v) => {
+    const erosion = v.productId === roles.decliningProductId ? 1 - 0.2 * progress : 1;
+    const quantity = scenario === 'large_quantity' ? int(r, 10, 25) : r() < 0.75 ? 1 : int(r, 2, 3);
+    return {
+      variantId: v.id,
+      productId: v.productId,
+      title: v.productTitle,
+      variantTitle: v.title,
+      sku: v.sku,
+      quantity,
+      unitPriceCents: Math.round(v.priceCents * erosion),
+      taxCents: 0,
+    };
+  });
+  const subtotal = lines.reduce((s, l) => s + l.unitPriceCents * l.quantity, 0);
+
+  // shipping
+  let shippingCents = pick(r, [0, 0, 500, 999, 1499, 2500]);
+  if (scenario === 'free_shipping' || scenario === 'shipping_refund') {
+    shippingCents = Math.max(shippingCents, 999);
+  }
+  if (scenario === 'zero_total') shippingCents = 0;
+
+  // discount
+  let discount: Discount | null = null;
+  if (scenario === 'percent_discount')
+    discount = { kind: 'percent', code: 'SEED-PCT', percent: pick(r, [10, 15, 20, 25]) };
+  else if (scenario === 'negative_profit')
+    discount = { kind: 'percent', code: 'SEED-CLEARANCE', percent: pick(r, [35, 40, 50]) };
+  else if (scenario === 'zero_total')
+    discount = { kind: 'percent', code: 'SEED-FREE', percent: 100 };
+  else if (scenario === 'fixed_discount') {
+    const cents = Math.min(Math.floor(subtotal / 2 / 100) * 100, Math.max(500, pct(subtotal, 15)));
+    discount = { kind: 'fixed', code: 'SEED-FIXED', amountCents: Math.max(100, cents) };
+  } else if (scenario === 'free_shipping')
+    discount = { kind: 'free_shipping', code: 'SEED-FREESHIP' };
+
+  const discountCents =
+    discount?.kind === 'percent'
+      ? lines.reduce((s, l) => s + pct(l.unitPriceCents * l.quantity, discount.percent), 0)
+      : discount?.kind === 'fixed'
+        ? Math.min(discount.amountCents, subtotal)
+        : 0;
+  const shippingCharged = discount?.kind === 'free_shipping' ? 0 : shippingCents;
+
+  // tax (explicit per-line amounts; fixed discounts are kept tax-free to avoid ambiguity)
+  const taxRate =
+    scenario === 'zero_total' || discount?.kind === 'fixed' ? 0 : pick(r, [0, 0, 5, 8.875]);
+  const taxesIncluded = taxRate > 0 && r() < 0.25;
+  for (const l of lines) {
+    const gross = l.unitPriceCents * l.quantity;
+    const after = discount?.kind === 'percent' ? gross - pct(gross, discount.percent) : gross;
+    l.taxCents = taxesIncluded
+      ? after - Math.round(after / (1 + taxRate / 100))
+      : Math.round((after * taxRate) / 100);
+  }
+  const taxCents = lines.reduce((s, l) => s + l.taxCents, 0);
+  const totalCents = subtotal - discountCents + shippingCharged + (taxesIncluded ? 0 : taxCents);
+
+  // payment status and lifecycle
+  const financialStatus: PlannedOrder['financialStatus'] =
+    scenario === 'pending_unpaid' || scenario === 'cancelled_unpaid'
+      ? 'PENDING'
+      : scenario === 'authorized_only'
+        ? 'AUTHORIZED'
+        : scenario === 'partially_paid'
+          ? 'PARTIALLY_PAID'
+          : 'PAID';
+  const cancel = scenario === 'cancelled_unpaid' || scenario === 'cancelled_refunded';
+
+  // refunds
+  let refund: PlannedRefund | null = null;
+  const containsHighRefund = lines.some((l) => l.productId === roles.highRefundProductId);
+  if (scenario === 'partial_refund' || scenario === 'late_refund') {
+    const lineIndex = int(r, 0, lines.length - 1);
+    const line = lines[lineIndex]!;
+    refund = {
+      kind: 'partial',
+      lineIndex,
+      quantity: line.quantity > 1 ? int(r, 1, line.quantity - 1) : 1,
+      restock: r() < 0.6,
+      daysAfter: scenario === 'late_refund' ? int(r, 35, 70) : int(r, 1, 20),
+    };
+  } else if (scenario === 'full_refund') {
+    refund = {
+      kind: 'full',
+      lineIndex: 0,
+      quantity: 0,
+      restock: r() < 0.6,
+      daysAfter: int(r, 1, 15),
+    };
+  } else if (scenario === 'shipping_refund') {
+    refund = {
+      kind: 'shipping',
+      lineIndex: 0,
+      quantity: 0,
+      restock: false,
+      daysAfter: int(r, 1, 10),
+    };
+  } else if (scenario === 'cancelled_refunded') {
+    refund = { kind: 'full', lineIndex: 0, quantity: 0, restock: true, daysAfter: int(r, 0, 3) };
+  } else if (containsHighRefund && financialStatus === 'PAID' && totalCents > 0 && r() < 0.35) {
+    refund = {
+      kind: 'partial',
+      lineIndex: 0,
+      quantity: 1,
+      restock: false,
+      daysAfter: int(r, 2, 25),
+    };
+  }
+  // a refund must not land in the future
+  if (refund) {
+    const maxDays = Math.floor((now.getTime() - when.getTime()) / 86_400_000);
+    refund.daysAfter = Math.min(refund.daysAfter, Math.max(0, maxDays - 1));
+  }
+
+  const modifiers: string[] = [];
+  if (taxesIncluded) modifiers.push('tax_inclusive');
+  if (taxRate > 0 && !taxesIncluded) modifiers.push('tax_exclusive');
+  if (lines.some((l) => catalog.find((v) => v.id === l.variantId)?.costCents == null))
+    modifiers.push('missing_cogs');
+  if (lines.some((l) => l.productId === roles.decliningProductId))
+    modifiers.push('declining_margin');
+  if (lines.some((l) => l.productId === roles.highRefundProductId))
+    modifiers.push('high_refund_product');
+  const guest = r() < 0.2;
+  if (guest) modifiers.push('guest');
+  if (shippingCents === 0) modifiers.push('no_shipping_charge');
+
+  return {
+    index,
+    sourceId,
+    processedAt: when.toISOString(),
+    scenarios: [scenario],
+    modifiers,
+    lines,
+    shippingCents,
+    discount,
+    taxesIncluded,
+    taxRate,
+    financialStatus,
+    cancel,
+    refund,
+    customer: guest ? null : pick(r, c.customers),
+    currency: scenario === 'foreign_currency' ? 'EUR' : 'USD',
+    tags,
+    expected: { subtotalCents: subtotal, discountCents, taxCents, totalCents },
+  };
+}
+
 export function generatePlan(opts: PlanOptions): PlannedOrder[] {
   const { catalog, now } = opts;
-  const roles = productRoles(catalog);
-  const r = createRng(opts.seed);
-  const byProduct = (id: string) => catalog.filter((v) => v.productId === id);
+  const c: BuildContext = {
+    catalog,
+    roles: productRoles(catalog),
+    customers: CUSTOMERS,
+    now,
+    r: createRng(opts.seed),
+  };
+  const { r } = c;
   const plan: PlannedOrder[] = [];
 
   for (let i = 0; i < opts.orders; i++) {
@@ -212,168 +435,180 @@ export function generatePlan(opts: PlanOptions): PlannedOrder[] {
       now.getTime() - dayOffset * 86_400_000 - int(r, 1, 14) * 3_600_000 - int(r, 0, 59) * 60_000,
     );
     const progress = (opts.days - 1 - dayOffset) / Math.max(1, opts.days - 1); // 0 oldest .. 1 newest
-
-    // lines
-    let variants: CatalogVariant[];
-    if (scenario === 'negative_profit') variants = [pick(r, byProduct(roles.lowMarginProductId))];
-    else if (scenario === 'multi_item')
-      variants = Array.from({ length: int(r, 2, 4) }, () => pick(r, catalog));
-    else variants = Array.from({ length: r() < 0.7 ? 1 : 2 }, () => pick(r, catalog));
-    variants = [...new Map(variants.map((v) => [v.id, v])).values()];
-
-    const lines: PlannedLine[] = variants.map((v) => {
-      const erosion = v.productId === roles.decliningProductId ? 1 - 0.2 * progress : 1;
-      const quantity =
-        scenario === 'large_quantity' ? int(r, 10, 25) : r() < 0.75 ? 1 : int(r, 2, 3);
-      return {
-        variantId: v.id,
-        productId: v.productId,
-        title: v.productTitle,
-        variantTitle: v.title,
-        sku: v.sku,
-        quantity,
-        unitPriceCents: Math.round(v.priceCents * erosion),
-        taxCents: 0,
-      };
-    });
-    const subtotal = lines.reduce((s, l) => s + l.unitPriceCents * l.quantity, 0);
-
-    // shipping
-    let shippingCents = pick(r, [0, 0, 500, 999, 1499, 2500]);
-    if (scenario === 'free_shipping' || scenario === 'shipping_refund') {
-      shippingCents = Math.max(shippingCents, 999);
-    }
-    if (scenario === 'zero_total') shippingCents = 0;
-
-    // discount
-    let discount: Discount | null = null;
-    if (scenario === 'percent_discount')
-      discount = { kind: 'percent', code: 'SEED-PCT', percent: pick(r, [10, 15, 20, 25]) };
-    else if (scenario === 'negative_profit')
-      discount = { kind: 'percent', code: 'SEED-CLEARANCE', percent: pick(r, [35, 40, 50]) };
-    else if (scenario === 'zero_total')
-      discount = { kind: 'percent', code: 'SEED-FREE', percent: 100 };
-    else if (scenario === 'fixed_discount') {
-      const cents = Math.min(
-        Math.floor(subtotal / 2 / 100) * 100,
-        Math.max(500, pct(subtotal, 15)),
-      );
-      discount = { kind: 'fixed', code: 'SEED-FIXED', amountCents: Math.max(100, cents) };
-    } else if (scenario === 'free_shipping')
-      discount = { kind: 'free_shipping', code: 'SEED-FREESHIP' };
-
-    const discountCents =
-      discount?.kind === 'percent'
-        ? lines.reduce((s, l) => s + pct(l.unitPriceCents * l.quantity, discount.percent), 0)
-        : discount?.kind === 'fixed'
-          ? Math.min(discount.amountCents, subtotal)
-          : 0;
-    const shippingCharged = discount?.kind === 'free_shipping' ? 0 : shippingCents;
-
-    // tax (explicit per-line amounts; fixed discounts are kept tax-free to avoid ambiguity)
-    const taxRate =
-      scenario === 'zero_total' || discount?.kind === 'fixed' ? 0 : pick(r, [0, 0, 5, 8.875]);
-    const taxesIncluded = taxRate > 0 && r() < 0.25;
-    for (const l of lines) {
-      const gross = l.unitPriceCents * l.quantity;
-      const after = discount?.kind === 'percent' ? gross - pct(gross, discount.percent) : gross;
-      l.taxCents = taxesIncluded
-        ? after - Math.round(after / (1 + taxRate / 100))
-        : Math.round((after * taxRate) / 100);
-    }
-    const taxCents = lines.reduce((s, l) => s + l.taxCents, 0);
-    const totalCents = subtotal - discountCents + shippingCharged + (taxesIncluded ? 0 : taxCents);
-
-    // payment status and lifecycle
-    const financialStatus: PlannedOrder['financialStatus'] =
-      scenario === 'pending_unpaid' || scenario === 'cancelled_unpaid'
-        ? 'PENDING'
-        : scenario === 'authorized_only'
-          ? 'AUTHORIZED'
-          : scenario === 'partially_paid'
-            ? 'PARTIALLY_PAID'
-            : 'PAID';
-    const cancel = scenario === 'cancelled_unpaid' || scenario === 'cancelled_refunded';
-
-    // refunds
-    let refund: PlannedRefund | null = null;
-    const containsHighRefund = lines.some((l) => l.productId === roles.highRefundProductId);
-    if (scenario === 'partial_refund' || scenario === 'late_refund') {
-      const lineIndex = int(r, 0, lines.length - 1);
-      const line = lines[lineIndex]!;
-      refund = {
-        kind: 'partial',
-        lineIndex,
-        quantity: line.quantity > 1 ? int(r, 1, line.quantity - 1) : 1,
-        restock: r() < 0.6,
-        daysAfter: scenario === 'late_refund' ? int(r, 35, 70) : int(r, 1, 20),
-      };
-    } else if (scenario === 'full_refund') {
-      refund = {
-        kind: 'full',
-        lineIndex: 0,
-        quantity: 0,
-        restock: r() < 0.6,
-        daysAfter: int(r, 1, 15),
-      };
-    } else if (scenario === 'shipping_refund') {
-      refund = {
-        kind: 'shipping',
-        lineIndex: 0,
-        quantity: 0,
-        restock: false,
-        daysAfter: int(r, 1, 10),
-      };
-    } else if (scenario === 'cancelled_refunded') {
-      refund = { kind: 'full', lineIndex: 0, quantity: 0, restock: true, daysAfter: int(r, 0, 3) };
-    } else if (containsHighRefund && financialStatus === 'PAID' && totalCents > 0 && r() < 0.35) {
-      refund = {
-        kind: 'partial',
-        lineIndex: 0,
-        quantity: 1,
-        restock: false,
-        daysAfter: int(r, 2, 25),
-      };
-    }
-    // a refund must not land in the future
-    if (refund) {
-      const maxDays = Math.floor((now.getTime() - when.getTime()) / 86_400_000);
-      refund.daysAfter = Math.min(refund.daysAfter, Math.max(0, maxDays - 1));
-    }
-
-    const modifiers: string[] = [];
-    if (taxesIncluded) modifiers.push('tax_inclusive');
-    if (taxRate > 0 && !taxesIncluded) modifiers.push('tax_exclusive');
-    if (lines.some((l) => catalog.find((v) => v.id === l.variantId)?.costCents == null))
-      modifiers.push('missing_cogs');
-    if (lines.some((l) => l.productId === roles.decliningProductId))
-      modifiers.push('declining_margin');
-    if (lines.some((l) => l.productId === roles.highRefundProductId))
-      modifiers.push('high_refund_product');
-    const guest = r() < 0.2;
-    if (guest) modifiers.push('guest');
-    if (shippingCents === 0) modifiers.push('no_shipping_charge');
-
-    plan.push({
-      index: i,
-      sourceId: `pi-seed-${opts.seed}-${i}`,
-      processedAt: when.toISOString(),
-      scenarios: [scenario],
-      modifiers,
-      lines,
-      shippingCents,
-      discount,
-      taxesIncluded,
-      taxRate,
-      financialStatus,
-      cancel,
-      refund,
-      customer: guest ? null : pick(r, CUSTOMERS),
-      currency: scenario === 'foreign_currency' ? 'EUR' : 'USD',
-      expected: { subtotalCents: subtotal, discountCents, taxCents, totalCents },
-    });
+    plan.push(buildOrder(c, i, `pi-seed-${opts.seed}-${i}`, scenario, when, progress));
   }
   return plan;
 }
 
 export const cents = (c: number) => (c / 100).toFixed(2);
+
+// ---- one year of history, month by month ---------------------------------------------------
+
+export interface HistoryOptions {
+  seed: number;
+  /** First day, YYYY-MM-DD (UTC). */
+  from: string;
+  /** Last day, YYYY-MM-DD (UTC), normally today. */
+  to: string;
+  now: Date;
+  catalog: CatalogVariant[];
+}
+
+const DAY_MS = 86_400_000;
+const dayKey = (d: Date) => d.toISOString().slice(0, 10);
+const dayNumber = (key: string) => Math.floor(Date.parse(`${key}T00:00:00Z`) / DAY_MS);
+const compact = (key: string) => key.replace(/-/g, '');
+
+/** Stable hash of text to a 32 bit seed, so every day has its own random stream. */
+function hashSeed(text: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619);
+  return h >>> 0;
+}
+
+/** Calendar days from..to inclusive, as YYYY-MM-DD. */
+export function daysBetween(from: string, to: string): string[] {
+  const out: string[] = [];
+  for (let n = dayNumber(from); n <= dayNumber(to); n++) {
+    out.push(dayKey(new Date(n * DAY_MS)));
+  }
+  return out;
+}
+
+/** Seasonal factor by calendar month (1 to 12). */
+const SEASON = [1, 0.85, 0.9, 0.95, 1, 1, 0.9, 0.95, 1, 1.05, 1.35, 1.5];
+
+/**
+ * Expected orders on a day: a gentle upward trend over the period, more at weekends and before
+ * the holidays, and a few busy days (about 4%, plus Black Friday) that run 2.5 to 3 times higher.
+ */
+export function expectedOrdersOnDay(day: string, from: string, to: string, seed: number): number {
+  const span = Math.max(1, dayNumber(to) - dayNumber(from));
+  const t = (dayNumber(day) - dayNumber(from)) / span;
+  const date = new Date(`${day}T00:00:00Z`);
+  const weekday = date.getUTCDay();
+  const weekend = weekday === 0 || weekday === 6 ? 1.3 : 1;
+  const season = SEASON[date.getUTCMonth()]!;
+  const busy = createRng(hashSeed(`${seed}:busy:${day}`))() < 0.04 ? 2.5 : 1;
+  const blackFriday = date.getUTCMonth() === 10 && date.getUTCDate() >= 24 && weekday === 5 ? 3 : 1;
+  return (3 + 3 * t) * weekend * season * Math.max(busy, blackFriday);
+}
+
+/**
+ * Orders for one calendar day. Self-contained and independent of when it runs: the day's random
+ * stream comes from (seed, day) only, so the same day always gives the same orders and the same
+ * source ids, whatever range the plan was started with.
+ */
+export function planDay(
+  day: string,
+  opts: Pick<HistoryOptions, 'seed' | 'from' | 'to' | 'now' | 'catalog'>,
+  ordinalBase = 0,
+): PlannedOrder[] {
+  const r = createRng(hashSeed(`${opts.seed}:day:${day}`));
+  const mean = expectedOrdersOnDay(day, opts.from, opts.to, opts.seed);
+  const count = Math.max(1, Math.floor(mean) + (r() < mean - Math.floor(mean) ? 1 : 0));
+  const span = Math.max(1, dayNumber(opts.to) - dayNumber(opts.from));
+  const progress = (dayNumber(day) - dayNumber(opts.from)) / span;
+  const dom = Number(day.slice(8, 10));
+  const c: BuildContext = {
+    catalog: opts.catalog,
+    roles: productRoles(opts.catalog),
+    customers: CUSTOMERS,
+    now: opts.now,
+    r,
+  };
+  const dayStart = dayNumber(day) * DAY_MS;
+  const out: PlannedOrder[] = [];
+  for (let k = 0; k < count; k++) {
+    // Days 1 to 18 of every month lead with scenario number (day - 1), so each scenario appears
+    // at least once a month; the rest is weighted random like the original seeder.
+    const forced = k === 0 && dom <= SCENARIOS.length ? SCENARIOS[dom - 1]! : null;
+    const scenario = forced ?? weightedScenario(r);
+    let at = dayStart + (7 * 3600 + int(r, 0, 15 * 3600)) * 1000;
+    if (at > opts.now.getTime()) at = opts.now.getTime() - int(r, 1, 600) * 60_000;
+    out.push(
+      buildOrder(
+        c,
+        ordinalBase + k,
+        `pi-seed-${opts.seed}-h${compact(day)}-${k}`,
+        scenario,
+        new Date(at),
+        progress,
+        [`pi-m-${day.slice(0, 7)}`],
+      ),
+    );
+  }
+  return out;
+}
+
+function weightedScenario(r: Rng): Scenario {
+  const total = Object.values(WEIGHTS).reduce((a, b) => a + b, 0);
+  let x = r() * total;
+  for (const s of SCENARIOS) {
+    x -= WEIGHTS[s];
+    if (x < 0) return s;
+  }
+  return 'normal';
+}
+
+/** All months in from..to, as YYYY-MM. */
+export function monthsBetween(from: string, to: string): string[] {
+  return [...new Set(daysBetween(from, to).map((d) => d.slice(0, 7)))];
+}
+
+/** The plan for one month (YYYY-MM) of the history, clipped to from..to. */
+export function generateMonthPlan(month: string, opts: HistoryOptions): PlannedOrder[] {
+  const days = daysBetween(opts.from, opts.to).filter((d) => d.startsWith(month));
+  const out: PlannedOrder[] = [];
+  for (const d of days) out.push(...planDay(d, opts, out.length));
+  return out;
+}
+
+// ---- daily orders ---------------------------------------------------------------------------
+
+export interface DailyOptions {
+  seed: number;
+  /** YYYY-MM-DD (UTC) */
+  day: string;
+  now: Date;
+  catalog: CatalogVariant[];
+}
+
+/** A day always owns this many scenario slots; the day's order count (10 to 15) uses the first few. */
+const DAILY_STRIDE = 15;
+
+/** How many orders a day gets: 10 to 15, decided by the date alone. */
+export function dailyCount(seed: number, day: string): number {
+  return 10 + Math.floor(createRng(hashSeed(`${seed}:daily-count:${day}`))() * 6);
+}
+
+/**
+ * 10 to 15 orders dated now. Scenarios rotate through a global slot counter (day number times 15
+ * plus the position), so every scenario appears within a couple of days and always within a week.
+ */
+export function generateDailyPlan(opts: DailyOptions): PlannedOrder[] {
+  const r = createRng(hashSeed(`${opts.seed}:daily:${opts.day}`));
+  const count = dailyCount(opts.seed, opts.day);
+  const c: BuildContext = {
+    catalog: opts.catalog,
+    roles: productRoles(opts.catalog),
+    customers: CUSTOMERS,
+    now: opts.now,
+    r,
+  };
+  const base = dayNumber(opts.day) * DAILY_STRIDE;
+  return Array.from({ length: count }, (_, k) => {
+    const scenario = SCENARIOS[(base + k) % SCENARIOS.length]!;
+    // spread over the minutes just before "now" so they all read as today
+    const when = new Date(opts.now.getTime() - (count - k) * 60_000 - int(r, 0, 59) * 1000);
+    return buildOrder(
+      c,
+      k,
+      `pi-seed-${opts.seed}-daily-${compact(opts.day)}-${k}`,
+      scenario,
+      when,
+      1,
+      [`pi-daily-${compact(opts.day)}`],
+    );
+  });
+}
