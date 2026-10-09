@@ -1,0 +1,27 @@
+{
+  "name": "@pi/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dev": "tsx watch --env-file=../../.env src/main.ts",
+    "start": "node --env-file=../../.env dist/main.js"
+  },
+  "dependencies": {
+    "@pi/config": "workspace:^",
+    "@pi/contracts": "workspace:^",
+    "@pi/db": "workspace:^",
+    "@pi/profit-engine": "workspace:^",
+    "@pi/shopify": "workspace:^",
+    "pg": "^8.23.1",
+    "pg-boss": "^12.37.1",
+    "@pi/reports": "workspace:^",
+    "nodemailer": "^10.0.16"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.23.1",
+    "@types/nodemailer": "^8.0.2"
+  }
+}

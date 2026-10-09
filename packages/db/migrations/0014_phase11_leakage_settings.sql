@@ -1,0 +1,4 @@
+ALTER TABLE "s_app_setting" ADD COLUMN "margin_warning_pct" numeric(5, 2) DEFAULT '20' NOT NULL;--> statement-breakpoint
+ALTER TABLE "s_app_setting" ADD COLUMN "refund_rate_warning_pct" numeric(5, 2) DEFAULT '10' NOT NULL;--> statement-breakpoint
+ALTER TABLE "s_app_setting" ADD COLUMN "cost_change_warning_pct" numeric(6, 2) DEFAULT '10' NOT NULL;--> statement-breakpoint
+ALTER TABLE "s_app_setting" ADD CONSTRAINT "ck_s_app_setting_leakage" CHECK ("s_app_setting"."margin_warning_pct" between 0 and 100 and "s_app_setting"."refund_rate_warning_pct" between 0 and 100 and "s_app_setting"."cost_change_warning_pct" between 0 and 1000);

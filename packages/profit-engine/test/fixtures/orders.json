@@ -1,0 +1,1192 @@
+{
+  "timezone": "America/New_York",
+  "orders": [
+    {
+      "name": "#1002",
+      "order": {
+        "shopifyId": 18937535856866,
+        "processedAt": "2026-07-23T02:24:11.000Z",
+        "isTest": false,
+        "financialStatus": "PAID",
+        "cancelledAt": null,
+        "taxesIncluded": false,
+        "currency": "USD",
+        "subtotalAmount": "0.0000",
+        "discountsAmount": "749.9500",
+        "shippingAmount": "0.0000",
+        "taxAmount": "0.0000",
+        "totalAmount": "0.0000",
+        "lines": [
+          {
+            "shopifyId": 50781758750946,
+            "variantShopifyId": 67639797088482,
+            "productShopifyId": 15403318247650,
+            "quantity": 1,
+            "unitPriceAmount": "749.9500",
+            "taxAmount": "0.0000",
+            "requiresShipping": true,
+            "isGiftCard": false
+          }
+        ],
+        "refunds": [],
+        "transactions": []
+      }
+    },
+    {
+      "name": "#1004",
+      "order": {
+        "shopifyId": 18937536905442,
+        "processedAt": "2026-07-11T23:25:04.000Z",
+        "isTest": false,
+        "financialStatus": "PENDING",
+        "cancelledAt": "2026-10-09T08:00:11.000Z",
+        "taxesIncluded": true,
+        "currency": "USD",
+        "subtotalAmount": "24.9500",
+        "discountsAmount": "0.0000",
+        "shippingAmount": "0.0000",
+        "taxAmount": "1.1900",
+        "totalAmount": "24.9500",
+        "lines": [
+          {
+            "shopifyId": 50781760618722,
+            "variantShopifyId": 67639796826338,
+            "productShopifyId": 15403318083810,
+            "quantity": 1,
+            "unitPriceAmount": "24.9500",
+            "taxAmount": "1.1900",
+            "requiresShipping": true,
+            "isGiftCard": false
+          }
+        ],
+        "refunds": [
+          {
+            "shopifyId": 1112722079970,
+            "processedAt": "2026-10-09T08:00:10.000Z",
+            "totalAmount": "0.0000",
+            "lines": [
+              {
+                "shopifyId": 760782880994,
+                "lineItemShopifyId": 50781760618722,
+                "quantity": 1,
+                "subtotalAmount": "24.9500",
+                "taxAmount": "1.1900",
+                "restockType": "NO_RESTOCK"
+              }
+            ]
+          }
+        ],
+        "transactions": []
+      }
+    },
+    {
+      "name": "#1006",
+      "order": {
+        "shopifyId": 18937538085090,
+        "processedAt": "2026-07-25T02:52:04.000Z",
+        "isTest": false,
+        "financialStatus": "PAID",
+        "cancelledAt": null,
+        "taxesIncluded": false,
+        "currency": "USD",
+        "subtotalAmount": "885.9500",
+        "discountsAmount": "0.0000",
+        "shippingAmount": "9.9900",
+        "taxAmount": "44.3000",
+        "totalAmount": "940.2400",
+        "lines": [
+          {
+            "shopifyId": 50781762257122,
+            "variantShopifyId": 67639796760802,
+            "productShopifyId": 15403318116578,
+            "quantity": 1,
+            "unitPriceAmount": "885.9500",
+            "taxAmount": "44.3000",
+            "requiresShipping": true,
+            "isGiftCard": false
+          }
+        ],
+        "refunds": [],
+        "transactions": [
+          {
+            "shopifyId": 20811551244514,
+            "kind": "SALE",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "amount": "940.2400",
+            "feeAmount": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "#1010",
+      "order": {
+        "shopifyId": 18937539395810,
+        "processedAt": "2026-10-04T19:32:52.000Z",
+        "isTest": false,
+        "financialStatus": "PAID",
+        "cancelledAt": null,
+        "taxesIncluded": false,
+        "currency": "USD",
+        "subtotalAmount": "27.9200",
+        "discountsAmount": "6.9800",
+        "shippingAmount": "9.9900",
+        "taxAmount": "0.0000",
+        "totalAmount": "37.9100",
+        "lines": [
+          {
+            "shopifyId": 50781763993826,
+            "variantShopifyId": 67639796826338,
+            "productShopifyId": 15403318083810,
+            "quantity": 1,
+            "unitPriceAmount": "24.9500",
+            "taxAmount": "0.0000",
+            "requiresShipping": true,
+            "isGiftCard": false
+          },
+          {
+            "shopifyId": 50781764026594,
+            "variantShopifyId": 67639796891874,
+            "productShopifyId": 15403318083810,
+            "quantity": 1,
+            "unitPriceAmount": "9.9500",
+            "taxAmount": "0.0000",
+            "requiresShipping": true,
+            "isGiftCard": false
+          }
+        ],
+        "refunds": [],
+        "transactions": [
+          {
+            "shopifyId": 20811552981218,
+            "kind": "SALE",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "amount": "37.9100",
+            "feeAmount": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "#1012",
+      "order": {
+        "shopifyId": 18937540772066,
+        "processedAt": "2026-09-15T06:40:52.000Z",
+        "isTest": false,
+        "financialStatus": "PAID",
+        "cancelledAt": null,
+        "taxesIncluded": false,
+        "currency": "USD",
+        "subtotalAmount": "1399.9000",
+        "discountsAmount": "14.9900",
+        "shippingAmount": "14.9900",
+        "taxAmount": "124.2400",
+        "totalAmount": "1524.1400",
+        "lines": [
+          {
+            "shopifyId": 50781766090978,
+            "variantShopifyId": 67639797022946,
+            "productShopifyId": 15403318313186,
+            "quantity": 2,
+            "unitPriceAmount": "699.9500",
+            "taxAmount": "124.2400",
+            "requiresShipping": true,
+            "isGiftCard": false
+          }
+        ],
+        "refunds": [],
+        "transactions": [
+          {
+            "shopifyId": 20811554783458,
+            "kind": "SALE",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "amount": "1524.1400",
+            "feeAmount": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "#1013",
+      "order": {
+        "shopifyId": 18937540837602,
+        "processedAt": "2026-08-30T04:22:52.000Z",
+        "isTest": false,
+        "financialStatus": "PARTIALLY_REFUNDED",
+        "cancelledAt": null,
+        "taxesIncluded": false,
+        "currency": "USD",
+        "subtotalAmount": "885.9500",
+        "discountsAmount": "0.0000",
+        "shippingAmount": "25.0000",
+        "taxAmount": "0.0000",
+        "totalAmount": "910.9500",
+        "lines": [
+          {
+            "shopifyId": 50781766189282,
+            "variantShopifyId": 67639796728034,
+            "productShopifyId": 15403317985506,
+            "quantity": 1,
+            "unitPriceAmount": "885.9500",
+            "taxAmount": "0.0000",
+            "requiresShipping": true,
+            "isGiftCard": false
+          }
+        ],
+        "refunds": [
+          {
+            "shopifyId": 1112722538722,
+            "processedAt": "2026-10-08T05:22:52.000Z",
+            "totalAmount": "885.9500",
+            "lines": [
+              {
+                "shopifyId": 760783438050,
+                "lineItemShopifyId": 50781766189282,
+                "quantity": 1,
+                "subtotalAmount": "885.9500",
+                "taxAmount": "0.0000",
+                "restockType": "NO_RESTOCK"
+              }
+            ]
+          }
+        ],
+        "transactions": [
+          {
+            "shopifyId": 20811554848994,
+            "kind": "SALE",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "amount": "910.9500",
+            "feeAmount": null
+          },
+          {
+            "shopifyId": 20811554914530,
+            "kind": "REFUND",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "amount": "885.9500",
+            "feeAmount": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "#1014",
+      "order": {
+        "shopifyId": 18937540903138,
+        "processedAt": "2026-10-07T22:09:52.000Z",
+        "isTest": false,
+        "financialStatus": "REFUNDED",
+        "cancelledAt": null,
+        "taxesIncluded": false,
+        "currency": "USD",
+        "subtotalAmount": "1585.9000",
+        "discountsAmount": "0.0000",
+        "shippingAmount": "0.0000",
+        "taxAmount": "79.3000",
+        "totalAmount": "1665.2000",
+        "lines": [
+          {
+            "shopifyId": 50781766254818,
+            "variantShopifyId": 67639796728034,
+            "productShopifyId": 15403317985506,
+            "quantity": 1,
+            "unitPriceAmount": "885.9500",
+            "taxAmount": "44.3000",
+            "requiresShipping": true,
+            "isGiftCard": false
+          },
+          {
+            "shopifyId": 50781766287586,
+            "variantShopifyId": 67639797022946,
+            "productShopifyId": 15403318313186,
+            "quantity": 1,
+            "unitPriceAmount": "699.9500",
+            "taxAmount": "35.0000",
+            "requiresShipping": true,
+            "isGiftCard": false
+          }
+        ],
+        "refunds": [
+          {
+            "shopifyId": 1112722571490,
+            "processedAt": "2026-10-07T23:09:52.000Z",
+            "totalAmount": "1665.2000",
+            "lines": [
+              {
+                "shopifyId": 760783470818,
+                "lineItemShopifyId": 50781766254818,
+                "quantity": 1,
+                "subtotalAmount": "885.9500",
+                "taxAmount": "44.3000",
+                "restockType": "NO_RESTOCK"
+              },
+              {
+                "shopifyId": 760783503586,
+                "lineItemShopifyId": 50781766287586,
+                "quantity": 1,
+                "subtotalAmount": "699.9500",
+                "taxAmount": "35.0000",
+                "restockType": "NO_RESTOCK"
+              }
+            ]
+          }
+        ],
+        "transactions": [
+          {
+            "shopifyId": 20811554980066,
+            "kind": "SALE",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "amount": "1665.2000",
+            "feeAmount": null
+          },
+          {
+            "shopifyId": 20811555045602,
+            "kind": "REFUND",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "amount": "1665.2000",
+            "feeAmount": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "#1016",
+      "order": {
+        "shopifyId": 18937542246626,
+        "processedAt": "2026-07-21T18:30:52.000Z",
+        "isTest": false,
+        "financialStatus": "AUTHORIZED",
+        "cancelledAt": null,
+        "taxesIncluded": false,
+        "currency": "USD",
+        "subtotalAmount": "1724.9500",
+        "discountsAmount": "0.0000",
+        "shippingAmount": "14.9900",
+        "taxAmount": "0.0000",
+        "totalAmount": "1739.9400",
+        "lines": [
+          {
+            "shopifyId": 50781768057058,
+            "variantShopifyId": 67639797317858,
+            "productShopifyId": 15403318444258,
+            "quantity": 1,
+            "unitPriceAmount": "1025.0000",
+            "taxAmount": "0.0000",
+            "requiresShipping": true,
+            "isGiftCard": false
+          },
+          {
+            "shopifyId": 50781768089826,
+            "variantShopifyId": 67639796924642,
+            "productShopifyId": 15403318313186,
+            "quantity": 1,
+            "unitPriceAmount": "699.9500",
+            "taxAmount": "0.0000",
+            "requiresShipping": true,
+            "isGiftCard": false
+          }
+        ],
+        "refunds": [],
+        "transactions": [
+          {
+            "shopifyId": 20811556782306,
+            "kind": "AUTHORIZATION",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "amount": "1739.9400",
+            "feeAmount": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "#1019",
+      "order": {
+        "shopifyId": 18937542410466,
+        "processedAt": "2026-09-23T20:04:52.000Z",
+        "isTest": false,
+        "financialStatus": "PAID",
+        "cancelledAt": null,
+        "taxesIncluded": false,
+        "currency": "USD",
+        "subtotalAmount": "487.4700",
+        "discountsAmount": "262.4800",
+        "shippingAmount": "14.9900",
+        "taxAmount": "0.0000",
+        "totalAmount": "502.4600",
+        "lines": [
+          {
+            "shopifyId": 50781768450274,
+            "variantShopifyId": 67639797481698,
+            "productShopifyId": 15403318477026,
+            "quantity": 1,
+            "unitPriceAmount": "749.9500",
+            "taxAmount": "0.0000",
+            "requiresShipping": true,
+            "isGiftCard": false
+          }
+        ],
+        "refunds": [],
+        "transactions": [
+          {
+            "shopifyId": 20811556880610,
+            "kind": "SALE",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "amount": "502.4600",
+            "feeAmount": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "#1024",
+      "order": {
+        "shopifyId": 18937543688418,
+        "processedAt": "2026-08-14T21:10:52.000Z",
+        "isTest": false,
+        "financialStatus": "PAID",
+        "cancelledAt": null,
+        "taxesIncluded": false,
+        "currency": "USD",
+        "subtotalAmount": "1025.0000",
+        "discountsAmount": "25.0000",
+        "shippingAmount": "25.0000",
+        "taxAmount": "0.0000",
+        "totalAmount": "1025.0000",
+        "lines": [
+          {
+            "shopifyId": 50781770416354,
+            "variantShopifyId": 67639797317858,
+            "productShopifyId": 15403318444258,
+            "quantity": 1,
+            "unitPriceAmount": "1025.0000",
+            "taxAmount": "0.0000",
+            "requiresShipping": true,
+            "isGiftCard": false
+          }
+        ],
+        "refunds": [],
+        "transactions": [
+          {
+            "shopifyId": 20811558944994,
+            "kind": "SALE",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "amount": "1025.0000",
+            "feeAmount": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "#1032",
+      "order": {
+        "shopifyId": 18937546670306,
+        "processedAt": "2026-09-10T19:41:52.000Z",
+        "isTest": false,
+        "financialStatus": "PENDING",
+        "cancelledAt": null,
+        "taxesIncluded": false,
+        "currency": "USD",
+        "subtotalAmount": "1399.9000",
+        "discountsAmount": "0.0000",
+        "shippingAmount": "5.0000",
+        "taxAmount": "0.0000",
+        "totalAmount": "1404.9000",
+        "lines": [
+          {
+            "shopifyId": 50781775233250,
+            "variantShopifyId": 67639796957410,
+            "productShopifyId": 15403318313186,
+            "quantity": 2,
+            "unitPriceAmount": "699.9500",
+            "taxAmount": "0.0000",
+            "requiresShipping": true,
+            "isGiftCard": false
+          }
+        ],
+        "refunds": [],
+        "transactions": []
+      }
+    },
+    {
+      "name": "#1048",
+      "order": {
+        "shopifyId": 18937552404706,
+        "processedAt": "2026-10-09T01:53:10.000Z",
+        "isTest": false,
+        "financialStatus": "REFUNDED",
+        "cancelledAt": "2026-10-09T08:12:19.000Z",
+        "taxesIncluded": false,
+        "currency": "USD",
+        "subtotalAmount": "885.9500",
+        "discountsAmount": "0.0000",
+        "shippingAmount": "0.0000",
+        "taxAmount": "0.0000",
+        "totalAmount": "885.9500",
+        "lines": [
+          {
+            "shopifyId": 50781783818466,
+            "variantShopifyId": 67639796531426,
+            "productShopifyId": 15403318051042,
+            "quantity": 1,
+            "unitPriceAmount": "885.9500",
+            "taxAmount": "0.0000",
+            "requiresShipping": true,
+            "isGiftCard": false
+          }
+        ],
+        "refunds": [
+          {
+            "shopifyId": 1112724177122,
+            "processedAt": "2026-10-09T02:53:10.000Z",
+            "totalAmount": "885.9500",
+            "lines": [
+              {
+                "shopifyId": 760785141986,
+                "lineItemShopifyId": 50781783818466,
+                "quantity": 1,
+                "subtotalAmount": "885.9500",
+                "taxAmount": "0.0000",
+                "restockType": "NO_RESTOCK"
+              }
+            ]
+          }
+        ],
+        "transactions": [
+          {
+            "shopifyId": 20811570675938,
+            "kind": "SALE",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "amount": "885.9500",
+            "feeAmount": null
+          },
+          {
+            "shopifyId": 20811570708706,
+            "kind": "REFUND",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "amount": "885.9500",
+            "feeAmount": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "#1050",
+      "order": {
+        "shopifyId": 18937552535778,
+        "processedAt": "2026-08-07T18:15:10.000Z",
+        "isTest": false,
+        "financialStatus": "PENDING",
+        "cancelledAt": null,
+        "taxesIncluded": false,
+        "currency": "USD",
+        "subtotalAmount": "600.0000",
+        "discountsAmount": "0.0000",
+        "shippingAmount": "9.9900",
+        "taxAmount": "53.2500",
+        "totalAmount": "663.2400",
+        "lines": [
+          {
+            "shopifyId": 50781784047842,
+            "variantShopifyId": 67639796564194,
+            "productShopifyId": 15403318280418,
+            "quantity": 1,
+            "unitPriceAmount": "600.0000",
+            "taxAmount": "53.2500",
+            "requiresShipping": true,
+            "isGiftCard": false
+          }
+        ],
+        "refunds": [],
+        "transactions": []
+      }
+    },
+    {
+      "name": "#1054",
+      "order": {
+        "shopifyId": 18937554108642,
+        "processedAt": "2026-10-01T02:27:10.000Z",
+        "isTest": false,
+        "financialStatus": "PAID",
+        "cancelledAt": null,
+        "taxesIncluded": false,
+        "currency": "USD",
+        "subtotalAmount": "699.9500",
+        "discountsAmount": "0.0000",
+        "shippingAmount": "25.0000",
+        "taxAmount": "35.0000",
+        "totalAmount": "759.9500",
+        "lines": [
+          {
+            "shopifyId": 50781786865890,
+            "variantShopifyId": 67639796924642,
+            "productShopifyId": 15403318313186,
+            "quantity": 1,
+            "unitPriceAmount": "699.9500",
+            "taxAmount": "35.0000",
+            "requiresShipping": true,
+            "isGiftCard": false
+          }
+        ],
+        "refunds": [],
+        "transactions": [
+          {
+            "shopifyId": 20811572871394,
+            "kind": "SALE",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "amount": "759.9500",
+            "feeAmount": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "#1057",
+      "order": {
+        "shopifyId": 18937555419362,
+        "processedAt": "2026-08-29T04:31:10.000Z",
+        "isTest": false,
+        "financialStatus": "PAID",
+        "cancelledAt": null,
+        "taxesIncluded": true,
+        "currency": "USD",
+        "subtotalAmount": "2524.9000",
+        "discountsAmount": "0.0000",
+        "shippingAmount": "9.9900",
+        "taxAmount": "205.8200",
+        "totalAmount": "2534.8900",
+        "lines": [
+          {
+            "shopifyId": 50781788930274,
+            "variantShopifyId": 67639797481698,
+            "productShopifyId": 15403318477026,
+            "quantity": 2,
+            "unitPriceAmount": "749.9500",
+            "taxAmount": "122.2700",
+            "requiresShipping": true,
+            "isGiftCard": false
+          },
+          {
+            "shopifyId": 50781788963042,
+            "variantShopifyId": 67639797317858,
+            "productShopifyId": 15403318444258,
+            "quantity": 1,
+            "unitPriceAmount": "1025.0000",
+            "taxAmount": "83.5500",
+            "requiresShipping": true,
+            "isGiftCard": false
+          }
+        ],
+        "refunds": [],
+        "transactions": [
+          {
+            "shopifyId": 20811574509794,
+            "kind": "SALE",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "amount": "2534.8900",
+            "feeAmount": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "#1064",
+      "order": {
+        "shopifyId": 18937556828386,
+        "processedAt": "2026-08-04T05:11:10.000Z",
+        "isTest": false,
+        "financialStatus": "PARTIALLY_REFUNDED",
+        "cancelledAt": null,
+        "taxesIncluded": false,
+        "currency": "USD",
+        "subtotalAmount": "2371.9000",
+        "discountsAmount": "0.0000",
+        "shippingAmount": "14.9900",
+        "taxAmount": "118.6000",
+        "totalAmount": "2505.4900",
+        "lines": [
+          {
+            "shopifyId": 50781790863586,
+            "variantShopifyId": 67639796564194,
+            "productShopifyId": 15403318280418,
+            "quantity": 1,
+            "unitPriceAmount": "600.0000",
+            "taxAmount": "30.0000",
+            "requiresShipping": true,
+            "isGiftCard": false
+          },
+          {
+            "shopifyId": 50781790896354,
+            "variantShopifyId": 67639796760802,
+            "productShopifyId": 15403318116578,
+            "quantity": 2,
+            "unitPriceAmount": "885.9500",
+            "taxAmount": "88.6000",
+            "requiresShipping": true,
+            "isGiftCard": false
+          }
+        ],
+        "refunds": [
+          {
+            "shopifyId": 1112724701410,
+            "processedAt": "2026-08-21T06:11:10.000Z",
+            "totalAmount": "630.0000",
+            "lines": [
+              {
+                "shopifyId": 760785633506,
+                "lineItemShopifyId": 50781790863586,
+                "quantity": 1,
+                "subtotalAmount": "600.0000",
+                "taxAmount": "30.0000",
+                "restockType": "NO_RESTOCK"
+              }
+            ]
+          }
+        ],
+        "transactions": [
+          {
+            "shopifyId": 20811576279266,
+            "kind": "SALE",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "amount": "2505.4900",
+            "feeAmount": null
+          },
+          {
+            "shopifyId": 20811576344802,
+            "kind": "REFUND",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "amount": "630.0000",
+            "feeAmount": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "#1068",
+      "order": {
+        "shopifyId": 18937558597858,
+        "processedAt": "2026-07-12T22:34:10.000Z",
+        "isTest": false,
+        "financialStatus": "PENDING",
+        "cancelledAt": null,
+        "taxesIncluded": false,
+        "currency": "USD",
+        "subtotalAmount": "3075.0000",
+        "discountsAmount": "0.0000",
+        "shippingAmount": "9.9900",
+        "taxAmount": "153.7500",
+        "totalAmount": "3238.7400",
+        "lines": [
+          {
+            "shopifyId": 50781793648866,
+            "variantShopifyId": 67639797317858,
+            "productShopifyId": 15403318444258,
+            "quantity": 3,
+            "unitPriceAmount": "1025.0000",
+            "taxAmount": "153.7500",
+            "requiresShipping": true,
+            "isGiftCard": false
+          }
+        ],
+        "refunds": [],
+        "transactions": []
+      }
+    },
+    {
+      "name": "#1069",
+      "order": {
+        "shopifyId": 18937558630626,
+        "processedAt": "2026-08-26T19:49:10.000Z",
+        "isTest": false,
+        "financialStatus": "PENDING",
+        "cancelledAt": "2026-10-09T08:16:48.000Z",
+        "taxesIncluded": true,
+        "currency": "USD",
+        "subtotalAmount": "1025.0000",
+        "discountsAmount": "0.0000",
+        "shippingAmount": "5.0000",
+        "taxAmount": "48.8100",
+        "totalAmount": "1030.0000",
+        "lines": [
+          {
+            "shopifyId": 50781793714402,
+            "variantShopifyId": 67639797317858,
+            "productShopifyId": 15403318444258,
+            "quantity": 1,
+            "unitPriceAmount": "1025.0000",
+            "taxAmount": "48.8100",
+            "requiresShipping": true,
+            "isGiftCard": false
+          }
+        ],
+        "refunds": [
+          {
+            "shopifyId": 1112724898018,
+            "processedAt": "2026-10-09T08:16:47.000Z",
+            "totalAmount": "0.0000",
+            "lines": [
+              {
+                "shopifyId": 760785797346,
+                "lineItemShopifyId": 50781793714402,
+                "quantity": 1,
+                "subtotalAmount": "1025.0000",
+                "taxAmount": "48.8100",
+                "restockType": "NO_RESTOCK"
+              }
+            ]
+          }
+        ],
+        "transactions": []
+      }
+    },
+    {
+      "name": "#1089",
+      "order": {
+        "shopifyId": 18937564070114,
+        "processedAt": "2026-08-10T02:44:10.000Z",
+        "isTest": false,
+        "financialStatus": "PAID",
+        "cancelledAt": null,
+        "taxesIncluded": false,
+        "currency": "USD",
+        "subtotalAmount": "1379.9000",
+        "discountsAmount": "9.9900",
+        "shippingAmount": "9.9900",
+        "taxAmount": "0.0000",
+        "totalAmount": "1379.9000",
+        "lines": [
+          {
+            "shopifyId": 50781802299618,
+            "variantShopifyId": 67639797088482,
+            "productShopifyId": 15403318247650,
+            "quantity": 1,
+            "unitPriceAmount": "749.9500",
+            "taxAmount": "0.0000",
+            "requiresShipping": true,
+            "isGiftCard": false
+          },
+          {
+            "shopifyId": 50781802332386,
+            "variantShopifyId": 67639797285090,
+            "productShopifyId": 15403318378722,
+            "quantity": 1,
+            "unitPriceAmount": "629.9500",
+            "taxAmount": "0.0000",
+            "requiresShipping": true,
+            "isGiftCard": false
+          }
+        ],
+        "refunds": [],
+        "transactions": [
+          {
+            "shopifyId": 20811586240738,
+            "kind": "SALE",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "amount": "1379.9000",
+            "feeAmount": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "#1097",
+      "order": {
+        "shopifyId": 18937566462178,
+        "processedAt": "2026-08-16T00:57:10.000Z",
+        "isTest": false,
+        "financialStatus": "PAID",
+        "cancelledAt": null,
+        "taxesIncluded": false,
+        "currency": "USD",
+        "subtotalAmount": "885.9500",
+        "discountsAmount": "0.0000",
+        "shippingAmount": "25.0000",
+        "taxAmount": "0.0000",
+        "totalAmount": "910.9500",
+        "lines": [
+          {
+            "shopifyId": 50781807771874,
+            "variantShopifyId": 67639796760802,
+            "productShopifyId": 15403318116578,
+            "quantity": 1,
+            "unitPriceAmount": "885.9500",
+            "taxAmount": "0.0000",
+            "requiresShipping": true,
+            "isGiftCard": false
+          }
+        ],
+        "refunds": [],
+        "transactions": [
+          {
+            "shopifyId": 20811589517538,
+            "kind": "SALE",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "amount": "910.9500",
+            "feeAmount": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "#1116",
+      "order": {
+        "shopifyId": 18937571082466,
+        "processedAt": "2026-08-24T22:18:10.000Z",
+        "isTest": false,
+        "financialStatus": "PENDING",
+        "cancelledAt": null,
+        "taxesIncluded": false,
+        "currency": "USD",
+        "subtotalAmount": "2099.8500",
+        "discountsAmount": "0.0000",
+        "shippingAmount": "14.9900",
+        "taxAmount": "0.0000",
+        "totalAmount": "2114.8400",
+        "lines": [
+          {
+            "shopifyId": 50781815046370,
+            "variantShopifyId": 67639797055714,
+            "productShopifyId": 15403318313186,
+            "quantity": 3,
+            "unitPriceAmount": "699.9500",
+            "taxAmount": "0.0000",
+            "requiresShipping": true,
+            "isGiftCard": false
+          }
+        ],
+        "refunds": [],
+        "transactions": []
+      }
+    },
+    {
+      "name": "#1117",
+      "order": {
+        "shopifyId": 18937571115234,
+        "processedAt": "2026-09-18T21:10:10.000Z",
+        "isTest": false,
+        "financialStatus": "AUTHORIZED",
+        "cancelledAt": null,
+        "taxesIncluded": false,
+        "currency": "USD",
+        "subtotalAmount": "709.9000",
+        "discountsAmount": "0.0000",
+        "shippingAmount": "5.0000",
+        "taxAmount": "0.0000",
+        "totalAmount": "714.9000",
+        "lines": [
+          {
+            "shopifyId": 50781815079138,
+            "variantShopifyId": 67639797055714,
+            "productShopifyId": 15403318313186,
+            "quantity": 1,
+            "unitPriceAmount": "699.9500",
+            "taxAmount": "0.0000",
+            "requiresShipping": true,
+            "isGiftCard": false
+          },
+          {
+            "shopifyId": 50781815111906,
+            "variantShopifyId": 67639796891874,
+            "productShopifyId": 15403318083810,
+            "quantity": 1,
+            "unitPriceAmount": "9.9500",
+            "taxAmount": "0.0000",
+            "requiresShipping": true,
+            "isGiftCard": false
+          }
+        ],
+        "refunds": [],
+        "transactions": [
+          {
+            "shopifyId": 20811595808994,
+            "kind": "AUTHORIZATION",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "amount": "714.9000",
+            "feeAmount": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "#1119",
+      "order": {
+        "shopifyId": 18937571180770,
+        "processedAt": "2026-08-25T06:13:10.000Z",
+        "isTest": false,
+        "financialStatus": "AUTHORIZED",
+        "cancelledAt": null,
+        "taxesIncluded": false,
+        "currency": "USD",
+        "subtotalAmount": "7733.5700",
+        "discountsAmount": "0.0000",
+        "shippingAmount": "14.9900",
+        "taxAmount": "0.0000",
+        "totalAmount": "7748.5600",
+        "lines": [
+          {
+            "shopifyId": 50781815177442,
+            "variantShopifyId": 67639797317858,
+            "productShopifyId": 15403318444258,
+            "quantity": 1,
+            "unitPriceAmount": "1025.0000",
+            "taxAmount": "0.0000",
+            "requiresShipping": true,
+            "isGiftCard": false
+          },
+          {
+            "shopifyId": 50781815210210,
+            "variantShopifyId": 67639797350626,
+            "productShopifyId": 15403318411490,
+            "quantity": 3,
+            "unitPriceAmount": "2236.1900",
+            "taxAmount": "0.0000",
+            "requiresShipping": true,
+            "isGiftCard": false
+          }
+        ],
+        "refunds": [],
+        "transactions": [
+          {
+            "shopifyId": 20811595874530,
+            "kind": "AUTHORIZATION",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "amount": "7748.5600",
+            "feeAmount": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "#1122",
+      "order": {
+        "shopifyId": 18937572294882,
+        "processedAt": "2026-07-29T21:44:10.000Z",
+        "isTest": false,
+        "financialStatus": "PARTIALLY_PAID",
+        "cancelledAt": null,
+        "taxesIncluded": false,
+        "currency": "USD",
+        "subtotalAmount": "4846.9000",
+        "discountsAmount": "0.0000",
+        "shippingAmount": "5.0000",
+        "taxAmount": "0.0000",
+        "totalAmount": "4851.9000",
+        "lines": [
+          {
+            "shopifyId": 50781817307362,
+            "variantShopifyId": 67639797317858,
+            "productShopifyId": 15403318444258,
+            "quantity": 3,
+            "unitPriceAmount": "1025.0000",
+            "taxAmount": "0.0000",
+            "requiresShipping": true,
+            "isGiftCard": false
+          },
+          {
+            "shopifyId": 50781817340130,
+            "variantShopifyId": 67639796531426,
+            "productShopifyId": 15403318051042,
+            "quantity": 2,
+            "unitPriceAmount": "885.9500",
+            "taxAmount": "0.0000",
+            "requiresShipping": true,
+            "isGiftCard": false
+          }
+        ],
+        "refunds": [],
+        "transactions": [
+          {
+            "shopifyId": 20811597316322,
+            "kind": "SALE",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "amount": "2425.9500",
+            "feeAmount": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "#1127",
+      "order": {
+        "shopifyId": 18937573441762,
+        "processedAt": "2026-08-10T04:08:10.000Z",
+        "isTest": false,
+        "financialStatus": "PARTIALLY_PAID",
+        "cancelledAt": null,
+        "taxesIncluded": false,
+        "currency": "USD",
+        "subtotalAmount": "1585.9000",
+        "discountsAmount": "0.0000",
+        "shippingAmount": "0.0000",
+        "taxAmount": "140.7500",
+        "totalAmount": "1726.6500",
+        "lines": [
+          {
+            "shopifyId": 50781818749154,
+            "variantShopifyId": 67639796924642,
+            "productShopifyId": 15403318313186,
+            "quantity": 1,
+            "unitPriceAmount": "699.9500",
+            "taxAmount": "62.1200",
+            "requiresShipping": true,
+            "isGiftCard": false
+          },
+          {
+            "shopifyId": 50781818781922,
+            "variantShopifyId": 67639796531426,
+            "productShopifyId": 15403318051042,
+            "quantity": 1,
+            "unitPriceAmount": "885.9500",
+            "taxAmount": "78.6300",
+            "requiresShipping": true,
+            "isGiftCard": false
+          }
+        ],
+        "refunds": [],
+        "transactions": [
+          {
+            "shopifyId": 20811599741154,
+            "kind": "SALE",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "amount": "863.3300",
+            "feeAmount": null
+          }
+        ]
+      }
+    }
+  ],
+  "shopifyCosts": {
+    "67639796760802": "540.4300",
+    "67639796891874": "5.8700",
+    "67639797022946": "335.9800",
+    "67639796728034": "363.2400",
+    "67639797317858": "615.0000",
+    "67639797481698": "659.9600",
+    "67639796957410": "300.9800",
+    "67639796531426": "425.2600",
+    "67639796564194": "294.0000",
+    "67639797285090": "321.2700",
+    "67639797055714": "405.9700",
+    "67639797350626": "1446.4700"
+  }
+}

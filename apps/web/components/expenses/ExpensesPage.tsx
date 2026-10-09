@@ -1,0 +1,708 @@
+'use client';
+
+import { Dropdown, CategoryDropdown, ShowDropdown } from '../dropdown';
+
+import { useEffect, useState } from 'react';
+import type {
+  AuditResponse,
+  CategoryListResponse,
+  ExpenseListResponse,
+  ExpenseRow,
+  ExpenseSummaryResponse,
+} from '@pi/contracts';
+import { apiDelete, apiPost, apiPut } from '../../lib/api';
+import { formatMoney, formatPercent, longDate } from '../../lib/format';
+import { SampleBars } from '../preview/ui';
+import { ErrorBanner, Loading, useApi } from '../profitability/shared';
+import { FormError, isAmount, todayLocal, useAction } from '../settings/shared';
+import { StatCard, StatGrid } from '../common';
+
+type Tab = 'all' | 'recurring' | 'categories' | 'history';
+
+const COLORS = ['#005bd3', '#047b5d', '#b98900', '#8a3ffc', '#c4295c', '#007f9f'];
+const monthName = (m: string) =>
+  new Date(`${m}T00:00:00Z`).toLocaleString('en-US', { month: 'short', timeZone: 'UTC' });
+const FILTER_GRID = 'repeat(auto-fit, minmax(170px, 1fr))';
+
+export function ExpensesPage() {
+  const [tab, setTab] = useState<Tab>('all');
+  const [version, setVersion] = useState(0);
+  const [adding, setAdding] = useState(false);
+  const changed = () => setVersion((v) => v + 1);
+
+  const summary = useApi<ExpenseSummaryResponse>(`/expenses/summary?_=${version}`);
+  const cats = useApi<CategoryListResponse>(`/expenses/categories?_=${version}`);
+
+  return (
+    <>
+      <Summary data={summary.data} error={summary.error} onRetry={() => void summary.reload()} />
+      <s-stack direction="inline" gap="small">
+        {(
+          [
+            ['all', 'All expenses'],
+            ['recurring', 'Recurring'],
+            ['categories', 'Categories'],
+            ['history', 'Change history'],
+          ] as const
+        ).map(([id, label]) => (
+          <s-button
+            key={id}
+            variant={tab === id ? 'primary' : 'secondary'}
+            onClick={() => setTab(id)}
+          >
+            {label}
+          </s-button>
+        ))}
+        <s-button variant="primary" onClick={() => setAdding((v) => !v)}>
+          {adding ? 'Close form' : 'Add expense'}
+        </s-button>
+      </s-stack>
+
+      {adding && cats.data && (
+        <AddExpense
+          categories={cats.data.categories}
+          currency={summary.data?.currency ?? ''}
+          onSaved={() => {
+            setAdding(false);
+            changed();
+          }}
+        />
+      )}
+
+      {(tab === 'all' || tab === 'recurring') && cats.data && (
+        <List mode={tab} categories={cats.data.categories} version={version} onChanged={changed} />
+      )}
+      {tab === 'categories' && cats.data && (
+        <Categories categories={cats.data.categories} onChanged={changed} />
+      )}
+      {tab === 'history' && <History version={version} />}
+    </>
+  );
+}
+
+function Summary({
+  data,
+  error,
+  onRetry,
+}: {
+  data: ExpenseSummaryResponse | null;
+  error: string | null;
+  onRetry: () => void;
+}) {
+  if (error) return <ErrorBanner message={error} onRetry={onRetry} />;
+  if (!data) return <Loading what="expenses" />;
+  const names = [...new Set(data.months.flatMap((m) => m.byCategory.map((c) => c.category)))];
+  const chart = data.months.map((m) => ({
+    name: monthName(m.month),
+    ...Object.fromEntries(
+      names.map((n) => [n, Number(m.byCategory.find((c) => c.category === n)?.amount ?? 0)]),
+    ),
+  }));
+  const cur = data.currency;
+  return (
+    <>
+      <StatGrid>
+        <StatCard label="Expenses this month" value={formatMoney(data.thisMonth, cur)} />
+        <StatCard
+          label="Recurring per month"
+          value={formatMoney(data.recurringPerMonth, cur)}
+          note={`${data.recurringCount} active`}
+        />
+        <StatCard label="One-time this month" value={formatMoney(data.oneTimeThisMonth, cur)} />
+        <StatCard
+          label="Share of revenue (30 days)"
+          value={data.shareOfRevenue === null ? '—' : formatPercent(data.shareOfRevenue)}
+        />
+      </StatGrid>
+      {names.length > 0 && (
+        <s-section heading="Expenses by month">
+          <SampleBars
+            data={chart}
+            keys={names.map((n, i) => ({ key: n, name: n, color: COLORS[i % COLORS.length]! }))}
+          />
+        </s-section>
+      )}
+    </>
+  );
+}
+
+function AddExpense({
+  categories,
+  currency,
+  onSaved,
+}: {
+  categories: CategoryListResponse['categories'];
+  currency: string;
+  onSaved: () => void;
+}) {
+  const [name, setName] = useState('');
+  const [amount, setAmount] = useState('');
+  const [categoryId, setCategoryId] = useState(categories[0]?.id ?? '');
+  const [kind, setKind] = useState<'one_time' | 'recurring'>('recurring');
+  const [frequency, setFrequency] = useState<'monthly' | 'yearly'>('monthly');
+  const [start, setStart] = useState(todayLocal());
+  const [end, setEnd] = useState('');
+  const [touched, setTouched] = useState(false);
+  // One key per open form: pressing Save twice, or a retry, cannot add the expense twice.
+  const [requestKey] = useState(() => crypto.randomUUID());
+  const { busy, error, run } = useAction();
+
+  const nameOk = name.trim().length > 0 && name.trim().length <= 120;
+  const amountOk = isAmount(amount);
+  const startOk = /^\d{4}-\d{2}-\d{2}$/.test(start);
+  const endOk = end === '' || (/^\d{4}-\d{2}-\d{2}$/.test(end) && end >= start);
+
+  async function save() {
+    setTouched(true);
+    if (!nameOk || !amountOk || !startOk || !endOk || !categoryId) return;
+    const ok = await run(() =>
+      apiPost('/expenses', {
+        name: name.trim(),
+        categoryId,
+        amount: amount.trim(),
+        kind,
+        ...(kind === 'recurring' ? { frequency } : {}),
+        startDate: start,
+        ...(kind === 'recurring' && end ? { endDate: end } : {}),
+        requestKey,
+      }),
+    );
+    if (ok) onSaved();
+  }
+
+  return (
+    <s-section heading="Add expense">
+      <s-stack gap="base">
+        <s-grid gridTemplateColumns={FILTER_GRID} gap="base" alignItems="end">
+          <s-text-field
+            label="Name"
+            placeholder="Warehouse rent"
+            value={name}
+            error={touched && !nameOk ? 'Enter a name' : undefined}
+            onInput={(e) => setName(e.currentTarget.value)}
+          />
+          <s-text-field
+            label={`Amount (${currency})`}
+            value={amount}
+            error={touched && !amountOk ? 'Enter a number such as 1200.00' : undefined}
+            onInput={(e) => setAmount(e.currentTarget.value)}
+          />
+          <CategoryDropdown value={categoryId} categories={categories} onChange={setCategoryId} />
+          <Dropdown
+            label="Repeats"
+            value={kind === 'one_time' ? 'once' : frequency}
+            options={[
+              { value: 'once', label: 'One time' },
+              { value: 'monthly', label: 'Every month' },
+              { value: 'yearly', label: 'Every year' },
+            ]}
+            onChange={(v) => {
+              if (v === 'once') setKind('one_time');
+              else {
+                setKind('recurring');
+                setFrequency(v as 'monthly' | 'yearly');
+              }
+            }}
+          />
+          <s-date-field
+            label={kind === 'one_time' ? 'Date' : 'Starts'}
+            value={start}
+            onChange={(e) => setStart(e.currentTarget.value)}
+          />
+          {kind === 'recurring' && (
+            <s-date-field
+              label="Ends (optional)"
+              value={end}
+              error={touched && !endOk ? 'Must be after the start' : undefined}
+              onChange={(e) => setEnd(e.currentTarget.value)}
+            />
+          )}
+        </s-grid>
+        <FormError message={error} />
+        <div>
+          <s-button variant="primary" disabled={busy} onClick={() => void save()}>
+            Save expense
+          </s-button>
+        </div>
+      </s-stack>
+    </s-section>
+  );
+}
+
+function List({
+  mode,
+  categories,
+  version,
+  onChanged,
+}: {
+  mode: 'all' | 'recurring';
+  categories: CategoryListResponse['categories'];
+  version: number;
+  onChanged: () => void;
+}) {
+  const [search, setSearch] = useState('');
+  const [applied, setApplied] = useState('');
+  const [kind, setKind] = useState<'all' | 'one_time'>('all');
+  const [selected, setSelected] = useState<ExpenseRow | null>(null);
+
+  useEffect(() => {
+    const t = setTimeout(() => setApplied(search.trim()), 350);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const q = new URLSearchParams({ filter: mode === 'recurring' ? 'recurring' : kind });
+  if (applied) q.set('search', applied);
+  q.set('_', String(version));
+  const { data, error, loading, reload } = useApi<ExpenseListResponse>(`/expenses?${q}`);
+
+  return (
+    <>
+      <s-section heading={mode === 'recurring' ? 'Recurring expenses' : 'All expenses'}>
+        <s-stack gap="base">
+          <s-grid gridTemplateColumns={FILTER_GRID} gap="base" alignItems="end">
+            <s-search-field
+              label="Search"
+              placeholder="Name or category"
+              value={search}
+              onInput={(e) => setSearch(e.currentTarget.value)}
+            />
+            {mode === 'all' && (
+              <ShowDropdown
+                label="Show"
+                value={kind}
+                options={[
+                  { value: 'all', label: 'Everything' },
+                  { value: 'one_time', label: 'One-time only' },
+                ]}
+                onChange={(v) => setKind(v as 'all' | 'one_time')}
+              />
+            )}
+          </s-grid>
+          {error && <ErrorBanner message={error} onRetry={() => void reload()} />}
+          {loading && !data && <Loading what="expenses" />}
+          {data && data.rows.length === 0 && (
+            <s-empty-state heading="No expenses yet">
+              <s-paragraph>
+                Add rent, salaries, software and other costs so net profit is complete.
+              </s-paragraph>
+            </s-empty-state>
+          )}
+          {data && data.rows.length > 0 && (
+            <div
+              aria-busy={loading}
+              style={{
+                opacity: loading ? 0.6 : 1,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 16,
+              }}
+            >
+              <s-table>
+                <s-table-header-row>
+                  <s-table-header listSlot="primary">Name</s-table-header>
+                  <s-table-header>Category</s-table-header>
+                  <s-table-header>Repeats</s-table-header>
+                  <s-table-header format="numeric">Amount</s-table-header>
+                  <s-table-header format="numeric">This month</s-table-header>
+                  <s-table-header>Next charge</s-table-header>
+                  <s-table-header>Status</s-table-header>
+                  <s-table-header>Action</s-table-header>
+                </s-table-header-row>
+                <s-table-body>
+                  {data.rows.map((r) => (
+                    <s-table-row key={r.id}>
+                      <s-table-cell>{r.name}</s-table-cell>
+                      <s-table-cell>{r.category}</s-table-cell>
+                      <s-table-cell>
+                        {r.kind === 'one_time'
+                          ? 'One time'
+                          : r.frequency === 'yearly'
+                            ? 'Yearly'
+                            : 'Monthly'}
+                      </s-table-cell>
+                      <s-table-cell>{formatMoney(r.amount, data.currency)}</s-table-cell>
+                      <s-table-cell>{formatMoney(r.thisMonth, data.currency)}</s-table-cell>
+                      <s-table-cell>{r.nextCharge ? longDate(r.nextCharge) : '—'}</s-table-cell>
+                      <s-table-cell>
+                        <s-badge
+                          tone={
+                            r.status === 'active'
+                              ? 'success'
+                              : r.status === 'scheduled'
+                                ? 'info'
+                                : 'neutral'
+                          }
+                        >
+                          {r.status === 'active'
+                            ? 'Active'
+                            : r.status === 'scheduled'
+                              ? 'Scheduled'
+                              : 'Ended'}
+                        </s-badge>
+                      </s-table-cell>
+                      <s-table-cell>
+                        <s-button
+                          variant="tertiary"
+                          accessibilityLabel={`Manage ${r.name}`}
+                          onClick={() => setSelected(r)}
+                        >
+                          Manage
+                        </s-button>
+                      </s-table-cell>
+                    </s-table-row>
+                  ))}
+                </s-table-body>
+              </s-table>
+            </div>
+          )}
+        </s-stack>
+      </s-section>
+      {selected && data && (
+        <Manage
+          row={data.rows.find((r) => r.id === selected.id) ?? selected}
+          currency={data.currency}
+          categories={categories}
+          onClose={() => setSelected(null)}
+          onChanged={() => {
+            onChanged();
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+function Manage({
+  row,
+  currency,
+  categories,
+  onClose,
+  onChanged,
+}: {
+  row: ExpenseRow;
+  currency: string;
+  categories: CategoryListResponse['categories'];
+  onClose: () => void;
+  onChanged: () => void;
+}) {
+  const recurring = row.kind === 'recurring';
+  const [name, setName] = useState(row.name);
+  const [amount, setAmount] = useState(row.amount.replace(/\.?0+$/, ''));
+  const [categoryId, setCategoryId] = useState(row.categoryId);
+  const [from, setFrom] = useState(recurring ? `${todayLocal().slice(0, 7)}-01` : row.startDate);
+  const [stopDay, setStopDay] = useState(todayLocal());
+  const [month, setMonth] = useState(`${todayLocal().slice(0, 7)}-01`);
+  const [monthAmount, setMonthAmount] = useState('');
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const change = useAction();
+  const stop = useAction();
+  const mo = useAction();
+  const rm = useAction();
+
+  const amountOk = isAmount(amount);
+  const monthAmountOk = isAmount(monthAmount);
+
+  return (
+    <s-section heading={`Manage ${row.name}`}>
+      <s-stack gap="base">
+        {message && (
+          <s-banner tone="success">
+            <s-paragraph>{message}</s-paragraph>
+          </s-banner>
+        )}
+        <s-text type="strong">{recurring ? 'Change from a month on' : 'Edit'}</s-text>
+        <s-grid gridTemplateColumns={FILTER_GRID} gap="base" alignItems="end">
+          <s-text-field label="Name" value={name} onInput={(e) => setName(e.currentTarget.value)} />
+          <s-text-field
+            label={`Amount (${currency})`}
+            value={amount}
+            error={!amountOk ? 'Enter a number' : undefined}
+            onInput={(e) => setAmount(e.currentTarget.value)}
+          />
+          <CategoryDropdown value={categoryId} categories={categories} onChange={setCategoryId} />
+          <s-date-field
+            label={recurring ? 'Applies from (first of a month)' : 'Date'}
+            value={from}
+            onChange={(e) => setFrom(e.currentTarget.value)}
+          />
+        </s-grid>
+        {recurring && (
+          <s-text color="subdued">
+            Earlier months keep the amount that applied then. Only this month and later change.
+          </s-text>
+        )}
+        <FormError message={change.error} />
+        <div>
+          <s-button
+            variant="primary"
+            disabled={change.busy || !amountOk}
+            onClick={async () => {
+              const body = {
+                ...(name.trim() !== row.name ? { name: name.trim() } : {}),
+                ...(categoryId !== row.categoryId ? { categoryId } : {}),
+                ...(amount.trim() !== row.amount.replace(/\.?0+$/, '')
+                  ? { amount: amount.trim() }
+                  : {}),
+                effectiveFrom: recurring ? `${from.slice(0, 7)}-01` : from,
+              };
+              if (Object.keys(body).length === 1) {
+                setMessage('Nothing to change.');
+                return;
+              }
+              if (await change.run(() => apiPost(`/expenses/${row.id}/change`, body))) {
+                setMessage('Saved.');
+                onChanged();
+                onClose();
+              }
+            }}
+          >
+            Save change
+          </s-button>
+        </div>
+
+        {recurring && (
+          <>
+            <s-text type="strong">Change one month only</s-text>
+            <s-grid gridTemplateColumns={FILTER_GRID} gap="base" alignItems="end">
+              <s-date-field
+                label="Month (first day)"
+                value={month}
+                onChange={(e) => setMonth(e.currentTarget.value)}
+              />
+              <s-text-field
+                label={`Amount that month (${currency})`}
+                value={monthAmount}
+                error={monthAmount !== '' && !monthAmountOk ? 'Enter a number' : undefined}
+                onInput={(e) => setMonthAmount(e.currentTarget.value)}
+              />
+            </s-grid>
+            <FormError message={mo.error} />
+            <s-stack direction="inline" gap="small">
+              <s-button
+                disabled={mo.busy || !monthAmountOk}
+                onClick={async () => {
+                  if (
+                    await mo.run(() =>
+                      apiPut(`/expenses/${row.id}/months/${month.slice(0, 7)}-01`, {
+                        amount: monthAmount.trim(),
+                      }),
+                    )
+                  ) {
+                    setMessage(`Set ${month.slice(0, 7)} to ${monthAmount}.`);
+                    onChanged();
+                  }
+                }}
+              >
+                Set amount
+              </s-button>
+              <s-button
+                disabled={mo.busy}
+                onClick={async () => {
+                  if (
+                    await mo.run(() =>
+                      apiPut(`/expenses/${row.id}/months/${month.slice(0, 7)}-01`, { skip: true }),
+                    )
+                  ) {
+                    setMessage(`Skipped ${month.slice(0, 7)}.`);
+                    onChanged();
+                  }
+                }}
+              >
+                Skip this month
+              </s-button>
+            </s-stack>
+            {row.overrides.length > 0 && (
+              <s-stack gap="small-300">
+                <s-text type="strong">Months changed</s-text>
+                {row.overrides.map((o) => (
+                  <s-stack key={o.month} direction="inline" gap="small" alignItems="center">
+                    <s-text>
+                      {o.month.slice(0, 7)}:{' '}
+                      {o.skipped ? 'skipped' : formatMoney(o.amount, currency)}
+                    </s-text>
+                    <s-button
+                      variant="tertiary"
+                      onClick={async () => {
+                        if (await mo.run(() => apiDelete(`/expenses/${row.id}/months/${o.month}`)))
+                          onChanged();
+                      }}
+                    >
+                      Clear
+                    </s-button>
+                  </s-stack>
+                ))}
+              </s-stack>
+            )}
+
+            {row.status !== 'ended' && (
+              <>
+                <s-text type="strong">Stop this expense</s-text>
+                <s-grid gridTemplateColumns={FILTER_GRID} gap="base" alignItems="end">
+                  <s-date-field
+                    label="Last day it applies"
+                    value={stopDay}
+                    onChange={(e) => setStopDay(e.currentTarget.value)}
+                  />
+                </s-grid>
+                <FormError message={stop.error} />
+                <div>
+                  <s-button
+                    disabled={stop.busy}
+                    onClick={async () => {
+                      if (
+                        await stop.run(() =>
+                          apiPost(`/expenses/${row.id}/stop`, { lastDay: stopDay }),
+                        )
+                      ) {
+                        onChanged();
+                        onClose();
+                      }
+                    }}
+                  >
+                    Stop after this day
+                  </s-button>
+                </div>
+              </>
+            )}
+          </>
+        )}
+
+        <s-text type="strong">Remove</s-text>
+        <s-text color="subdued">
+          Removing erases the expense from every period, including past months. To keep past months,
+          stop it instead.
+        </s-text>
+        <FormError message={rm.error} />
+        {confirmRemove ? (
+          <s-stack direction="inline" gap="small">
+            <s-button
+              tone="critical"
+              disabled={rm.busy}
+              onClick={async () => {
+                if (await rm.run(() => apiDelete(`/expenses/${row.id}`))) {
+                  onChanged();
+                  onClose();
+                }
+              }}
+            >
+              Yes, remove it
+            </s-button>
+            <s-button onClick={() => setConfirmRemove(false)}>Cancel</s-button>
+          </s-stack>
+        ) : (
+          <div>
+            <s-button tone="critical" onClick={() => setConfirmRemove(true)}>
+              Remove expense
+            </s-button>
+          </div>
+        )}
+        <div>
+          <s-button variant="tertiary" onClick={onClose}>
+            Close
+          </s-button>
+        </div>
+      </s-stack>
+    </s-section>
+  );
+}
+
+function Categories({
+  categories,
+  onChanged,
+}: {
+  categories: CategoryListResponse['categories'];
+  onChanged: () => void;
+}) {
+  const [name, setName] = useState('');
+  const add = useAction();
+  const del = useAction();
+  return (
+    <s-section heading="Categories">
+      <s-stack gap="base">
+        <s-table>
+          <s-table-header-row>
+            <s-table-header listSlot="primary">Category</s-table-header>
+            <s-table-header format="numeric">Expenses</s-table-header>
+            <s-table-header>Action</s-table-header>
+          </s-table-header-row>
+          <s-table-body>
+            {categories.map((c) => (
+              <s-table-row key={c.id}>
+                <s-table-cell>{c.name}</s-table-cell>
+                <s-table-cell>{c.expenseCount}</s-table-cell>
+                <s-table-cell>
+                  <s-button
+                    variant="tertiary"
+                    tone="critical"
+                    disabled={del.busy}
+                    accessibilityLabel={`Archive ${c.name}`}
+                    onClick={async () => {
+                      if (await del.run(() => apiDelete(`/expenses/categories/${c.id}`)))
+                        onChanged();
+                    }}
+                  >
+                    Archive
+                  </s-button>
+                </s-table-cell>
+              </s-table-row>
+            ))}
+          </s-table-body>
+        </s-table>
+        <FormError message={del.error} />
+        <s-grid gridTemplateColumns={FILTER_GRID} gap="base" alignItems="end">
+          <s-text-field
+            label="New category"
+            value={name}
+            onInput={(e) => setName(e.currentTarget.value)}
+          />
+          <s-button
+            variant="primary"
+            disabled={add.busy || name.trim() === ''}
+            onClick={async () => {
+              if (await add.run(() => apiPost('/expenses/categories', { name: name.trim() }))) {
+                setName('');
+                onChanged();
+              }
+            }}
+          >
+            Add category
+          </s-button>
+        </s-grid>
+        <FormError message={add.error} />
+        <s-text color="subdued">
+          Archiving hides a category from new expenses. Existing expenses keep their label.
+        </s-text>
+      </s-stack>
+    </s-section>
+  );
+}
+
+function History({ version }: { version: number }) {
+  const { data, error, loading, reload } = useApi<AuditResponse>(`/expenses/history?_=${version}`);
+  return (
+    <s-section heading="Who changed what">
+      {error && <ErrorBanner message={error} onRetry={() => void reload()} />}
+      {loading && !data && <Loading what="history" />}
+      {data && data.rows.length === 0 && <s-text color="subdued">No changes yet.</s-text>}
+      {data && data.rows.length > 0 && (
+        <s-table>
+          <s-table-header-row>
+            <s-table-header listSlot="primary">When</s-table-header>
+            <s-table-header>Who</s-table-header>
+            <s-table-header>Change</s-table-header>
+          </s-table-header-row>
+          <s-table-body>
+            {data.rows.map((r) => (
+              <s-table-row key={r.id}>
+                <s-table-cell>{new Date(r.createdAt).toLocaleString()}</s-table-cell>
+                <s-table-cell>{r.actor.replace('shopify-user:', 'User ')}</s-table-cell>
+                <s-table-cell>{r.summary}</s-table-cell>
+              </s-table-row>
+            ))}
+          </s-table-body>
+        </s-table>
+      )}
+    </s-section>
+  );
+}

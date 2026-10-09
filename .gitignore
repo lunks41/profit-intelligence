@@ -1,0 +1,22 @@
+node_modules/
+dist/
+.next/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# secrets - never commit
+.env
+.env.*
+!.env.example
+
+.DS_Store
+*.log
+.vscode/
+
+# generated test-data manifests
+packages/seed/out/
+
+# database backups
+backups/
+backups-test/

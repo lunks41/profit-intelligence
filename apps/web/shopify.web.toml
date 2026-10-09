@@ -1,0 +1,5 @@
+name = "web"
+roles = ["frontend"]
+
+[commands]
+dev = "pnpm dev"

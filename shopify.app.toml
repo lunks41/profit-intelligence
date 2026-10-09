@@ -1,0 +1,51 @@
+# Shopify app configuration (config as code). Deploy with `pnpm shopify:deploy`.
+# The application URL and redirect URLs below are placeholders: `pnpm shopify:dev` rewrites them
+# to the temporary tunnel URL for development, and the production URL is set at deployment.
+client_id = "3bbbd3e97c78785f41572acca98bc4d5"
+name = "Profit Intelligence"
+application_url = "https://example.com"
+embedded = true
+
+[build]
+automatically_update_urls_on_dev = true
+dev_store_url = "profit-intelligence-dev.myshopify.com"
+
+[access_scopes]
+# Least privilege: read-only. The test-data seeder needs write scopes: see docs/development/test-data.md
+# (add them only for seeding a development store, never in a released version).
+scopes = "read_orders,read_products,read_inventory"
+use_legacy_install_flow = false
+
+[auth]
+# Token exchange needs no OAuth redirect, but Shopify requires at least one URL.
+redirect_urls = ["https://example.com/api/auth/callback"]
+
+[webhooks]
+api_version = "2026-10"
+
+# All webhooks go to one HMAC-verified endpoint (apps/api WebhooksController). The handler only
+# needs ids and re-reads the resource from Shopify, so we ask for ids only: no customer data is sent.
+[[webhooks.subscriptions]]
+topics = [
+  "orders/create",
+  "orders/updated",
+  "orders/cancelled",
+  "orders/edited",
+  "orders/delete",
+  "refunds/create",
+  "products/create",
+  "products/update",
+  "products/delete",
+  "inventory_items/update",
+]
+uri = "/api/v1/webhooks"
+include_fields = ["id", "admin_graphql_api_id", "order_id"]
+
+[[webhooks.subscriptions]]
+topics = ["app/uninstalled", "shop/update", "app_subscriptions/update"]
+uri = "/api/v1/webhooks"
+
+# Mandatory privacy webhooks (required for App Store apps). We store no customer personal data.
+[[webhooks.subscriptions]]
+compliance_topics = ["customers/data_request", "customers/redact", "shop/redact"]
+uri = "/api/v1/webhooks"

@@ -1,0 +1,23 @@
+{
+  "name": "@pi/seed",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Development-only: generates realistic historical test orders in the Shopify dev store.",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "seed": "tsx --env-file=../../.env src/cli.ts",
+    "verify": "tsx --env-file=../../.env src/verify.ts",
+    "profit-verify": "tsx --env-file=../../.env src/profit-verify.ts"
+  },
+  "dependencies": {
+    "@pi/db": "workspace:^",
+    "@pi/profit-engine": "workspace:^",
+    "@pi/shopify": "workspace:^",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.23.1"
+  }
+}

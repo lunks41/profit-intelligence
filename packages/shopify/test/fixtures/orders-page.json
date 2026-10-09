@@ -1,0 +1,1598 @@
+{
+  "orders": {
+    "nodes": [
+      {
+        "id": "gid://shopify/Order/18937547849954",
+        "name": "#1040",
+        "processedAt": "2026-04-12T23:04:32Z",
+        "createdAt": "2026-10-09T08:08:39Z",
+        "updatedAt": "2026-10-09T08:08:39Z",
+        "cancelledAt": null,
+        "closedAt": null,
+        "displayFinancialStatus": "PAID",
+        "displayFulfillmentStatus": "UNFULFILLED",
+        "taxesIncluded": false,
+        "test": false,
+        "sourceName": "pi-seed",
+        "tags": ["pi-fixed_discount", "pi-missing_cogs", "pi-seed"],
+        "currencyCode": "USD",
+        "presentmentCurrencyCode": "USD",
+        "subtotalPriceSet": {
+          "shopMoney": {
+            "amount": "620.46",
+            "currencyCode": "USD"
+          }
+        },
+        "totalDiscountsSet": {
+          "shopMoney": {
+            "amount": "109.49",
+            "currencyCode": "USD"
+          }
+        },
+        "totalShippingPriceSet": {
+          "shopMoney": {
+            "amount": "9.99",
+            "currencyCode": "USD"
+          }
+        },
+        "totalTaxSet": {
+          "shopMoney": {
+            "amount": "0.0",
+            "currencyCode": "USD"
+          }
+        },
+        "totalPriceSet": {
+          "shopMoney": {
+            "amount": "630.45",
+            "currencyCode": "USD"
+          },
+          "presentmentMoney": {
+            "amount": "630.45",
+            "currencyCode": "USD"
+          }
+        },
+        "totalRefundedSet": {
+          "shopMoney": {
+            "amount": "0.0",
+            "currencyCode": "USD"
+          }
+        },
+        "lineItems": {
+          "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": "eyJsYXN0X2lkIjo1MDc4MTc3Njc3MzM0NiwibGFzdF92YWx1ZSI6NTA3ODE3NzY3NzMzNDZ9"
+          },
+          "nodes": [
+            {
+              "id": "gid://shopify/LineItem/50781776773346",
+              "title": "The Multi-location Snowboard",
+              "variantTitle": null,
+              "sku": null,
+              "quantity": 1,
+              "requiresShipping": true,
+              "originalUnitPriceSet": {
+                "shopMoney": {
+                  "amount": "729.95",
+                  "currencyCode": "USD"
+                }
+              },
+              "totalDiscountSet": {
+                "shopMoney": {
+                  "amount": "0.0",
+                  "currencyCode": "USD"
+                }
+              },
+              "taxLines": [],
+              "variant": {
+                "id": "gid://shopify/ProductVariant/67639797252322"
+              },
+              "product": {
+                "id": "gid://shopify/Product/15403318345954"
+              }
+            }
+          ]
+        },
+        "refunds": [],
+        "transactions": [
+          {
+            "id": "gid://shopify/OrderTransaction/20811564286178",
+            "kind": "SALE",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "processedAt": "2026-04-12T23:04:32Z",
+            "amountSet": {
+              "shopMoney": {
+                "amount": "630.45",
+                "currencyCode": "USD"
+              }
+            },
+            "parentTransaction": null,
+            "fees": []
+          }
+        ]
+      },
+      {
+        "id": "gid://shopify/Order/18937542312162",
+        "name": "#1017",
+        "processedAt": "2026-04-14T18:11:52Z",
+        "createdAt": "2026-10-09T08:04:09Z",
+        "updatedAt": "2026-10-09T08:04:10Z",
+        "cancelledAt": null,
+        "closedAt": null,
+        "displayFinancialStatus": "PENDING",
+        "displayFulfillmentStatus": "UNFULFILLED",
+        "taxesIncluded": false,
+        "test": false,
+        "sourceName": "pi-seed",
+        "tags": ["pi-pending_unpaid", "pi-seed", "pi-tax_exclusive"],
+        "currencyCode": "USD",
+        "presentmentCurrencyCode": "USD",
+        "subtotalPriceSet": {
+          "shopMoney": {
+            "amount": "949.95",
+            "currencyCode": "USD"
+          }
+        },
+        "totalDiscountsSet": {
+          "shopMoney": {
+            "amount": "0.0",
+            "currencyCode": "USD"
+          }
+        },
+        "totalShippingPriceSet": {
+          "shopMoney": {
+            "amount": "9.99",
+            "currencyCode": "USD"
+          }
+        },
+        "totalTaxSet": {
+          "shopMoney": {
+            "amount": "47.5",
+            "currencyCode": "USD"
+          }
+        },
+        "totalPriceSet": {
+          "shopMoney": {
+            "amount": "1007.44",
+            "currencyCode": "USD"
+          },
+          "presentmentMoney": {
+            "amount": "1007.44",
+            "currencyCode": "USD"
+          }
+        },
+        "totalRefundedSet": {
+          "shopMoney": {
+            "amount": "0.0",
+            "currencyCode": "USD"
+          }
+        },
+        "lineItems": {
+          "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": "eyJsYXN0X2lkIjo1MDc4MTc2ODE1NTM2MiwibGFzdF92YWx1ZSI6NTA3ODE3NjgxNTUzNjJ9"
+          },
+          "nodes": [
+            {
+              "id": "gid://shopify/LineItem/50781768155362",
+              "title": "The Inventory Not Tracked Snowboard",
+              "variantTitle": null,
+              "sku": "sku-untracked-1",
+              "quantity": 1,
+              "requiresShipping": true,
+              "originalUnitPriceSet": {
+                "shopMoney": {
+                  "amount": "949.95",
+                  "currencyCode": "USD"
+                }
+              },
+              "totalDiscountSet": {
+                "shopMoney": {
+                  "amount": "0.0",
+                  "currencyCode": "USD"
+                }
+              },
+              "taxLines": [
+                {
+                  "priceSet": {
+                    "shopMoney": {
+                      "amount": "47.5",
+                      "currencyCode": "USD"
+                    }
+                  }
+                }
+              ],
+              "variant": {
+                "id": "gid://shopify/ProductVariant/67639796498658"
+              },
+              "product": {
+                "id": "gid://shopify/Product/15403317952738"
+              }
+            }
+          ]
+        },
+        "refunds": [],
+        "transactions": []
+      },
+      {
+        "id": "gid://shopify/Order/18937545425122",
+        "name": "#1029",
+        "processedAt": "2026-04-21T04:28:52Z",
+        "createdAt": "2026-10-09T08:06:29Z",
+        "updatedAt": "2026-10-09T08:06:31Z",
+        "cancelledAt": "2026-10-09T08:06:31Z",
+        "closedAt": "2026-10-09T08:06:31Z",
+        "displayFinancialStatus": "PENDING",
+        "displayFulfillmentStatus": "FULFILLMENT_NOT_REQUIRED",
+        "taxesIncluded": false,
+        "test": false,
+        "sourceName": "pi-seed",
+        "tags": ["pi-cancelled_unpaid", "pi-no_shipping_charge", "pi-seed", "pi-tax_exclusive"],
+        "currencyCode": "USD",
+        "presentmentCurrencyCode": "USD",
+        "subtotalPriceSet": {
+          "shopMoney": {
+            "amount": "1771.9",
+            "currencyCode": "USD"
+          }
+        },
+        "totalDiscountsSet": {
+          "shopMoney": {
+            "amount": "0.0",
+            "currencyCode": "USD"
+          }
+        },
+        "totalShippingPriceSet": {
+          "shopMoney": {
+            "amount": "0.0",
+            "currencyCode": "USD"
+          }
+        },
+        "totalTaxSet": {
+          "shopMoney": {
+            "amount": "88.6",
+            "currencyCode": "USD"
+          }
+        },
+        "totalPriceSet": {
+          "shopMoney": {
+            "amount": "1860.5",
+            "currencyCode": "USD"
+          },
+          "presentmentMoney": {
+            "amount": "1860.5",
+            "currencyCode": "USD"
+          }
+        },
+        "totalRefundedSet": {
+          "shopMoney": {
+            "amount": "0.0",
+            "currencyCode": "USD"
+          }
+        },
+        "lineItems": {
+          "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": "eyJsYXN0X2lkIjo1MDc4MTc3Mjc3NTY1MCwibGFzdF92YWx1ZSI6NTA3ODE3NzI3NzU2NTB9"
+          },
+          "nodes": [
+            {
+              "id": "gid://shopify/LineItem/50781772775650",
+              "title": "The Minimal Snowboard",
+              "variantTitle": null,
+              "sku": null,
+              "quantity": 2,
+              "requiresShipping": true,
+              "originalUnitPriceSet": {
+                "shopMoney": {
+                  "amount": "885.95",
+                  "currencyCode": "USD"
+                }
+              },
+              "totalDiscountSet": {
+                "shopMoney": {
+                  "amount": "0.0",
+                  "currencyCode": "USD"
+                }
+              },
+              "taxLines": [
+                {
+                  "priceSet": {
+                    "shopMoney": {
+                      "amount": "88.6",
+                      "currencyCode": "USD"
+                    }
+                  }
+                }
+              ],
+              "variant": {
+                "id": "gid://shopify/ProductVariant/67639796728034"
+              },
+              "product": {
+                "id": "gid://shopify/Product/15403317985506"
+              }
+            }
+          ]
+        },
+        "refunds": [
+          {
+            "id": "gid://shopify/Refund/1112723390690",
+            "createdAt": "2026-10-09T08:06:30Z",
+            "processedAt": "2026-10-09T08:06:30Z",
+            "note": "Order canceled",
+            "totalRefundedSet": {
+              "shopMoney": {
+                "amount": "0.0",
+                "currencyCode": "USD"
+              }
+            },
+            "refundLineItems": {
+              "pageInfo": {
+                "hasNextPage": false
+              },
+              "nodes": [
+                {
+                  "id": "gid://shopify/RefundLineItem/760784290018",
+                  "quantity": 2,
+                  "restockType": "NO_RESTOCK",
+                  "subtotalSet": {
+                    "shopMoney": {
+                      "amount": "1771.9",
+                      "currencyCode": "USD"
+                    }
+                  },
+                  "totalTaxSet": {
+                    "shopMoney": {
+                      "amount": "88.6",
+                      "currencyCode": "USD"
+                    }
+                  },
+                  "lineItem": {
+                    "id": "gid://shopify/LineItem/50781772775650"
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "transactions": []
+      },
+      {
+        "id": "gid://shopify/Order/18937545457890",
+        "name": "#1030",
+        "processedAt": "2026-04-26T20:59:52Z",
+        "createdAt": "2026-10-09T08:06:30Z",
+        "updatedAt": "2026-10-09T08:06:34Z",
+        "cancelledAt": "2026-10-09T08:06:34Z",
+        "closedAt": "2026-10-09T08:06:33Z",
+        "displayFinancialStatus": "REFUNDED",
+        "displayFulfillmentStatus": "FULFILLMENT_NOT_REQUIRED",
+        "taxesIncluded": false,
+        "test": false,
+        "sourceName": "pi-seed",
+        "tags": ["pi-cancelled_refunded", "pi-seed", "pi-tax_exclusive"],
+        "currencyCode": "USD",
+        "presentmentCurrencyCode": "USD",
+        "subtotalPriceSet": {
+          "shopMoney": {
+            "amount": "1585.9",
+            "currencyCode": "USD"
+          }
+        },
+        "totalDiscountsSet": {
+          "shopMoney": {
+            "amount": "0.0",
+            "currencyCode": "USD"
+          }
+        },
+        "totalShippingPriceSet": {
+          "shopMoney": {
+            "amount": "14.99",
+            "currencyCode": "USD"
+          }
+        },
+        "totalTaxSet": {
+          "shopMoney": {
+            "amount": "140.75",
+            "currencyCode": "USD"
+          }
+        },
+        "totalPriceSet": {
+          "shopMoney": {
+            "amount": "1741.64",
+            "currencyCode": "USD"
+          },
+          "presentmentMoney": {
+            "amount": "1741.64",
+            "currencyCode": "USD"
+          }
+        },
+        "totalRefundedSet": {
+          "shopMoney": {
+            "amount": "1741.64",
+            "currencyCode": "USD"
+          }
+        },
+        "lineItems": {
+          "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": "eyJsYXN0X2lkIjo1MDc4MTc3Mjg0MTE4NiwibGFzdF92YWx1ZSI6NTA3ODE3NzI4NDExODZ9"
+          },
+          "nodes": [
+            {
+              "id": "gid://shopify/LineItem/50781772808418",
+              "title": "The Complete Snowboard",
+              "variantTitle": "Powder",
+              "sku": null,
+              "quantity": 1,
+              "requiresShipping": true,
+              "originalUnitPriceSet": {
+                "shopMoney": {
+                  "amount": "699.95",
+                  "currencyCode": "USD"
+                }
+              },
+              "totalDiscountSet": {
+                "shopMoney": {
+                  "amount": "0.0",
+                  "currencyCode": "USD"
+                }
+              },
+              "taxLines": [
+                {
+                  "priceSet": {
+                    "shopMoney": {
+                      "amount": "62.12",
+                      "currencyCode": "USD"
+                    }
+                  }
+                }
+              ],
+              "variant": {
+                "id": "gid://shopify/ProductVariant/67639796990178"
+              },
+              "product": {
+                "id": "gid://shopify/Product/15403318313186"
+              }
+            },
+            {
+              "id": "gid://shopify/LineItem/50781772841186",
+              "title": "The Out of Stock Snowboard",
+              "variantTitle": null,
+              "sku": null,
+              "quantity": 1,
+              "requiresShipping": true,
+              "originalUnitPriceSet": {
+                "shopMoney": {
+                  "amount": "885.95",
+                  "currencyCode": "USD"
+                }
+              },
+              "totalDiscountSet": {
+                "shopMoney": {
+                  "amount": "0.0",
+                  "currencyCode": "USD"
+                }
+              },
+              "taxLines": [
+                {
+                  "priceSet": {
+                    "shopMoney": {
+                      "amount": "78.63",
+                      "currencyCode": "USD"
+                    }
+                  }
+                }
+              ],
+              "variant": {
+                "id": "gid://shopify/ProductVariant/67639796760802"
+              },
+              "product": {
+                "id": "gid://shopify/Product/15403318116578"
+              }
+            }
+          ]
+        },
+        "refunds": [
+          {
+            "id": "gid://shopify/Refund/1112723423458",
+            "createdAt": "2026-10-09T08:06:32Z",
+            "processedAt": "2026-04-29T21:59:52Z",
+            "note": "Seeded refund (full)",
+            "totalRefundedSet": {
+              "shopMoney": {
+                "amount": "1741.64",
+                "currencyCode": "USD"
+              }
+            },
+            "refundLineItems": {
+              "pageInfo": {
+                "hasNextPage": false
+              },
+              "nodes": [
+                {
+                  "id": "gid://shopify/RefundLineItem/760784322786",
+                  "quantity": 1,
+                  "restockType": "NO_RESTOCK",
+                  "subtotalSet": {
+                    "shopMoney": {
+                      "amount": "699.95",
+                      "currencyCode": "USD"
+                    }
+                  },
+                  "totalTaxSet": {
+                    "shopMoney": {
+                      "amount": "62.12",
+                      "currencyCode": "USD"
+                    }
+                  },
+                  "lineItem": {
+                    "id": "gid://shopify/LineItem/50781772808418"
+                  }
+                },
+                {
+                  "id": "gid://shopify/RefundLineItem/760784355554",
+                  "quantity": 1,
+                  "restockType": "NO_RESTOCK",
+                  "subtotalSet": {
+                    "shopMoney": {
+                      "amount": "885.95",
+                      "currencyCode": "USD"
+                    }
+                  },
+                  "totalTaxSet": {
+                    "shopMoney": {
+                      "amount": "78.63",
+                      "currencyCode": "USD"
+                    }
+                  },
+                  "lineItem": {
+                    "id": "gid://shopify/LineItem/50781772841186"
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "transactions": [
+          {
+            "id": "gid://shopify/OrderTransaction/20811560976610",
+            "kind": "SALE",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "processedAt": "2026-04-26T20:59:52Z",
+            "amountSet": {
+              "shopMoney": {
+                "amount": "1741.64",
+                "currencyCode": "USD"
+              }
+            },
+            "parentTransaction": null,
+            "fees": []
+          },
+          {
+            "id": "gid://shopify/OrderTransaction/20811561042146",
+            "kind": "REFUND",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "processedAt": "2026-10-09T08:06:32Z",
+            "amountSet": {
+              "shopMoney": {
+                "amount": "1741.64",
+                "currencyCode": "USD"
+              }
+            },
+            "parentTransaction": {
+              "id": "gid://shopify/OrderTransaction/20811560976610"
+            },
+            "fees": []
+          }
+        ]
+      },
+      {
+        "id": "gid://shopify/Order/18937546735842",
+        "name": "#1033",
+        "processedAt": "2026-05-07T01:46:52Z",
+        "createdAt": "2026-10-09T08:07:36Z",
+        "updatedAt": "2026-10-09T08:07:37Z",
+        "cancelledAt": null,
+        "closedAt": null,
+        "displayFinancialStatus": "PARTIALLY_PAID",
+        "displayFulfillmentStatus": "UNFULFILLED",
+        "taxesIncluded": false,
+        "test": false,
+        "sourceName": "pi-seed",
+        "tags": ["pi-no_shipping_charge", "pi-partially_paid", "pi-seed", "pi-tax_exclusive"],
+        "currencyCode": "USD",
+        "presentmentCurrencyCode": "USD",
+        "subtotalPriceSet": {
+          "shopMoney": {
+            "amount": "785.95",
+            "currencyCode": "USD"
+          }
+        },
+        "totalDiscountsSet": {
+          "shopMoney": {
+            "amount": "0.0",
+            "currencyCode": "USD"
+          }
+        },
+        "totalShippingPriceSet": {
+          "shopMoney": {
+            "amount": "0.0",
+            "currencyCode": "USD"
+          }
+        },
+        "totalTaxSet": {
+          "shopMoney": {
+            "amount": "69.75",
+            "currencyCode": "USD"
+          }
+        },
+        "totalPriceSet": {
+          "shopMoney": {
+            "amount": "855.7",
+            "currencyCode": "USD"
+          },
+          "presentmentMoney": {
+            "amount": "855.7",
+            "currencyCode": "USD"
+          }
+        },
+        "totalRefundedSet": {
+          "shopMoney": {
+            "amount": "0.0",
+            "currencyCode": "USD"
+          }
+        },
+        "lineItems": {
+          "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": "eyJsYXN0X2lkIjo1MDc4MTc3NTI2NjAxOCwibGFzdF92YWx1ZSI6NTA3ODE3NzUyNjYwMTh9"
+          },
+          "nodes": [
+            {
+              "id": "gid://shopify/LineItem/50781775266018",
+              "title": "The Compare at Price Snowboard",
+              "variantTitle": null,
+              "sku": null,
+              "quantity": 1,
+              "requiresShipping": true,
+              "originalUnitPriceSet": {
+                "shopMoney": {
+                  "amount": "785.95",
+                  "currencyCode": "USD"
+                }
+              },
+              "totalDiscountSet": {
+                "shopMoney": {
+                  "amount": "0.0",
+                  "currencyCode": "USD"
+                }
+              },
+              "taxLines": [
+                {
+                  "priceSet": {
+                    "shopMoney": {
+                      "amount": "69.75",
+                      "currencyCode": "USD"
+                    }
+                  }
+                }
+              ],
+              "variant": {
+                "id": "gid://shopify/ProductVariant/67639796465890"
+              },
+              "product": {
+                "id": "gid://shopify/Product/15403318182114"
+              }
+            }
+          ]
+        },
+        "refunds": [],
+        "transactions": [
+          {
+            "id": "gid://shopify/OrderTransaction/20811562647778",
+            "kind": "SALE",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "processedAt": "2026-05-07T01:46:52Z",
+            "amountSet": {
+              "shopMoney": {
+                "amount": "427.85",
+                "currencyCode": "USD"
+              }
+            },
+            "parentTransaction": null,
+            "fees": []
+          }
+        ]
+      },
+      {
+        "id": "gid://shopify/Order/18937547620578",
+        "name": "#1036",
+        "processedAt": "2026-05-26T20:33:32Z",
+        "createdAt": "2026-10-09T08:08:35Z",
+        "updatedAt": "2026-10-09T08:08:35Z",
+        "cancelledAt": null,
+        "closedAt": null,
+        "displayFinancialStatus": "PAID",
+        "displayFulfillmentStatus": "UNFULFILLED",
+        "taxesIncluded": false,
+        "test": false,
+        "sourceName": "pi-seed",
+        "tags": ["pi-foreign_currency", "pi-missing_cogs", "pi-seed"],
+        "currencyCode": "USD",
+        "presentmentCurrencyCode": "EUR",
+        "subtotalPriceSet": {
+          "shopMoney": {
+            "amount": "2029.85",
+            "currencyCode": "USD"
+          }
+        },
+        "totalDiscountsSet": {
+          "shopMoney": {
+            "amount": "0.0",
+            "currencyCode": "USD"
+          }
+        },
+        "totalShippingPriceSet": {
+          "shopMoney": {
+            "amount": "9.99",
+            "currencyCode": "USD"
+          }
+        },
+        "totalTaxSet": {
+          "shopMoney": {
+            "amount": "0.0",
+            "currencyCode": "USD"
+          }
+        },
+        "totalPriceSet": {
+          "shopMoney": {
+            "amount": "2039.84",
+            "currencyCode": "USD"
+          },
+          "presentmentMoney": {
+            "amount": "1876.64",
+            "currencyCode": "EUR"
+          }
+        },
+        "totalRefundedSet": {
+          "shopMoney": {
+            "amount": "0.0",
+            "currencyCode": "USD"
+          }
+        },
+        "lineItems": {
+          "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": "eyJsYXN0X2lkIjo1MDc4MTc3NjU0Mzk3MCwibGFzdF92YWx1ZSI6NTA3ODE3NzY1NDM5NzB9"
+          },
+          "nodes": [
+            {
+              "id": "gid://shopify/LineItem/50781776511202",
+              "title": "The Multi-managed Snowboard",
+              "variantTitle": null,
+              "sku": "sku-managed-1",
+              "quantity": 1,
+              "requiresShipping": true,
+              "originalUnitPriceSet": {
+                "shopMoney": {
+                  "amount": "629.95",
+                  "currencyCode": "USD"
+                }
+              },
+              "totalDiscountSet": {
+                "shopMoney": {
+                  "amount": "0.0",
+                  "currencyCode": "USD"
+                }
+              },
+              "taxLines": [],
+              "variant": {
+                "id": "gid://shopify/ProductVariant/67639797285090"
+              },
+              "product": {
+                "id": "gid://shopify/Product/15403318378722"
+              }
+            },
+            {
+              "id": "gid://shopify/LineItem/50781776543970",
+              "title": "The Complete Snowboard",
+              "variantTitle": "Ice",
+              "sku": null,
+              "quantity": 2,
+              "requiresShipping": true,
+              "originalUnitPriceSet": {
+                "shopMoney": {
+                  "amount": "699.95",
+                  "currencyCode": "USD"
+                }
+              },
+              "totalDiscountSet": {
+                "shopMoney": {
+                  "amount": "0.0",
+                  "currencyCode": "USD"
+                }
+              },
+              "taxLines": [],
+              "variant": {
+                "id": "gid://shopify/ProductVariant/67639796924642"
+              },
+              "product": {
+                "id": "gid://shopify/Product/15403318313186"
+              }
+            }
+          ]
+        },
+        "refunds": [],
+        "transactions": [
+          {
+            "id": "gid://shopify/OrderTransaction/20811563991266",
+            "kind": "SALE",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "processedAt": "2026-05-26T20:33:32Z",
+            "amountSet": {
+              "shopMoney": {
+                "amount": "2039.84",
+                "currencyCode": "USD"
+              }
+            },
+            "parentTransaction": null,
+            "fees": []
+          }
+        ]
+      },
+      {
+        "id": "gid://shopify/Order/18937552503010",
+        "name": "#1049",
+        "processedAt": "2026-06-04T03:35:10Z",
+        "createdAt": "2026-10-09T08:12:19Z",
+        "updatedAt": "2026-10-09T08:12:20Z",
+        "cancelledAt": null,
+        "closedAt": null,
+        "displayFinancialStatus": "AUTHORIZED",
+        "displayFulfillmentStatus": "UNFULFILLED",
+        "taxesIncluded": true,
+        "test": false,
+        "sourceName": "pi-seed",
+        "tags": [
+          "pi-authorized_only",
+          "pi-guest",
+          "pi-missing_cogs",
+          "pi-seed",
+          "pi-tax_inclusive"
+        ],
+        "currencyCode": "USD",
+        "presentmentCurrencyCode": "USD",
+        "subtotalPriceSet": {
+          "shopMoney": {
+            "amount": "24.95",
+            "currencyCode": "USD"
+          }
+        },
+        "totalDiscountsSet": {
+          "shopMoney": {
+            "amount": "0.0",
+            "currencyCode": "USD"
+          }
+        },
+        "totalShippingPriceSet": {
+          "shopMoney": {
+            "amount": "5.0",
+            "currencyCode": "USD"
+          }
+        },
+        "totalTaxSet": {
+          "shopMoney": {
+            "amount": "2.03",
+            "currencyCode": "USD"
+          }
+        },
+        "totalPriceSet": {
+          "shopMoney": {
+            "amount": "29.95",
+            "currencyCode": "USD"
+          },
+          "presentmentMoney": {
+            "amount": "29.95",
+            "currencyCode": "USD"
+          }
+        },
+        "totalRefundedSet": {
+          "shopMoney": {
+            "amount": "0.0",
+            "currencyCode": "USD"
+          }
+        },
+        "lineItems": {
+          "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": "eyJsYXN0X2lkIjo1MDc4MTc4NDAxNTA3NCwibGFzdF92YWx1ZSI6NTA3ODE3ODQwMTUwNzR9"
+          },
+          "nodes": [
+            {
+              "id": "gid://shopify/LineItem/50781784015074",
+              "title": "Selling Plans Ski Wax",
+              "variantTitle": "Selling Plans Ski Wax",
+              "sku": null,
+              "quantity": 1,
+              "requiresShipping": true,
+              "originalUnitPriceSet": {
+                "shopMoney": {
+                  "amount": "24.95",
+                  "currencyCode": "USD"
+                }
+              },
+              "totalDiscountSet": {
+                "shopMoney": {
+                  "amount": "0.0",
+                  "currencyCode": "USD"
+                }
+              },
+              "taxLines": [
+                {
+                  "priceSet": {
+                    "shopMoney": {
+                      "amount": "2.03",
+                      "currencyCode": "USD"
+                    }
+                  }
+                }
+              ],
+              "variant": {
+                "id": "gid://shopify/ProductVariant/67639796826338"
+              },
+              "product": {
+                "id": "gid://shopify/Product/15403318083810"
+              }
+            }
+          ]
+        },
+        "refunds": [],
+        "transactions": [
+          {
+            "id": "gid://shopify/OrderTransaction/20811570774242",
+            "kind": "AUTHORIZATION",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "processedAt": "2026-06-04T03:35:10Z",
+            "amountSet": {
+              "shopMoney": {
+                "amount": "29.95",
+                "currencyCode": "USD"
+              }
+            },
+            "parentTransaction": null,
+            "fees": []
+          }
+        ]
+      },
+      {
+        "id": "gid://shopify/Order/18937556959458",
+        "name": "#1065",
+        "processedAt": "2026-06-12T01:37:10Z",
+        "createdAt": "2026-10-09T08:15:41Z",
+        "updatedAt": "2026-10-09T08:15:42Z",
+        "cancelledAt": null,
+        "closedAt": null,
+        "displayFinancialStatus": "PARTIALLY_REFUNDED",
+        "displayFulfillmentStatus": "UNFULFILLED",
+        "taxesIncluded": false,
+        "test": false,
+        "sourceName": "pi-seed",
+        "tags": ["pi-seed", "pi-shipping_refund"],
+        "currencyCode": "USD",
+        "presentmentCurrencyCode": "USD",
+        "subtotalPriceSet": {
+          "shopMoney": {
+            "amount": "895.9",
+            "currencyCode": "USD"
+          }
+        },
+        "totalDiscountsSet": {
+          "shopMoney": {
+            "amount": "0.0",
+            "currencyCode": "USD"
+          }
+        },
+        "totalShippingPriceSet": {
+          "shopMoney": {
+            "amount": "14.99",
+            "currencyCode": "USD"
+          }
+        },
+        "totalTaxSet": {
+          "shopMoney": {
+            "amount": "0.0",
+            "currencyCode": "USD"
+          }
+        },
+        "totalPriceSet": {
+          "shopMoney": {
+            "amount": "910.89",
+            "currencyCode": "USD"
+          },
+          "presentmentMoney": {
+            "amount": "910.89",
+            "currencyCode": "USD"
+          }
+        },
+        "totalRefundedSet": {
+          "shopMoney": {
+            "amount": "14.99",
+            "currencyCode": "USD"
+          }
+        },
+        "lineItems": {
+          "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": "eyJsYXN0X2lkIjo1MDc4MTc5MTA5Mjk2MiwibGFzdF92YWx1ZSI6NTA3ODE3OTEwOTI5NjJ9"
+          },
+          "nodes": [
+            {
+              "id": "gid://shopify/LineItem/50781791060194",
+              "title": "The Out of Stock Snowboard",
+              "variantTitle": null,
+              "sku": null,
+              "quantity": 1,
+              "requiresShipping": true,
+              "originalUnitPriceSet": {
+                "shopMoney": {
+                  "amount": "885.95",
+                  "currencyCode": "USD"
+                }
+              },
+              "totalDiscountSet": {
+                "shopMoney": {
+                  "amount": "0.0",
+                  "currencyCode": "USD"
+                }
+              },
+              "taxLines": [],
+              "variant": {
+                "id": "gid://shopify/ProductVariant/67639796760802"
+              },
+              "product": {
+                "id": "gid://shopify/Product/15403318116578"
+              }
+            },
+            {
+              "id": "gid://shopify/LineItem/50781791092962",
+              "title": "Selling Plans Ski Wax",
+              "variantTitle": "Sample Selling Plans Ski Wax",
+              "sku": null,
+              "quantity": 1,
+              "requiresShipping": true,
+              "originalUnitPriceSet": {
+                "shopMoney": {
+                  "amount": "9.95",
+                  "currencyCode": "USD"
+                }
+              },
+              "totalDiscountSet": {
+                "shopMoney": {
+                  "amount": "0.0",
+                  "currencyCode": "USD"
+                }
+              },
+              "taxLines": [],
+              "variant": {
+                "id": "gid://shopify/ProductVariant/67639796891874"
+              },
+              "product": {
+                "id": "gid://shopify/Product/15403318083810"
+              }
+            }
+          ]
+        },
+        "refunds": [
+          {
+            "id": "gid://shopify/Refund/1112724734178",
+            "createdAt": "2026-10-09T08:15:42Z",
+            "processedAt": "2026-06-14T02:37:10Z",
+            "note": "Seeded refund (shipping)",
+            "totalRefundedSet": {
+              "shopMoney": {
+                "amount": "14.99",
+                "currencyCode": "USD"
+              }
+            },
+            "refundLineItems": {
+              "pageInfo": {
+                "hasNextPage": false
+              },
+              "nodes": []
+            }
+          }
+        ],
+        "transactions": [
+          {
+            "id": "gid://shopify/OrderTransaction/20811576475874",
+            "kind": "SALE",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "processedAt": "2026-06-12T01:37:10Z",
+            "amountSet": {
+              "shopMoney": {
+                "amount": "910.89",
+                "currencyCode": "USD"
+              }
+            },
+            "parentTransaction": null,
+            "fees": []
+          },
+          {
+            "id": "gid://shopify/OrderTransaction/20811576508642",
+            "kind": "REFUND",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "processedAt": "2026-10-09T08:15:42Z",
+            "amountSet": {
+              "shopMoney": {
+                "amount": "14.99",
+                "currencyCode": "USD"
+              }
+            },
+            "parentTransaction": {
+              "id": "gid://shopify/OrderTransaction/20811576475874"
+            },
+            "fees": []
+          }
+        ]
+      },
+      {
+        "id": "gid://shopify/Order/18937546604770",
+        "name": "#1031",
+        "processedAt": "2026-06-16T04:10:52Z",
+        "createdAt": "2026-10-09T08:07:35Z",
+        "updatedAt": "2026-10-09T08:07:35Z",
+        "cancelledAt": null,
+        "closedAt": null,
+        "displayFinancialStatus": "AUTHORIZED",
+        "displayFulfillmentStatus": "UNFULFILLED",
+        "taxesIncluded": false,
+        "test": false,
+        "sourceName": "pi-seed",
+        "tags": ["pi-authorized_only", "pi-seed", "pi-tax_exclusive"],
+        "currencyCode": "USD",
+        "presentmentCurrencyCode": "USD",
+        "subtotalPriceSet": {
+          "shopMoney": {
+            "amount": "1771.9",
+            "currencyCode": "USD"
+          }
+        },
+        "totalDiscountsSet": {
+          "shopMoney": {
+            "amount": "0.0",
+            "currencyCode": "USD"
+          }
+        },
+        "totalShippingPriceSet": {
+          "shopMoney": {
+            "amount": "5.0",
+            "currencyCode": "USD"
+          }
+        },
+        "totalTaxSet": {
+          "shopMoney": {
+            "amount": "88.6",
+            "currencyCode": "USD"
+          }
+        },
+        "totalPriceSet": {
+          "shopMoney": {
+            "amount": "1865.5",
+            "currencyCode": "USD"
+          },
+          "presentmentMoney": {
+            "amount": "1865.5",
+            "currencyCode": "USD"
+          }
+        },
+        "totalRefundedSet": {
+          "shopMoney": {
+            "amount": "0.0",
+            "currencyCode": "USD"
+          }
+        },
+        "lineItems": {
+          "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": "eyJsYXN0X2lkIjo1MDc4MTc3NTEzNDk0NiwibGFzdF92YWx1ZSI6NTA3ODE3NzUxMzQ5NDZ9"
+          },
+          "nodes": [
+            {
+              "id": "gid://shopify/LineItem/50781775134946",
+              "title": "The Videographer Snowboard",
+              "variantTitle": null,
+              "sku": null,
+              "quantity": 2,
+              "requiresShipping": true,
+              "originalUnitPriceSet": {
+                "shopMoney": {
+                  "amount": "885.95",
+                  "currencyCode": "USD"
+                }
+              },
+              "totalDiscountSet": {
+                "shopMoney": {
+                  "amount": "0.0",
+                  "currencyCode": "USD"
+                }
+              },
+              "taxLines": [
+                {
+                  "priceSet": {
+                    "shopMoney": {
+                      "amount": "88.6",
+                      "currencyCode": "USD"
+                    }
+                  }
+                }
+              ],
+              "variant": {
+                "id": "gid://shopify/ProductVariant/67639796531426"
+              },
+              "product": {
+                "id": "gid://shopify/Product/15403318051042"
+              }
+            }
+          ]
+        },
+        "refunds": [],
+        "transactions": [
+          {
+            "id": "gid://shopify/OrderTransaction/20811562549474",
+            "kind": "AUTHORIZATION",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "processedAt": "2026-06-16T04:10:52Z",
+            "amountSet": {
+              "shopMoney": {
+                "amount": "1865.5",
+                "currencyCode": "USD"
+              }
+            },
+            "parentTransaction": null,
+            "fees": []
+          }
+        ]
+      },
+      {
+        "id": "gid://shopify/Order/18937554174178",
+        "name": "#1055",
+        "processedAt": "2026-06-26T05:22:10Z",
+        "createdAt": "2026-10-09T08:13:25Z",
+        "updatedAt": "2026-10-09T08:13:26Z",
+        "cancelledAt": null,
+        "closedAt": null,
+        "displayFinancialStatus": "PAID",
+        "displayFulfillmentStatus": "UNFULFILLED",
+        "taxesIncluded": true,
+        "test": false,
+        "sourceName": "pi-seed",
+        "tags": ["pi-normal", "pi-seed", "pi-tax_inclusive"],
+        "currencyCode": "USD",
+        "presentmentCurrencyCode": "USD",
+        "subtotalPriceSet": {
+          "shopMoney": {
+            "amount": "1771.9",
+            "currencyCode": "USD"
+          }
+        },
+        "totalDiscountsSet": {
+          "shopMoney": {
+            "amount": "0.0",
+            "currencyCode": "USD"
+          }
+        },
+        "totalShippingPriceSet": {
+          "shopMoney": {
+            "amount": "14.99",
+            "currencyCode": "USD"
+          }
+        },
+        "totalTaxSet": {
+          "shopMoney": {
+            "amount": "84.38",
+            "currencyCode": "USD"
+          }
+        },
+        "totalPriceSet": {
+          "shopMoney": {
+            "amount": "1786.89",
+            "currencyCode": "USD"
+          },
+          "presentmentMoney": {
+            "amount": "1786.89",
+            "currencyCode": "USD"
+          }
+        },
+        "totalRefundedSet": {
+          "shopMoney": {
+            "amount": "0.0",
+            "currencyCode": "USD"
+          }
+        },
+        "lineItems": {
+          "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": "eyJsYXN0X2lkIjo1MDc4MTc4NzEyODAzNCwibGFzdF92YWx1ZSI6NTA3ODE3ODcxMjgwMzR9"
+          },
+          "nodes": [
+            {
+              "id": "gid://shopify/LineItem/50781787128034",
+              "title": "The Videographer Snowboard",
+              "variantTitle": null,
+              "sku": null,
+              "quantity": 2,
+              "requiresShipping": true,
+              "originalUnitPriceSet": {
+                "shopMoney": {
+                  "amount": "885.95",
+                  "currencyCode": "USD"
+                }
+              },
+              "totalDiscountSet": {
+                "shopMoney": {
+                  "amount": "0.0",
+                  "currencyCode": "USD"
+                }
+              },
+              "taxLines": [
+                {
+                  "priceSet": {
+                    "shopMoney": {
+                      "amount": "84.38",
+                      "currencyCode": "USD"
+                    }
+                  }
+                }
+              ],
+              "variant": {
+                "id": "gid://shopify/ProductVariant/67639796531426"
+              },
+              "product": {
+                "id": "gid://shopify/Product/15403318051042"
+              }
+            }
+          ]
+        },
+        "refunds": [],
+        "transactions": [
+          {
+            "id": "gid://shopify/OrderTransaction/20811572936930",
+            "kind": "SALE",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "processedAt": "2026-06-26T05:22:10Z",
+            "amountSet": {
+              "shopMoney": {
+                "amount": "1786.89",
+                "currencyCode": "USD"
+              }
+            },
+            "parentTransaction": null,
+            "fees": []
+          }
+        ]
+      },
+      {
+        "id": "gid://shopify/Order/18937543786722",
+        "name": "#1025",
+        "processedAt": "2026-07-03T05:32:52Z",
+        "createdAt": "2026-10-09T08:05:18Z",
+        "updatedAt": "2026-10-09T08:05:20Z",
+        "cancelledAt": null,
+        "closedAt": null,
+        "displayFinancialStatus": "PARTIALLY_REFUNDED",
+        "displayFulfillmentStatus": "UNFULFILLED",
+        "taxesIncluded": true,
+        "test": false,
+        "sourceName": "pi-seed",
+        "tags": ["pi-partial_refund", "pi-seed", "pi-tax_inclusive"],
+        "currencyCode": "USD",
+        "presentmentCurrencyCode": "USD",
+        "subtotalPriceSet": {
+          "shopMoney": {
+            "amount": "709.9",
+            "currencyCode": "USD"
+          }
+        },
+        "totalDiscountsSet": {
+          "shopMoney": {
+            "amount": "0.0",
+            "currencyCode": "USD"
+          }
+        },
+        "totalShippingPriceSet": {
+          "shopMoney": {
+            "amount": "14.99",
+            "currencyCode": "USD"
+          }
+        },
+        "totalTaxSet": {
+          "shopMoney": {
+            "amount": "33.8",
+            "currencyCode": "USD"
+          }
+        },
+        "totalPriceSet": {
+          "shopMoney": {
+            "amount": "724.89",
+            "currencyCode": "USD"
+          },
+          "presentmentMoney": {
+            "amount": "724.89",
+            "currencyCode": "USD"
+          }
+        },
+        "totalRefundedSet": {
+          "shopMoney": {
+            "amount": "699.95",
+            "currencyCode": "USD"
+          }
+        },
+        "lineItems": {
+          "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": "eyJsYXN0X2lkIjo1MDc4MTc3MDUxNDY1OCwibGFzdF92YWx1ZSI6NTA3ODE3NzA1MTQ2NTh9"
+          },
+          "nodes": [
+            {
+              "id": "gid://shopify/LineItem/50781770481890",
+              "title": "The Complete Snowboard",
+              "variantTitle": "Sunset",
+              "sku": null,
+              "quantity": 1,
+              "requiresShipping": true,
+              "originalUnitPriceSet": {
+                "shopMoney": {
+                  "amount": "699.95",
+                  "currencyCode": "USD"
+                }
+              },
+              "totalDiscountSet": {
+                "shopMoney": {
+                  "amount": "0.0",
+                  "currencyCode": "USD"
+                }
+              },
+              "taxLines": [
+                {
+                  "priceSet": {
+                    "shopMoney": {
+                      "amount": "33.33",
+                      "currencyCode": "USD"
+                    }
+                  }
+                }
+              ],
+              "variant": {
+                "id": "gid://shopify/ProductVariant/67639797055714"
+              },
+              "product": {
+                "id": "gid://shopify/Product/15403318313186"
+              }
+            },
+            {
+              "id": "gid://shopify/LineItem/50781770514658",
+              "title": "Selling Plans Ski Wax",
+              "variantTitle": "Sample Selling Plans Ski Wax",
+              "sku": null,
+              "quantity": 1,
+              "requiresShipping": true,
+              "originalUnitPriceSet": {
+                "shopMoney": {
+                  "amount": "9.95",
+                  "currencyCode": "USD"
+                }
+              },
+              "totalDiscountSet": {
+                "shopMoney": {
+                  "amount": "0.0",
+                  "currencyCode": "USD"
+                }
+              },
+              "taxLines": [
+                {
+                  "priceSet": {
+                    "shopMoney": {
+                      "amount": "0.47",
+                      "currencyCode": "USD"
+                    }
+                  }
+                }
+              ],
+              "variant": {
+                "id": "gid://shopify/ProductVariant/67639796891874"
+              },
+              "product": {
+                "id": "gid://shopify/Product/15403318083810"
+              }
+            }
+          ]
+        },
+        "refunds": [
+          {
+            "id": "gid://shopify/Refund/1112723095778",
+            "createdAt": "2026-10-09T08:05:20Z",
+            "processedAt": "2026-07-06T06:32:52Z",
+            "note": "Seeded refund (partial)",
+            "totalRefundedSet": {
+              "shopMoney": {
+                "amount": "699.95",
+                "currencyCode": "USD"
+              }
+            },
+            "refundLineItems": {
+              "pageInfo": {
+                "hasNextPage": false
+              },
+              "nodes": [
+                {
+                  "id": "gid://shopify/RefundLineItem/760784060642",
+                  "quantity": 1,
+                  "restockType": "NO_RESTOCK",
+                  "subtotalSet": {
+                    "shopMoney": {
+                      "amount": "699.95",
+                      "currencyCode": "USD"
+                    }
+                  },
+                  "totalTaxSet": {
+                    "shopMoney": {
+                      "amount": "33.33",
+                      "currencyCode": "USD"
+                    }
+                  },
+                  "lineItem": {
+                    "id": "gid://shopify/LineItem/50781770481890"
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "transactions": [
+          {
+            "id": "gid://shopify/OrderTransaction/20811559010530",
+            "kind": "SALE",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "processedAt": "2026-07-03T05:32:52Z",
+            "amountSet": {
+              "shopMoney": {
+                "amount": "724.89",
+                "currencyCode": "USD"
+              }
+            },
+            "parentTransaction": null,
+            "fees": []
+          },
+          {
+            "id": "gid://shopify/OrderTransaction/20811559141602",
+            "kind": "REFUND",
+            "status": "SUCCESS",
+            "gateway": "manual",
+            "processedAt": "2026-10-09T08:05:19Z",
+            "amountSet": {
+              "shopMoney": {
+                "amount": "699.95",
+                "currencyCode": "USD"
+              }
+            },
+            "parentTransaction": {
+              "id": "gid://shopify/OrderTransaction/20811559010530"
+            },
+            "fees": []
+          }
+        ]
+      }
+    ]
+  }
+}
