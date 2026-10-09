@@ -1,6 +1,6 @@
 # Test data: seeding the Shopify development store
 
-`packages/seed` (`@pi/seed`) is a development-only tool that creates about 6 months of realistic orders in the dev store through the Admin API. It never ships with the product.
+`packages/seed` (`@pi/seed`) is a development-only tool that creates realistic orders (about 6 months at first, then a year of history and a few new orders every day) in the dev store through the Admin API. It never ships with the product.
 
 ## How it works
 
@@ -17,6 +17,32 @@ pnpm seed:shopify -- --scenarios partial_refund,negative_profit --limit 10
 ```
 
 Stages: `costs` (unit costs on about 60% of eligible variants), `orders`, `refunds` (refunds and cancellations), `manifest`.
+
+## Counts, customers, one year of history, daily orders
+
+```powershell
+pnpm seed:counts                                  # products, variants, customers, orders in Shopify and in the app database
+pnpm seed:shopify -- --stage customers            # 300 fake customers (seed.customerN@example.com, tag pi-seed); idempotent by email
+pnpm seed:shopify -- --stage history              # 1 Aug 2025 to today, month by month; resumable
+pnpm seed:shopify -- --stage history --months 2026-03,2026-04
+pnpm seed:shopify -- --stage manifest             # rebuild the manifest afterwards
+pnpm seed:daily                                   # 10 to 15 orders dated now; running it twice on a day adds nothing
+```
+
+- **Customers** exist only in the Shopify test store. Seeded orders use them (about 20% stay `guest`). The app never stores customer names or emails, and a test checks that no table has customer columns.
+- **History** is planned one calendar day at a time from (seed, date), so source ids (`pi-seed-42-h<YYYYMMDD>-<k>`) never change when the end date moves. Gentle upward trend, more at weekends and before the holidays, a few busy days and Black Friday. Days 1 to 18 of every month lead with scenario number (day - 1), so every scenario appears every month. Each order also carries the tag `pi-m-YYYY-MM`; a month looks up only its own orders, so a crash or rate-limit stall resumes at the first missing order. Run it as a long background process and write the log under `packages/seed/out/` (git-ignored).
+- **Daily** orders have source ids `pi-seed-42-daily-<YYYYMMDD>-<k>` and tag `pi-daily-<YYYYMMDD>`. The scenario of order k is `(dayNumber * 15 + k) mod 18`, so all 18 scenarios appear within 2 to 3 days and always within a week. Refunds are dated no later than now, so a "late" refund is recent here.
+- The released app imports only 90 days of orders. For development set `ORDER_HISTORY_DAYS=400` in `.env` (restart api and worker; rebuild `@pi/db`), then run a sync. The default stays 90 and plan entitlements (what the dashboard may show) are not changed.
+
+### Daily schedule (Windows)
+
+`packages/seed/scripts/seed-daily.cmd` runs `pnpm seed:daily` and appends to `packages/seed/out/daily.log`. Scheduled for 09:00 every day as the current user (only while logged on):
+
+```powershell
+schtasks /create /tn "ProfitIntelligence-SeedDaily" /tr "\"<repo>packagesseedscriptsseed-daily.cmd\"" /sc daily /st 09:00 /f
+schtasks /run /tn "ProfitIntelligence-SeedDaily"      # run now
+schtasks /delete /tn "ProfitIntelligence-SeedDaily" /f # remove
+```
 
 ## Scenarios
 
