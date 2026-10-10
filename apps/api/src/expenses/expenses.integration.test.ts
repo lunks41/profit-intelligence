@@ -516,15 +516,16 @@ describe('expenses', () => {
     expect((await call('DELETE', `/expenses/${id}`)).statusCode).toBe(404);
   });
 
-  it('net profit is contribution profit minus expenses, and says so when none are entered', async () => {
+  it('operating profit is contribution profit minus advertising and expenses, and says so when none are entered', async () => {
     await calculateAll(a);
     const none = await opex(ALL);
-    expect(none.netProfitBasis).toBe('contribution_only');
-    expect(none.estimatedNetProfit).toBeNull();
+    expect(none.operatingProfitBasis).toBe('contribution_only');
+    expect(none.estimatedOperatingProfit).toBeNull();
+    expect(none.operatingMargin).toBeNull();
     await addExpense({ amount: '500' });
     const withExp = await opex(ALL);
-    expect(withExp.netProfitBasis).toBe('full');
-    expect(cents(withExp.estimatedNetProfit!)).toBe(
+    expect(withExp.operatingProfitBasis).toBe('full');
+    expect(cents(withExp.estimatedOperatingProfit!)).toBe(
       cents(withExp.contributionProfit) - cents(withExp.operatingExpenses!),
     );
     expect(withExp.contributionProfit).toBe(none.contributionProfit);
@@ -582,11 +583,11 @@ describe('expenses', () => {
     expect(last.oneTime).toBe(s.oneTimeThisMonth);
   });
 
-  it('each month has a profit and loss equal to the Overview for that month, and says when net profit is not set up', async () => {
+  it('each month has a profit and loss equal to the Overview for that month, and says when operating profit is not set up', async () => {
     await calculateAll(a);
     const none = expenseSummaryResponseSchema.parse((await json('GET', '/expenses/summary')).body);
-    expect(none.netProfitStatus).toBe('not_configured');
-    for (const m of none.months) expect(m.netProfit).toBeNull();
+    expect(none.operatingProfitStatus).toBe('not_configured');
+    for (const m of none.months) expect(m.operatingProfit).toBeNull();
 
     await addExpense({ amount: '1200' });
     await addExpense({
@@ -597,19 +598,21 @@ describe('expenses', () => {
       startDate: '2026-09-10',
     });
     const s = expenseSummaryResponseSchema.parse((await json('GET', '/expenses/summary')).body);
-    expect(['complete', 'incomplete']).toContain(s.netProfitStatus);
-    expect(s.netProfitStatus === 'incomplete').toBe(s.months.some((m) => m.incomplete));
+    expect(['complete', 'incomplete']).toContain(s.operatingProfitStatus);
+    expect(s.operatingProfitStatus === 'incomplete').toBe(s.months.some((m) => m.incomplete));
     for (const m of s.months) {
       const [y, mo] = m.month.split('-').map(Number) as [number, number];
       const last = new Date(Date.UTC(y, mo, 0)).toISOString().slice(0, 10);
-      expect(cents(m.netProfit!)).toBe(cents(m.contributionProfit) - cents(m.total));
+      expect(cents(m.operatingProfit!)).toBe(
+        cents(m.contributionProfit) - cents(m.advertising ?? '0') - cents(m.total),
+      );
       // a finished month equals the Overview for that month (the current month is still running,
       // so the Overview only counts its days so far)
       if (last >= s.today) continue;
       const o = await opex(`?preset=custom&from=${m.month}&to=${last}`);
       expect(m.revenue).toBe(o.revenue);
       expect(m.contributionProfit).toBe(o.contributionProfit);
-      expect(m.netProfit).toBe(o.estimatedNetProfit);
+      expect(m.operatingProfit).toBe(o.estimatedOperatingProfit);
       expect(m.incomplete).toBe(o.partial);
     }
   });
@@ -702,8 +705,9 @@ describe('advertising', () => {
     expect((await marketing()).totals.spend).toBe('60.0000');
   });
 
-  it('ad spend lowers contribution profit and net profit on the Overview, and everything still reconciles', async () => {
+  it('ad spend lowers operating profit, never contribution profit, and everything still reconciles', async () => {
     await calculateAll(a);
+    await addExpense({ amount: '500' });
     const before = await opex(ALL);
     const { id } = await account();
     await spend(id, [
@@ -712,13 +716,19 @@ describe('advertising', () => {
     ]);
     const after = await opex(ALL);
     expect(after.adSpend).toBe('350.2500');
-    expect(cents(before.contributionProfit) - cents(after.contributionProfit)).toBe(35025);
+    expect(after.contributionProfit).toBe(before.contributionProfit);
+    expect(cents(before.estimatedOperatingProfit!) - cents(after.estimatedOperatingProfit!)).toBe(
+      35025,
+    );
+    expect(cents(after.estimatedOperatingProfit!)).toBe(
+      cents(after.contributionProfit) - cents(after.adSpend!) - cents(after.operatingExpenses!),
+    );
     // the trend still adds up to the headline
     const o = overviewResponseSchema.parse((await json('GET', `/dashboard/overview${ALL}`)).body);
     expect(o.trend.reduce((s, d) => s + cents(d.contributionProfit), 0)).toBe(
       cents(o.summary.contributionProfit),
     );
-    // products plus unallocated items (including advertising) equal the Overview figure
+    // products plus unallocated items equal contribution profit; advertising is not one of them
     let page = 1;
     let last;
     for (;;) {
@@ -733,13 +743,13 @@ describe('advertising', () => {
       if (page >= last.paging.totalPages) break;
       page++;
     }
-    expect(last.reconciliation.unallocated.advertising).toBe('-350.2500');
+    expect(last.reconciliation.unallocated).not.toHaveProperty('advertising');
     expect(last.reconciliation.matches).toBe(true);
     expect(last.reconciliation.dashboardContributionProfit).toBe(after.contributionProfit);
     // marketing shows the same figure
     const m = await marketing(ALL);
-    expect(m.totals.profitAfterAds).toBe(after.contributionProfit);
     expect(m.totals.contributionProfit).toBe(before.contributionProfit);
+    expect(cents(m.totals.contributionProfit) - cents(m.totals.profitAfterAds)).toBe(35025);
     expect(m.totals.blendedReturn).not.toBeNull();
   });
 

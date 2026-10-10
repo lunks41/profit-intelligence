@@ -126,8 +126,8 @@ export class ProfitabilityService {
       getProfitAggregate(this.db, scope, range),
       getAdSpend(this.db, scope, range),
     ]);
-    const advertising = ads.byAccount.reduce((a, x) => a.minus(dec(x.spend)), new D(0));
-    const total = productProfit.plus(unallocatedTotal).plus(advertising);
+    // advertising is an operating cost, so it is not part of how products add up to contribution profit
+    const total = productProfit.plus(unallocatedTotal);
     const periodSummary = summarizePeriod({
       totals: agg.totals,
       coverage: agg.coverage,
@@ -161,7 +161,6 @@ export class ProfitabilityService {
           paymentFees: toStored(unallocated.paymentFees),
           shippingCost: toStored(unallocated.shippingCost),
           unlinkedCost: toStored(unallocated.unlinkedCost),
-          advertising: toStored(advertising),
         },
         total: toStored(total),
         dashboardContributionProfit: dashboard,

@@ -203,7 +203,7 @@ export class ExpensesService {
         revenue: f.revenue,
         contributionProfit: f.contributionProfit,
         advertising: f.adSpend,
-        netProfit: f.estimatedNetProfit,
+        operatingProfit: f.estimatedOperatingProfit,
         incomplete: f.partial,
       };
     });
@@ -243,7 +243,7 @@ export class ExpensesService {
         ? null
         : dec(spend30).div(dec(revenue)).toDecimalPlaces(4).toFixed(4),
       months,
-      netProfitStatus:
+      operatingProfitStatus:
         expenses.length === 0
           ? ('not_configured' as const)
           : months.some((m) => m.incomplete)

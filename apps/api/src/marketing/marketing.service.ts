@@ -154,9 +154,14 @@ export class MarketingService {
       hasData: ads.hasData,
       spend: totalAdSpend(ads.byAccount),
     };
-    // before: contribution without advertising; after: with the advertising that exists
-    const before = summarizePeriod({ ...base, ads: { ...adsInput, hasData: false } });
-    const after = summarizePeriod({ ...base, ads: adsInput });
+    // contribution profit never includes advertising; "after ads" takes the spend that exists off it
+    const before = summarizePeriod({ ...base, ads: adsInput });
+    const after = {
+      ...before,
+      contributionProfit: toStored(
+        dec(before.contributionProfit).minus(ads.hasData ? spend : new D(0)),
+      ),
+    };
 
     const byDay = new Map<string, InstanceType<typeof D>>();
     for (const d of ads.daily)
@@ -177,8 +182,8 @@ export class MarketingService {
         platformReportedSales: toStored(reported),
         shopifyRevenue: before.revenue,
         blendedReturn: ratioOf(before.revenue, toStored(spend)),
-        poas: ratioOf(before.contributionBeforeAds, toStored(spend)),
-        contributionProfit: before.contributionBeforeAds,
+        poas: ratioOf(before.contributionProfit, toStored(spend)),
+        contributionProfit: before.contributionProfit,
         profitAfterAds: after.contributionProfit,
         hasData: ads.hasData,
         hasAccounts: ads.hasAccounts,

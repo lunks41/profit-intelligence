@@ -217,9 +217,6 @@ function ProductsTable({
           <Line label="Shipping refunded" value={formatMoney(un.shippingRefund, cur)} />
           <Line label="Payment fees" value={formatMoney(un.paymentFees, cur)} />
           <Line label="Shipping cost" value={formatMoney(un.shippingCost, cur)} />
-          {Number(un.advertising) !== 0 && (
-            <Line label="Advertising" value={formatMoney(un.advertising, cur)} />
-          )}
           <Line label="Contribution profit" value={formatMoney(rec.total, cur)} strong />
           <s-text color="subdued">
             {rec.matches
