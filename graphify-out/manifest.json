@@ -160,8 +160,8 @@
     "hash": "64454f8b5e7f4141691744adfe86c83e"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\expenses\\expenses.integration.test.ts": {
-    "mtime": 1791668693.848449,
-    "hash": "b9f41f3554d772d06a5bb9dcff99d647"
+    "mtime": 1791668733.0163388,
+    "hash": "579dcae6bcba0615c2021ab4a4aaf62c"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\expenses\\expenses.module.ts": {
     "mtime": 1791542481.1136055,
@@ -328,7 +328,7 @@
     "hash": "29faa14ff0610db4c12851763efa3d49"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\next-env.d.ts": {
-    "mtime": 1791664694.6591988,
+    "mtime": 1791674385.8056757,
     "hash": "0e4a65e8b2b9aa3ed0f8957b9406bd41"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\next.config.mjs": {
@@ -512,8 +512,8 @@
     "hash": "596dcbfff0f3bd63b25c8c1f23b2de5a"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\marketing\\MarketingPage.tsx": {
-    "mtime": 1791611629.4450173,
-    "hash": "e18d8970fa254b9029168a6c0d63747f"
+    "mtime": 1791674241.2687213,
+    "hash": "c4ada3b7f63dfb400eb38e5e2196a880"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\notices\\Notice.tsx": {
     "mtime": 1791569692.23089,
@@ -616,12 +616,12 @@
     "hash": "ee82a90dc381742516d480e5591da6bd"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\profitability\\OrdersPage.tsx": {
-    "mtime": 1791668482.1951842,
-    "hash": "94ac7a5da2197070071669bb270a3d51"
+    "mtime": 1791674075.9826853,
+    "hash": "f04c25c7c90f38acca3e024f81d135d2"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\profitability\\ProductsPage.tsx": {
-    "mtime": 1791668482.2247176,
-    "hash": "6cb62640f6e8d038236abfcc4cc3089b"
+    "mtime": 1791674075.9833,
+    "hash": "abc9261ba125a4cba0968ae2173f2c7b"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\profitability\\shared.tsx": {
     "mtime": 1791575183.6332953,
@@ -1584,8 +1584,8 @@
     "hash": "b77e287a1f70ba45f37818e567a623d7"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\roadmap.md": {
-    "mtime": 1791667566.9173098,
-    "hash": "69e16622c79ee1fca4f9e64e51abc3ac"
+    "mtime": 1791668760.2598314,
+    "hash": "85d325efff7950b1d51eb9986eddea4a"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\architecture\\billing.md": {
     "mtime": 1791549276.7097468,
