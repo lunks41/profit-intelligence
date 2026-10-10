@@ -3,15 +3,15 @@ import type { OverviewResponse, ProfitSummary } from '@pi/contracts';
 import { costBreakdown, feeDetail } from './costs';
 import { sparkSeries } from './series';
 
-/** The worked example from docs/finance/figures.md: costs 380 + 30 + 25 + 35 = 470. */
+/** The worked example from docs/finance/figures.md: variable costs 380 + 30 + 25 = 435; advertising 35 is apart. */
 const base = {
   revenue: '870.0000',
   cogs: '380.0000',
   paymentFees: '30.0000',
   shippingCost: '25.0000',
   adSpend: '35.0000',
-  contributionProfit: '400.0000',
-  totalCosts: '470.0000',
+  contributionProfit: '435.0000',
+  totalCosts: '435.0000',
   operatingExpenses: '100.0000',
   statuses: {
     cogs: 'confirmed',
@@ -19,7 +19,7 @@ const base = {
     shippingCost: 'confirmed',
     advertising: 'confirmed',
     operatingExpenses: 'confirmed',
-    estimatedNetProfit: 'confirmed',
+    estimatedOperatingProfit: 'confirmed',
   },
   missingShares: { cogs: '0.0000', paymentFees: '0.0000', shippingCost: '0.0000' },
 } as unknown as ProfitSummary;
@@ -31,19 +31,21 @@ const row = (b: ReturnType<typeof costBreakdown>, key: string) =>
 describe('the costs breakdown', () => {
   const b = costBreakdown(base, 'USD');
 
-  it('the four costs add up to the total costs, to the cent', () => {
+  it('the three variable costs add up to the total costs, to the cent, without advertising', () => {
     const sum = b.rows.reduce((a, r) => a + Math.round(Number(r.amount) * 100), 0);
     expect(sum).toBe(Math.round(Number(b.total) * 100));
-    expect(b.total).toBe('470.0000');
+    expect(b.total).toBe('435.0000');
+    expect(b.rows.some((r) => (r.key as string) === 'ads')).toBe(false);
   });
 
   it('the shares of the known costs add up to one, largest first', () => {
-    expect(b.rows.map((r) => r.key)).toEqual(['cogs', 'ads', 'fees', 'shippingCost']);
+    expect(b.rows.map((r) => r.key)).toEqual(['cogs', 'fees', 'shippingCost']);
     expect(b.rows.reduce((a, r) => a + (r.share ?? 0), 0)).toBeCloseTo(1, 10);
-    expect(row(b, 'cogs').share).toBeCloseTo(380 / 470, 10);
+    expect(row(b, 'cogs').share).toBeCloseTo(380 / 435, 10);
   });
 
-  it('operating expenses are shown apart from the costs, not in their total', () => {
+  it('advertising and operating expenses are shown apart from the costs, not in their total', () => {
+    expect(b.advertising).toMatchObject({ amount: '35.0000', standing: 'confirmed' });
     expect(b.operatingExpenses).toMatchObject({ amount: '100.0000', standing: 'confirmed' });
   });
 
@@ -54,7 +56,7 @@ describe('the costs breakdown', () => {
         {
           shippingCost: '0.0000',
           missingShares: { ...base.missingShares, shippingCost: '1.0000' },
-          totalCosts: '445.0000',
+          totalCosts: '410.0000',
         },
       ),
       'USD',
@@ -75,13 +77,13 @@ describe('the costs breakdown', () => {
 
   it('advertising not set up, or without spend, is a word', () => {
     const none = costBreakdown(with_({ advertising: 'not_configured' }, { adSpend: null }), 'USD');
-    expect(row(none, 'ads')).toMatchObject({
+    expect(none.advertising).toMatchObject({
       amount: null,
       text: 'Not set up',
       standing: 'not_set_up',
     });
     const nospend = costBreakdown(with_({ advertising: 'missing' }, { adSpend: null }), 'USD');
-    expect(row(nospend, 'ads')).toMatchObject({
+    expect(nospend.advertising).toMatchObject({
       amount: null,
       text: 'No spend',
       standing: 'no_data',

@@ -274,8 +274,6 @@ describe('billing on, no subscription: the free plan is enforced on the server',
       orders: null,
       averageOrderValue: null,
       marginPoints: null,
-      basis: 'contribution',
-      basisNote: null,
     });
     expect(o.previous.orders).toBe(0);
   });

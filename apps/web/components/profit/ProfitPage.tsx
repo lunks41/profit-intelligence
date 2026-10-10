@@ -149,8 +149,6 @@ function Kpis({ data }: { data: OverviewResponse }) {
   const s = data.summary;
   const cur = data.currency.code;
   const spark = sparkSeries(data.trend);
-  const beforeAds = data.deltas.basis === 'before_advertising';
-  const suffix = beforeAds ? 'before advertising' : null;
   return (
     <s-grid gridTemplateColumns="repeat(auto-fit, minmax(15rem, 1fr))" gap="base">
       <Kpi
@@ -172,7 +170,6 @@ function Kpis({ data }: { data: OverviewResponse }) {
           <Change
             delta={describeDelta(data.deltas.contributionProfit)}
             previous={data.previousPeriod}
-            suffix={suffix}
           />
         }
         notes={s.partial ? <s-badge tone="caution">Partial: some costs missing</s-badge> : null}
@@ -184,11 +181,7 @@ function Kpis({ data }: { data: OverviewResponse }) {
         value={formatPercent(s.contributionMargin)}
         info="Contribution profit divided by revenue."
         change={
-          <Change
-            delta={describePoints(data.deltas.marginPoints)}
-            previous={data.previousPeriod}
-            suffix={suffix}
-          />
+          <Change delta={describePoints(data.deltas.marginPoints)} previous={data.previousPeriod} />
         }
         spark={spark.margin}
       />
@@ -197,24 +190,26 @@ function Kpis({ data }: { data: OverviewResponse }) {
           icon="chart-vertical"
           label="Ad spend"
           value={formatMoney(s.adSpend, cur)}
-          info="Spend imported for this period, in the display currency. Blended ROAS is revenue divided by that spend. POAS is contribution profit before advertising, divided by that spend."
+          info="Spend imported for this period, in the display currency. Blended ROAS is revenue divided by that spend. POAS is contribution profit divided by that spend."
           change={
             <s-text color="subdued">
-              ROAS {times(s.revenue, s.adSpend)} · POAS {times(s.contributionBeforeAds, s.adSpend)}
+              ROAS {times(s.revenue, s.adSpend)} · POAS {times(s.contributionProfit, s.adSpend)}
             </s-text>
           }
         />
       )}
       <Kpi
         icon="target"
-        label="Estimated net profit"
-        value={s.estimatedNetProfit === null ? '—' : formatMoney(s.estimatedNetProfit, cur)}
-        info="Contribution profit minus operating expenses. Shown only when operating expenses are set up, and called an estimate unless every input is confirmed."
+        label="Estimated operating profit"
+        value={
+          s.estimatedOperatingProfit === null ? '—' : formatMoney(s.estimatedOperatingProfit, cur)
+        }
+        info="Contribution profit minus advertising and other operating expenses. Shown only when operating expenses are set up, and called an estimate unless every input is confirmed."
         change={
           <s-text color="subdued">
-            {s.estimatedNetProfit === null
+            {s.estimatedOperatingProfit === null
               ? 'Add operating expenses to see it'
-              : s.statuses?.estimatedNetProfit === 'estimated'
+              : s.statuses?.estimatedOperatingProfit === 'estimated'
                 ? 'Estimate: some inputs are missing or estimated'
                 : 'After advertising and expenses'}
           </s-text>
@@ -243,13 +238,13 @@ function Trend({
   const months = pnl.columns.slice(1).filter((c) => c.label !== 'Total');
   const revenue = line('Revenue');
   const profit = line('Contribution profit');
-  const net = line('Estimated net profit');
+  const net = line('Estimated operating profit');
   if (!revenue || !profit || !net) return null;
   const data = months.map((m, i) => ({
     name: m.label,
     Revenue: Number(revenue[i + 1]),
     'Contribution profit': Number(profit[i + 1]),
-    'Net profit': Number(net[i + 1]),
+    'Operating profit': Number(net[i + 1]),
   }));
   return (
     <s-section heading="Revenue and profit by month">
@@ -258,7 +253,7 @@ function Trend({
         keys={[
           { key: 'Revenue', name: 'Revenue', color: '#005bd3' },
           { key: 'Contribution profit', name: 'Contribution profit', color: '#047b5d' },
-          { key: 'Net profit', name: 'Net profit', color: '#b98900' },
+          { key: 'Operating profit', name: 'Estimated operating profit', color: '#b98900' },
         ]}
       />
       <s-text color="subdued">

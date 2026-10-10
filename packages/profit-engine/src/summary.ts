@@ -35,7 +35,7 @@ export interface FigureStatuses {
   advertising: FigureStatus;
   operatingExpenses: FigureStatus;
   /** not_configured without operating expenses; estimated while anything above is not confirmed */
-  estimatedNetProfit: FigureStatus;
+  estimatedOperatingProfit: FigureStatus;
 }
 
 /**
@@ -85,21 +85,28 @@ export interface Summary {
   paymentFees: string;
   shippingCost: string;
   adSpend: string | null;
-  /** revenue - product cost - payment fees - shipping cost (advertising not yet taken off) */
-  contributionBeforeAds: string;
-  /** contributionBeforeAds minus advertising when advertising data exists, otherwise equal to it */
+  /**
+   * revenue - product cost - payment fees - shipping cost. Advertising and operating expenses are
+   * NOT taken off: they are operating costs and come after contribution profit.
+   */
   contributionProfit: string;
   /**
-   * Everything taken off revenue to reach contribution profit: product cost, payment fees, shipping
-   * cost and (when data exists) advertising. Equal to revenue - contributionProfit, to the cent.
-   * Operating expenses are not part of it.
+   * The variable costs of selling: product cost, payment fees and shipping cost. Equal to
+   * revenue - contributionProfit, to the cent. Advertising and operating expenses are separate.
    */
   totalCosts: string;
+  /** operating expenses entered by the merchant (rent, salaries, software...); advertising is apart */
   operatingExpenses: string | null;
-  estimatedNetProfit: string | null;
+  /**
+   * contribution profit - advertising (when data exists) - operating expenses. Not available until
+   * operating expenses are set up. An estimate unless every input is confirmed; never "net profit".
+   */
+  estimatedOperatingProfit: string | null;
   /** "full": operating expenses entered; "contribution_only": they were not */
-  netProfitBasis: 'full' | 'contribution_only';
+  operatingProfitBasis: 'full' | 'contribution_only';
   contributionMargin: string | null;
+  /** estimated operating profit / revenue; null when operating profit is not available */
+  operatingMargin: string | null;
   averageOrderValue: string | null;
   refundRate: string | null;
   taxCollected: string;
@@ -234,11 +241,13 @@ function qualifiersFor(
   if ([cost, fees, ship].some((x) => x.status === 'estimated'))
     out.push('Some product costs, payment fees or shipping costs are estimates.');
   if (ads === 'not_configured')
-    out.push('Advertising is not set up, so profit excludes advertising.');
+    out.push('Advertising is not set up, so operating profit excludes advertising.');
   if (ads === 'missing')
-    out.push('No advertising spend was imported for this period, so profit excludes advertising.');
+    out.push(
+      'No advertising spend was imported for this period, so operating profit excludes advertising.',
+    );
   if (expenses === 'not_configured')
-    out.push('No operating expenses are set up, so estimated net profit is not available.');
+    out.push('No operating expenses are set up, so estimated operating profit is not available.');
   return out;
 }
 
@@ -304,7 +313,7 @@ export interface TotalsSummaryOptions extends SummaryOptions {
 /**
  * Totals for a period from per-component sums. This is the single place the headline formulas
  * live: `summarize` (entries) and the SQL-aggregated dashboard both end up here.
- * Costs are returned as positive numbers; contribution and net profit are signed.
+ * Costs are returned as positive numbers; contribution and operating profit are signed.
  */
 export function summarizeFromTotals(totals: ComponentTotals, opts: TotalsSummaryOptions): Summary {
   const t = (c: Component): Dec => dec(totals[c] ?? '0');
@@ -318,10 +327,11 @@ export function summarizeFromTotals(totals: ComponentTotals, opts: TotalsSummary
   const paymentFees = t('payment_fees').neg();
   const shippingCost = t('shipping_cost').neg();
   const adSpend = opts.adSpend ? dec(opts.adSpend.amount) : null;
-  const beforeAds = revenue.minus(cogs).minus(paymentFees).minus(shippingCost);
-  const contribution = beforeAds.minus(adSpend ?? new D(0));
+  const contribution = revenue.minus(cogs).minus(paymentFees).minus(shippingCost);
 
   const expenses = opts.operatingExpenses ? dec(opts.operatingExpenses.amount) : null;
+  // advertising is an operating cost: it comes off contribution profit together with the expenses
+  const operatingProfit = expenses ? contribution.minus(adSpend ?? new D(0)).minus(expenses) : null;
   const conf = confidenceFromCoverage(opts.coverage);
   const q = (d: Dec | null) => (d ? toStored(d) : null);
 
@@ -334,7 +344,7 @@ export function summarizeFromTotals(totals: ComponentTotals, opts: TotalsSummary
       ? 'missing'
       : 'not_configured';
   const expensesStatus: FigureStatus = expenses ? 'confirmed' : 'not_configured';
-  const netStatus: FigureStatus = !expenses
+  const operatingStatus: FigureStatus = !expenses
     ? 'not_configured'
     : [cost, fees, ship].some((x) => x.status === 'missing' || x.status === 'estimated') ||
         adsStatus !== 'confirmed'
@@ -352,13 +362,15 @@ export function summarizeFromTotals(totals: ComponentTotals, opts: TotalsSummary
     paymentFees: toStored(paymentFees),
     shippingCost: toStored(shippingCost),
     adSpend: q(adSpend),
-    contributionBeforeAds: toStored(beforeAds),
     contributionProfit: toStored(contribution),
     totalCosts: toStored(revenue.minus(contribution)),
     operatingExpenses: q(expenses),
-    estimatedNetProfit: expenses ? toStored(contribution.minus(expenses)) : null,
-    netProfitBasis: expenses ? 'full' : 'contribution_only',
+    estimatedOperatingProfit: operatingProfit ? toStored(operatingProfit) : null,
+    operatingProfitBasis: expenses ? 'full' : 'contribution_only',
     contributionMargin: q(ratio(contribution, revenue)?.toDecimalPlaces(4) ?? null),
+    operatingMargin: q(
+      operatingProfit ? (ratio(operatingProfit, revenue)?.toDecimalPlaces(4) ?? null) : null,
+    ),
     averageOrderValue:
       opts.orderCount > 0 ? toStored(revenue.div(opts.orderCount).toDecimalPlaces(4)) : null,
     refundRate: q(ratio(productRefunds, grossSales)?.toDecimalPlaces(4) ?? null),
@@ -371,7 +383,7 @@ export function summarizeFromTotals(totals: ComponentTotals, opts: TotalsSummary
       shippingCost: ship.status,
       advertising: adsStatus,
       operatingExpenses: expensesStatus,
-      estimatedNetProfit: netStatus,
+      estimatedOperatingProfit: operatingStatus,
     },
     missingShares: {
       cogs: cost.missingShare,

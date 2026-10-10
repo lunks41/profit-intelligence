@@ -12,7 +12,7 @@ True profit per order and product, after product cost, fees, shipping, ads and e
 
 ## Key benefits
 
-- **One honest profit number.** Revenue less product cost, payment fees, shipping and advertising, and net profit once expenses are set up. Every figure says whether it is confirmed, estimated or missing; an unknown cost is never shown as zero.
+- **One honest profit number.** Revenue less product cost, payment fees and shipping is contribution profit; advertising and other operating expenses then give estimated operating profit once expenses are set up. Every figure says whether it is confirmed, estimated or missing; an unknown cost is never shown as zero.
 - **Profit per product and per order.** Find the products and orders that lose money, with every figure explained in plain language.
 - **Fees and shipping you can trust.** Shopify Payments fees are read from Shopify. Other gateways and carrier costs use rules you set (by country, weight and zone), clearly labelled as estimates.
 - **Ads in the same picture.** Daily spend from Meta and Google Ads, with blended return next to profit.

@@ -16,4 +16,4 @@ Shopify gives an app the last **60 days** of orders. Older orders need the prote
 
 - A merchant who looks at "1 Year" on day one sees about two months of figures. That is true to the data and is labelled, not hidden.
 - Profit for orders older than the window is never estimated or back-filled.
-- The seeded development store has a year of orders, but only the last 60 days are reachable by the sync until the scope is granted.
+- The seeded development store is the exception: seeded orders are created with today as their creation date (the 60-day limit is on creation date), so Shopify returns all of them. What the app imports from it is limited by the sync window (`HISTORY_DAYS`, 90 days; for development set `ORDER_HISTORY_DAYS=400`). A real store's older orders are not reachable until `read_all_orders` is approved.

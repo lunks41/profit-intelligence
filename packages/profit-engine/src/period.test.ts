@@ -8,9 +8,8 @@ import type { PeriodInputs } from './period.js';
  *   shipping charged 30.00, shipping refunded 10.00                      -> revenue 870.00
  *   product cost 400.00, of which 20.00 came back on a restocked refund  -> product cost 380.00
  *   payment fees 30.00, shipping cost 25.00
- *   contribution before advertising = 870 - 380 - 30 - 25 = 435.00
- *   advertising 35.00                                                    -> contribution profit 400.00
- *   operating expenses 100.00                                            -> estimated net profit 300.00
+ *   contribution profit = 870 - 380 - 30 - 25 = 435.00                   (advertising is NOT taken off)
+ *   advertising 35.00 and operating expenses 100.00                      -> estimated operating profit 300.00
  */
 const totals = {
   gross_sales: '1000.0000',
@@ -49,12 +48,28 @@ describe('the headline formulas (worked example)', () => {
     expect(s.paymentFees).toBe('30.0000');
     expect(s.shippingCost).toBe('25.0000');
   });
-  it('contribution before advertising, contribution profit, margin and net profit', () => {
-    expect(s.contributionBeforeAds).toBe('435.0000');
-    expect(s.contributionProfit).toBe('400.0000');
-    expect(s.contributionMargin).toBe('0.4598'); // 400 / 870
-    expect(s.estimatedNetProfit).toBe('300.0000');
-    expect(s.netProfitBasis).toBe('full');
+  it('contribution profit and margin leave advertising out; operating profit takes it off with the expenses', () => {
+    expect(s.contributionProfit).toBe('435.0000');
+    expect(s.contributionMargin).toBe('0.5000'); // 435 / 870
+    expect(s.totalCosts).toBe('435.0000'); // product cost + fees + shipping cost
+    expect(s.estimatedOperatingProfit).toBe('300.0000'); // 435 - 35 advertising - 100 expenses
+    expect(s.operatingMargin).toBe('0.3448'); // 300 / 870
+    expect(s.operatingProfitBasis).toBe('full');
+    expect(s).not.toHaveProperty('contributionBeforeAds');
+    expect(s).not.toHaveProperty('estimatedNetProfit');
+  });
+  it('advertising changes operating profit and never contribution profit', () => {
+    const withoutAds = summarizePeriod(
+      input({ ads: { configured: true, hasData: false, spend: '0.0000' } }),
+    );
+    const bigAds = summarizePeriod(
+      input({ ads: { configured: true, hasData: true, spend: '500.0000' } }),
+    );
+    expect(withoutAds.contributionProfit).toBe(s.contributionProfit);
+    expect(bigAds.contributionProfit).toBe(s.contributionProfit);
+    expect(bigAds.totalCosts).toBe(s.totalCosts);
+    expect(bigAds.estimatedOperatingProfit).toBe('-165.0000'); // 435 - 500 - 100: negative stays negative
+    expect(bigAds.operatingMargin).toBe('-0.1897');
   });
   it('average order value and refund rate', () => {
     expect(s.averageOrderValue).toBe('87.0000');
@@ -67,7 +82,7 @@ describe('the headline formulas (worked example)', () => {
       shippingCost: 'confirmed',
       advertising: 'confirmed',
       operatingExpenses: 'confirmed',
-      estimatedNetProfit: 'confirmed',
+      estimatedOperatingProfit: 'confirmed',
     });
     expect(s.qualifiers).toEqual([]);
   });
@@ -77,7 +92,7 @@ describe('the headline formulas (worked example)', () => {
 });
 
 describe('unknown is not zero: advertising and operating expenses', () => {
-  it('with no advertising account and no expenses, profit excludes both and net is not available', () => {
+  it('with no advertising account and no expenses, operating profit is not available', () => {
     const s = summarizePeriod(
       input({
         ads: { configured: false, hasData: false, spend: '0.0000' },
@@ -86,15 +101,18 @@ describe('unknown is not zero: advertising and operating expenses', () => {
     );
     expect(s.statuses.advertising).toBe('not_configured');
     expect(s.statuses.operatingExpenses).toBe('not_configured');
-    expect(s.statuses.estimatedNetProfit).toBe('not_configured');
+    expect(s.statuses.estimatedOperatingProfit).toBe('not_configured');
     expect(s.adSpend).toBeNull();
     expect(s.operatingExpenses).toBeNull();
-    expect(s.estimatedNetProfit).toBeNull();
-    expect(s.netProfitBasis).toBe('contribution_only');
-    expect(s.contributionProfit).toBe(s.contributionBeforeAds); // nothing taken off
-    expect(s.qualifiers).toContain('Advertising is not set up, so profit excludes advertising.');
+    expect(s.estimatedOperatingProfit).toBeNull();
+    expect(s.operatingMargin).toBeNull();
+    expect(s.operatingProfitBasis).toBe('contribution_only');
+    expect(s.contributionProfit).toBe('435.0000');
     expect(s.qualifiers).toContain(
-      'No operating expenses are set up, so estimated net profit is not available.',
+      'Advertising is not set up, so operating profit excludes advertising.',
+    );
+    expect(s.qualifiers).toContain(
+      'No operating expenses are set up, so estimated operating profit is not available.',
     );
   });
 
@@ -105,9 +123,9 @@ describe('unknown is not zero: advertising and operating expenses', () => {
     expect(s.statuses.advertising).toBe('missing');
     expect(s.adSpend).toBeNull();
     expect(s.qualifiers.join(' ')).toMatch(/No advertising spend was imported/);
-    // net is a number only because expenses exist, and it is called an estimate
-    expect(s.estimatedNetProfit).toBe('335.0000');
-    expect(s.statuses.estimatedNetProfit).toBe('estimated');
+    // operating profit is a number only because expenses exist, and it is called an estimate
+    expect(s.estimatedOperatingProfit).toBe('335.0000');
+    expect(s.statuses.estimatedOperatingProfit).toBe('estimated');
   });
 
   it('spend entered as exactly 0.00 is a confirmed zero, not missing', () => {
@@ -140,7 +158,7 @@ describe('unknown is not zero: product cost, payment fees and shipping cost', ()
     expect(s.missingShares.paymentFees).toBe('1.0000');
     expect(s.partial).toBe(true);
     expect(s.qualifiers).toContain('Payment fees are missing for 10 of 10 orders.');
-    expect(s.statuses.estimatedNetProfit).toBe('estimated'); // never "confirmed" with a gap
+    expect(s.statuses.estimatedOperatingProfit).toBe('estimated'); // never "confirmed" with a gap
   });
 
   it('the same zero with every fee confirmed is a confirmed zero', () => {
@@ -184,7 +202,7 @@ describe('unknown is not zero: product cost, payment fees and shipping cost', ()
     expect(s.qualifiers).toContain(
       'Some product costs, payment fees or shipping costs are estimates.',
     );
-    expect(s.statuses.estimatedNetProfit).toBe('estimated');
+    expect(s.statuses.estimatedOperatingProfit).toBe('estimated');
   });
 
   it('nothing of the kind in the period is not applicable', () => {
@@ -225,5 +243,65 @@ describe('decimal-safe helpers', () => {
       'USD',
     );
     expect(total).toBe('300.0000');
+  });
+});
+
+describe('edge cases of the new definitions', () => {
+  it('zero revenue gives no margins instead of NaN or Infinity', () => {
+    const s = summarizePeriod(
+      input({
+        totals: {},
+        coverage: { cost: null, fees: null, shipping: null },
+        orderCount: 0,
+        ads: { configured: false, hasData: false, spend: '0.0000' },
+        operatingExpenses: '100.0000',
+      }),
+    );
+    expect(s.revenue).toBe('0.0000');
+    expect(s.contributionMargin).toBeNull();
+    expect(s.operatingMargin).toBeNull();
+    // expenses with no sales are a real loss, not a missing number
+    expect(s.estimatedOperatingProfit).toBe('-100.0000');
+  });
+
+  it('a negative contribution profit gives a negative margin, shown as a number', () => {
+    const s = summarizePeriod(
+      input({
+        totals: { ...totals, cogs: '-900.0000', cogs_reversal: '0.0000' },
+        ads: { configured: false, hasData: false, spend: '0.0000' },
+        operatingExpenses: null,
+      }),
+    );
+    expect(s.contributionProfit).toBe('-85.0000'); // 870 - 900 - 30 - 25
+    expect(s.contributionMargin).toBe('-0.0977'); // -85 / 870
+    expect(s.estimatedOperatingProfit).toBeNull();
+  });
+
+  it('refunds reduce revenue and so contribution margin, and are never counted twice', () => {
+    const base = summarizePeriod(input());
+    const refunded = summarizePeriod(input({ totals: { ...totals, product_refund: '-150.0000' } }));
+    // 100.00 more refunded: revenue and contribution profit both fall by exactly 100.00
+    expect(Number(base.revenue) - Number(refunded.revenue)).toBe(100);
+    expect(Number(base.contributionProfit) - Number(refunded.contributionProfit)).toBe(100);
+    expect(refunded.productRefunds).toBe('150.0000');
+  });
+
+  it('estimated and missing inputs label operating profit as an estimate, never confirmed', () => {
+    const estimated = summarizePeriod(
+      input({ coverage: { ...allActual, fees: { actual: 5, estimated: 5, missing: 0 } } }),
+    );
+    expect(estimated.statuses.estimatedOperatingProfit).toBe('estimated');
+    const missing = summarizePeriod(
+      input({
+        coverage: { ...allActual, shipping: { actual: 5, estimated: 0, missing: 5 } },
+        anyMissing: true,
+      }),
+    );
+    expect(missing.statuses.estimatedOperatingProfit).toBe('estimated');
+    expect(missing.partial).toBe(true);
+    const adsGap = summarizePeriod(
+      input({ ads: { configured: true, hasData: false, spend: '0.0000' } }),
+    );
+    expect(adsGap.statuses.estimatedOperatingProfit).toBe('estimated');
   });
 });

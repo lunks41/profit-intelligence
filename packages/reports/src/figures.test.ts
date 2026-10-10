@@ -35,13 +35,16 @@ const make = (over: Partial<PeriodInputs> = {}) =>
   );
 
 describe('the profit and loss cells (what the screen, CSV and PDF all show)', () => {
-  it('a fully known period shows amounts, all Confirmed, with net profit an Estimate', () => {
+  it('a fully known period shows amounts, all Confirmed, with operating profit an Estimate', () => {
     const f = make();
     expect(f.revenue).toEqual({ text: '870.0000', status: 'Confirmed' });
     expect(f.cogs).toEqual({ text: '-380.0000', status: 'Confirmed' });
     expect(f.ads).toEqual({ text: '-35.0000', status: 'Confirmed' });
-    expect(f.contribution).toEqual({ text: '400.0000', status: 'Confirmed' });
-    expect(f.net).toEqual({ text: '300.0000', status: 'Estimated' });
+    // advertising is below contribution profit: 435 - 35 advertising - 100 expenses = 300
+    expect(f.contribution).toEqual({ text: '435.0000', status: 'Confirmed' });
+    expect(f.operating).toEqual({ text: '300.0000', status: 'Estimated' });
+    expect(f).not.toHaveProperty('beforeAds');
+    expect(f).not.toHaveProperty('net');
   });
 
   it('without advertising or expenses the cells are words, not zero', () => {
@@ -51,8 +54,8 @@ describe('the profit and loss cells (what the screen, CSV and PDF all show)', ()
     });
     expect(f.ads.text).toBe('Not configured');
     expect(f.opex.text).toBe('Not set up');
-    expect(f.net).toEqual({ text: 'Not available', status: 'Needs operating expenses' });
-    expect(f.contribution.status).toBe('Confirmed, excludes advertising');
+    expect(f.operating).toEqual({ text: 'Not available', status: 'Needs operating expenses' });
+    expect(f.contribution.status).toBe('Confirmed'); // contribution profit never depended on advertising
     expect(f.ads.text).not.toMatch(/^-?\d/);
   });
 
@@ -68,8 +71,8 @@ describe('the profit and loss cells (what the screen, CSV and PDF all show)', ()
       anyMissing: true,
     });
     expect(f.fees).toEqual({ text: 'Missing', status: 'Missing' });
-    expect(f.beforeAds.status).toBe('Incomplete');
-    expect(f.net.status).toBe('Incomplete');
+    expect(f.contribution.status).toBe('Incomplete');
+    expect(f.operating.status).toBe('Incomplete');
   });
 
   it('a cost missing on some orders keeps its known amount but is marked Incomplete', () => {
@@ -105,13 +108,13 @@ describe('CSV keeps the words', () => {
         ['Advertising', 'Not configured', 'Not configured'],
         ['Product cost', '-380.0000', 'Confirmed'],
       ],
-      totalRows: [['Estimated net profit', 'Not available', 'Needs operating expenses']],
+      totalRows: [['Estimated operating profit', 'Not available', 'Needs operating expenses']],
       notes: [],
     };
     const text = renderCsv(table).toString('utf8');
     expect(text).toContain('Payment fees,Missing,Missing');
     expect(text).toContain('Advertising,Not configured,Not configured');
     expect(text).toContain('Product cost,-380.0000,Confirmed');
-    expect(text).toContain('Estimated net profit,Not available,Needs operating expenses');
+    expect(text).toContain('Estimated operating profit,Not available,Needs operating expenses');
   });
 });

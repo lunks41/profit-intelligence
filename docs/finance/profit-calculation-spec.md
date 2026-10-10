@@ -22,25 +22,25 @@ Rules already approved earlier (restated for completeness): tax is excluded from
 
 ## 2. Vocabulary
 
-| Term                     | Definition                                                                                             |
-| ------------------------ | ------------------------------------------------------------------------------------------------------ |
-| Gross sales              | Sum of line unit price x quantity, before discounts, **excluding tax**.                                |
-| Product discounts        | Discounts on products (not shipping), excluding tax.                                                   |
-| Product refunds          | Value of refunded product lines, excluding tax, in the period the refund was issued.                   |
-| **Net sales**            | Gross sales - product discounts - product refunds.                                                     |
-| Shipping revenue         | Shipping charged to the customer, after shipping discounts and excluding tax, minus shipping refunded. |
-| **Revenue**              | Net sales + shipping revenue.                                                                          |
-| COGS                     | Unit cost x quantity of lines sold, minus unit cost x quantity of restocked refund lines.              |
-| Payment fees             | Fees paid to the payment provider (actual, or estimated by a rule).                                    |
-| Shipping cost            | What the merchant pays carriers (rule based; Shopify does not report it).                              |
-| Advertising spend        | Reported spend from connected ad platforms (Phase 9; optional).                                        |
-| **Contribution profit**  | Revenue - COGS - payment fees - shipping cost - advertising spend. Headline KPI.                       |
-| Operating expenses       | Rent, salaries, software and similar (Phase 9).                                                        |
-| **Estimated net profit** | Contribution profit - operating expenses. Always labelled estimated.                                   |
-| Contribution margin      | Contribution profit / revenue (empty when revenue is zero).                                            |
-| Average order value      | Revenue / number of counted orders in the period.                                                      |
-| Refund rate              | Product refunds / gross sales in the period (cash view: late refunds count in the period they happen). |
-| Tax (memo)               | Tax collected and tax refunded are tracked but are not revenue and not in profit.                      |
+| Term                           | Definition                                                                                             |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| Gross sales                    | Sum of line unit price x quantity, before discounts, **excluding tax**.                                |
+| Product discounts              | Discounts on products (not shipping), excluding tax.                                                   |
+| Product refunds                | Value of refunded product lines, excluding tax, in the period the refund was issued.                   |
+| **Net sales**                  | Gross sales - product discounts - product refunds.                                                     |
+| Shipping revenue               | Shipping charged to the customer, after shipping discounts and excluding tax, minus shipping refunded. |
+| **Revenue**                    | Net sales + shipping revenue.                                                                          |
+| COGS                           | Unit cost x quantity of lines sold, minus unit cost x quantity of restocked refund lines.              |
+| Payment fees                   | Fees paid to the payment provider (actual, or estimated by a rule).                                    |
+| Shipping cost                  | What the merchant pays carriers (rule based; Shopify does not report it).                              |
+| Advertising spend              | Reported spend from connected ad platforms (Phase 9; optional).                                        |
+| **Contribution profit**        | Revenue - COGS - payment fees - shipping cost - advertising spend. Headline KPI.                       |
+| Operating expenses             | Rent, salaries, software and similar (Phase 9).                                                        |
+| **Estimated operating profit** | Contribution profit - advertising - operating expenses. Always labelled estimated.                     |
+| Contribution margin            | Contribution profit / revenue (empty when revenue is zero).                                            |
+| Average order value            | Revenue / number of counted orders in the period.                                                      |
+| Refund rate                    | Product refunds / gross sales in the period (cash view: late refunds count in the period they happen). |
+| Tax (memo)                     | Tax collected and tax refunded are tracked but are not revenue and not in profit.                      |
 
 Money in the engine is always the shop currency and always an exact decimal. Conversion to a reporting currency happens afterwards (section 13).
 
@@ -108,7 +108,7 @@ Only for orders with at least one shippable line. From the merchant's rule (`s_s
 
 ## 9. Advertising and operating expenses (inputs only in this phase)
 
-The engine accepts period totals from Phase 9. Advertising: _not applicable_ when no ad account is connected; platform-reported spend is never netted against Shopify revenue. Operating expenses: _Actual_ when expense entries exist for the period, otherwise _Missing_, and the net profit line then reads "contribution only: no operating expenses entered".
+The engine accepts period totals from Phase 9. Advertising: _not applicable_ when no ad account is connected; platform-reported spend is never netted against Shopify revenue. Operating expenses: _Actual_ when expense entries exist for the period, otherwise _Missing_, and the estimated operating profit line then reads "Not available: no operating expenses entered".
 
 ## 10. Component status model
 

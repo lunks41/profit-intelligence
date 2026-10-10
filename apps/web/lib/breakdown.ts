@@ -12,7 +12,7 @@ export interface BreakdownRow {
   /** what to print: the formatted amount, or a word when no amount is known */
   text: string;
   standing: Standing;
-  /** a total line (revenue, contribution profit, net profit) */
+  /** a total line (revenue, contribution profit, operating profit) */
   total: boolean;
   /** shown indented under the line it adjusts */
   indent: boolean;
@@ -27,9 +27,9 @@ export function negate(amount: string): string {
 const isAllMissing = (share: string | null) => share !== null && Number(share) >= 1;
 
 /**
- * The profit breakdown as plain rows: every line from sales to estimated net profit, each with the
+ * The profit breakdown as plain rows: every line from sales to estimated operating profit, each with the
  * standing of its figure. A cost that is unknown for every order is the word "Missing", never a
- * zero; advertising and operating expenses that are not set up say so; net profit is a number only
+ * zero; advertising and operating expenses that are not set up say so; operating profit is a number only
  * when operating expenses exist, and is then marked as an estimate unless every input is confirmed.
  * Costs are shown as negative amounts so the column adds up to the totals.
  */
@@ -94,15 +94,6 @@ export function breakdownRows(s: ProfitSummary, currency: string): BreakdownRow[
     s.missingShares.shippingCost,
   );
 
-  if (st.advertising === 'confirmed') {
-    add('ads', 'Advertising', negate(s.adSpend ?? '0'), 'confirmed', { indent: true });
-  } else {
-    add('ads', 'Advertising', null, st.advertising === 'missing' ? 'no_data' : 'not_set_up', {
-      indent: true,
-      word: st.advertising === 'missing' ? 'No spend for this period' : 'Not set up',
-    });
-  }
-
   const costsKnown = [st.cogs, st.paymentFees, st.shippingCost];
   const contributionStanding: Standing = costsKnown.includes('missing')
     ? 'incomplete'
@@ -113,25 +104,37 @@ export function breakdownRows(s: ProfitSummary, currency: string): BreakdownRow[
     total: true,
   });
 
+  if (st.advertising === 'confirmed') {
+    add('ads', 'Advertising', negate(s.adSpend ?? '0'), 'confirmed', { indent: true });
+  } else {
+    add('ads', 'Advertising', null, st.advertising === 'missing' ? 'no_data' : 'not_set_up', {
+      indent: true,
+      word: st.advertising === 'missing' ? 'No spend for this period' : 'Not set up',
+    });
+  }
+
   if (st.operatingExpenses === 'confirmed') {
-    add('opex', 'Operating expenses', negate(s.operatingExpenses ?? '0'), 'confirmed', {
+    add('opex', 'Other operating expenses', negate(s.operatingExpenses ?? '0'), 'confirmed', {
       indent: true,
     });
   } else {
-    add('opex', 'Operating expenses', null, 'not_set_up', { indent: true, word: 'Not set up' });
+    add('opex', 'Other operating expenses', null, 'not_set_up', {
+      indent: true,
+      word: 'Not set up',
+    });
   }
 
-  if (s.estimatedNetProfit === null) {
-    add('net', 'Estimated net profit', null, 'not_available', {
+  if (s.estimatedOperatingProfit === null) {
+    add('operating', 'Estimated operating profit', null, 'not_available', {
       total: true,
       word: 'Not available',
     });
   } else {
     add(
-      'net',
-      'Estimated net profit',
-      s.estimatedNetProfit,
-      st.estimatedNetProfit === 'confirmed' ? 'confirmed' : 'estimated',
+      'operating',
+      'Estimated operating profit',
+      s.estimatedOperatingProfit,
+      st.estimatedOperatingProfit === 'confirmed' ? 'confirmed' : 'estimated',
       { total: true },
     );
   }

@@ -14,17 +14,16 @@ const base = {
   paymentFees: '30.0000',
   shippingCost: '25.0000',
   adSpend: '35.0000',
-  contributionBeforeAds: '435.0000',
-  contributionProfit: '400.0000',
+  contributionProfit: '435.0000',
   operatingExpenses: '100.0000',
-  estimatedNetProfit: '300.0000',
+  estimatedOperatingProfit: '300.0000',
   statuses: {
     cogs: 'confirmed',
     paymentFees: 'confirmed',
     shippingCost: 'confirmed',
     advertising: 'confirmed',
     operatingExpenses: 'confirmed',
-    estimatedNetProfit: 'confirmed',
+    estimatedOperatingProfit: 'confirmed',
   },
   missingShares: { cogs: '0.0000', paymentFees: '0.0000', shippingCost: '0.0000' },
 } as unknown as ProfitSummary;
@@ -54,13 +53,14 @@ describe('the profit breakdown', () => {
   it('the lines add up to each total, in whole cents', () => {
     const amt = (k: string) => cents(by(rows, k).amount!);
     expect(amt('gross') + amt('discounts') + amt('refunds') + amt('shipping')).toBe(amt('revenue'));
-    expect(amt('revenue') + amt('cogs') + amt('fees') + amt('shippingCost') + amt('ads')).toBe(
+    expect(amt('revenue') + amt('cogs') + amt('fees') + amt('shippingCost')).toBe(
       amt('contribution'),
     );
-    expect(amt('contribution') + amt('opex')).toBe(amt('net'));
+    // advertising and other operating expenses come after contribution profit
+    expect(amt('contribution') + amt('ads') + amt('opex')).toBe(amt('operating'));
     expect(by(rows, 'revenue').amount).toBe('870.0000');
-    expect(by(rows, 'contribution').amount).toBe('400.0000');
-    expect(by(rows, 'net').amount).toBe('300.0000');
+    expect(by(rows, 'contribution').amount).toBe('435.0000');
+    expect(by(rows, 'operating').amount).toBe('300.0000');
   });
 
   it('shows discounts and refunds separately, and costs as negatives', () => {
@@ -118,16 +118,16 @@ describe('the profit breakdown', () => {
     expect(by(noSpend, 'ads')).toMatchObject({ amount: null, standing: 'no_data' });
   });
 
-  it('net profit is not available without operating expenses', () => {
+  it('operating profit is not available without operating expenses', () => {
     const r = breakdownRows(
       withStatus(
-        { operatingExpenses: 'not_configured', estimatedNetProfit: 'not_configured' },
-        { operatingExpenses: null, estimatedNetProfit: null },
+        { operatingExpenses: 'not_configured', estimatedOperatingProfit: 'not_configured' },
+        { operatingExpenses: null, estimatedOperatingProfit: null },
       ),
       'USD',
     );
     expect(by(r, 'opex')).toMatchObject({ amount: null, text: 'Not set up' });
-    expect(by(r, 'net')).toMatchObject({
+    expect(by(r, 'operating')).toMatchObject({
       amount: null,
       text: 'Not available',
       standing: 'not_available',
@@ -135,12 +135,20 @@ describe('the profit breakdown', () => {
   });
 
   it('net profit with a gap upstream is an estimate, not confirmed', () => {
-    const r = breakdownRows(withStatus({ estimatedNetProfit: 'estimated' }), 'USD');
-    expect(by(r, 'net')).toMatchObject({ amount: '300.0000', standing: 'estimated' });
+    const r = breakdownRows(withStatus({ estimatedOperatingProfit: 'estimated' }), 'USD');
+    expect(by(r, 'operating')).toMatchObject({ amount: '300.0000', standing: 'estimated' });
   });
 
-  it('contribution profit is never labelled as net profit', () => {
+  it('contribution profit and operating profit are never labelled as net profit', () => {
     expect(by(rows, 'contribution').label).toBe('Contribution profit');
-    expect(by(rows, 'net').label).toBe('Estimated net profit');
+    expect(by(rows, 'operating').label).toBe('Estimated operating profit');
+    expect(rows.some((r) => /net profit/i.test(r.label))).toBe(false);
+  });
+
+  it('advertising is listed below contribution profit, with the other operating expenses', () => {
+    const keys = rows.map((r) => r.key);
+    expect(keys.indexOf('contribution')).toBeLessThan(keys.indexOf('ads'));
+    expect(keys.indexOf('ads')).toBeLessThan(keys.indexOf('opex'));
+    expect(keys.indexOf('opex')).toBeLessThan(keys.indexOf('operating'));
   });
 });

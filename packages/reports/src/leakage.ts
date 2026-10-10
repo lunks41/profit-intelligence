@@ -235,7 +235,7 @@ export function evaluateLeakage(input: LeakageInputs, limits: LeakageSettings): 
       severity: 'warning',
       title: `${low.length} ${plural(low.length, 'product has', 'products have')} a margin below ${Number(limits.marginPct)}%`,
       evidence: `Margin before shipping and fees is under your limit of ${Number(limits.marginPct)}%.`,
-      why: 'Shipping, fees and advertising come out of a thin margin, so these products may not pay for themselves.',
+      why: 'Shipping and fees come out of a thin margin, so these products may not pay for themselves.',
       action: { label: 'Review these products', href: '/products' },
       impact: null,
       items: low.slice(0, 5).map((p) => ({

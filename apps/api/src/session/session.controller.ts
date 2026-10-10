@@ -85,7 +85,7 @@ export class SessionController {
         status: done(expenses.expenses.length > 0),
         href: '/expenses',
         optional: true,
-        why: 'Rent, salaries and ad spend are needed for net profit. Skip this if you only want contribution profit.',
+        why: 'Rent, salaries and ad spend are needed for operating profit. Skip this if you only want contribution profit.',
       },
     ];
 

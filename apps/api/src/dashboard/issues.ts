@@ -169,7 +169,8 @@ export function buildIssues(i: IssueInput): Issue[] {
       id: 'advertising_not_set_up',
       severity: 'info',
       title: 'Advertising is not set up',
-      detail: 'Profit excludes advertising until you add an account and enter or import spend.',
+      detail:
+        'Operating profit excludes advertising until you add an account and enter or import spend.',
       action: { label: 'Set up advertising', href: '/marketing?tab=accounts' },
     });
   } else if (q.advertising === 'missing') {
@@ -177,7 +178,8 @@ export function buildIssues(i: IssueInput): Issue[] {
       id: 'advertising_no_data',
       severity: 'info',
       title: 'No advertising spend for this period',
-      detail: 'An account exists but has no spend for these dates, so profit excludes advertising.',
+      detail:
+        'An account exists but has no spend for these dates, so operating profit excludes advertising.',
       action: { label: 'Enter or import spend', href: '/marketing?tab=accounts' },
     });
   }
@@ -187,7 +189,7 @@ export function buildIssues(i: IssueInput): Issue[] {
       severity: 'info',
       title: 'Operating expenses are not set up',
       detail:
-        'Estimated net profit is not available until you add rent, salaries or similar costs.',
+        'Estimated operating profit is not available until you add rent, salaries or similar costs.',
       action: { label: 'Add expenses', href: '/expenses' },
     });
   }

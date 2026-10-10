@@ -23,7 +23,6 @@ export function WhatChangedCard({ data }: { data: OverviewResponse }) {
       <CardHeader title="What changed" />
       <s-stack gap="small">
         <s-text type="strong">{w.headline}</s-text>
-        {w.basisNote && <s-text color="subdued">{w.basisNote}</s-text>}
         {w.drivers.length > 0 ? (
           <ul
             style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: '0.625rem' }}

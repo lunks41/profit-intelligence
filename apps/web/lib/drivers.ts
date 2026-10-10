@@ -2,7 +2,7 @@ import type { OverviewResponse } from '@pi/contracts';
 import { formatMoney, formatPercent, periodLabel } from './format';
 
 export interface Driver {
-  key: 'sales' | 'discounts' | 'refunds' | 'cogs' | 'fees' | 'shipping' | 'advertising';
+  key: 'sales' | 'discounts' | 'refunds' | 'cogs' | 'fees' | 'shipping';
   label: string;
   /** effect on profit in currency units: positive helped, negative hurt */
   effect: number;
@@ -17,8 +17,6 @@ export interface WhatChanged {
   /** profit now minus profit before, in currency units */
   change: number;
   headline: string;
-  /** what the comparison leaves out, when it does not use full contribution profit */
-  basisNote: string | null;
   /** the biggest movers, largest first (at most four) */
   drivers: Driver[];
   /** data problems that make part of this change a data effect, not performance */
@@ -37,9 +35,9 @@ const round2 = (n: number) => Math.round(n * 100) / 100;
 
 /**
  * Explains the profit change against the previous period in plain terms. Profit is revenue less
- * product cost, payment fees, shipping and (when both periods have it) advertising, so the effects
- * of its parts add up to the change exactly: sales (revenue before discounts and refunds),
- * discounts, refunds, product cost, fees, shipping and advertising. The biggest movers are listed
+ * product cost, payment fees and shipping, so the effects of its parts add up to the change
+ * exactly: sales (revenue before discounts and refunds), discounts, refunds, product cost, fees and
+ * shipping. Advertising is an operating cost and is not part of contribution profit. The biggest movers are listed
  * with the fact behind each (refund rate, missing costs, estimated fees). Returns null when there
  * is nothing to compare against.
  */
@@ -47,14 +45,12 @@ export function whatChanged(d: Input): WhatChanged | null {
   const { summary: s, previous: p } = d;
   if (s.orders === 0 || p.orders === 0) return null;
   const cur = d.currency.code;
-  const beforeAds = d.deltas.basis === 'before_advertising';
-  const profitOf = (x: typeof s) => num(beforeAds ? x.contributionBeforeAds : x.contributionProfit);
+  const profitOf = (x: typeof s) => num(x.contributionProfit);
   const change = round2(profitOf(s) - profitOf(p));
   const money = (v: number | string) => formatMoney(typeof v === 'number' ? v.toFixed(2) : v, cur);
   const pct = (a: string | null, b: string | null) =>
     `${formatPercent(num(a))} to ${formatPercent(num(b))}`;
 
-  const adsBoth = !beforeAds && s.adSpend !== null && p.adSpend !== null;
   const salesNow = num(s.revenue) + num(s.discounts) + num(s.productRefunds);
   const salesBefore = num(p.revenue) + num(p.discounts) + num(p.productRefunds);
 
@@ -120,17 +116,6 @@ export function whatChanged(d: Input): WhatChanged | null {
           : null,
     },
   ];
-  if (adsBoth) {
-    all.push({
-      key: 'advertising',
-      label: 'Advertising',
-      effect: -(num(s.adSpend) - num(p.adSpend)),
-      from: money(p.adSpend!),
-      to: money(s.adSpend!),
-      note: null,
-    });
-  }
-
   const total = all.reduce((a, x) => a + Math.abs(x.effect), 0);
   const drivers = all
     .map((x) => ({ ...x, effect: round2(x.effect) }))
@@ -157,7 +142,7 @@ export function whatChanged(d: Input): WhatChanged | null {
   const abs = Math.abs(change);
   const direction = abs < 0.005 ? 'flat' : change > 0 ? 'up' : 'down';
   const relative = d.deltas.contributionProfit;
-  const label = beforeAds ? 'Profit before advertising' : 'Contribution profit';
+  const label = 'Contribution profit';
   const against = periodLabel(d.previousPeriod.from, d.previousPeriod.to);
   const percent =
     relative === null ? '' : ` (${relative > 0 ? '+' : '-'}${formatPercent(Math.abs(relative))})`;
@@ -166,5 +151,5 @@ export function whatChanged(d: Input): WhatChanged | null {
       ? `${label} is unchanged compared with ${against}.`
       : `${label} ${direction === 'up' ? 'rose' : 'fell'} by ${money(abs)}${percent} compared with ${against}.`;
 
-  return { direction, change, headline, basisNote: d.deltas.basisNote, drivers, caveats };
+  return { direction, change, headline, drivers, caveats };
 }

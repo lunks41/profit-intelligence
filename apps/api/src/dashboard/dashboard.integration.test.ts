@@ -310,8 +310,6 @@ describe('GET /api/v1/dashboard/overview', () => {
       orders: null,
       averageOrderValue: null,
       marginPoints: null,
-      basis: 'contribution',
-      basisNote: null,
     });
     expect(JSON.stringify(body)).not.toMatch(/NaN|Infinity/);
   });
@@ -399,9 +397,10 @@ async function addSpend(rows: Array<{ date: string; spend: string }>, name = 'M'
   return id;
 }
 
-describe('advertising in the headline figure and the chart', () => {
-  it('the chart adds up to contribution profit once advertising exists (shop currency)', async () => {
+describe('advertising is an operating cost: it never changes contribution profit or the chart', () => {
+  it('contribution profit and the chart ignore advertising, and operating profit takes it off', async () => {
     await calculateAll(a);
+    const before = overviewResponseSchema.parse((await overview(ALL)).body);
     await addSpend([
       { date: '2026-09-05', spend: '250.50' },
       { date: '2026-09-06', spend: '10.01' },
@@ -410,17 +409,20 @@ describe('advertising in the headline figure and the chart', () => {
     const o = overviewResponseSchema.parse((await overview(ALL)).body);
     expect(o.summary.statuses.advertising).toBe('confirmed');
     expect(o.summary.adSpend).toBe('360.5000');
+    // the same contribution profit, total costs and chart with or without advertising
+    expect(o.summary.contributionProfit).toBe(before.summary.contributionProfit);
+    expect(o.summary.totalCosts).toBe(before.summary.totalCosts);
     expect(o.trend.reduce((s, d) => s + centsOf(d.contributionProfit), 0)).toBe(
       centsOf(o.summary.contributionProfit),
     );
-    expect(centsOf(o.summary.contributionBeforeAds) - centsOf(o.summary.adSpend!)).toBe(
+    expect(o.trend.reduce((s, d) => s + centsOf(d.costs), 0)).toBe(centsOf(o.summary.totalCosts));
+    expect(centsOf(o.summary.revenue) - centsOf(o.summary.totalCosts)).toBe(
       centsOf(o.summary.contributionProfit),
     );
   });
 
-  it('with a display currency the chart still adds up to the headline, advertising included', async () => {
+  it('with a display currency the chart still adds up to the headline', async () => {
     await calculateAll(a);
-    // two accounts spending on the same day, amounts that do not convert to whole cents
     await addSpend([{ date: '2026-09-05', spend: '10.01' }], 'A');
     await addSpend([{ date: '2026-09-05', spend: '20.03' }], 'B');
     await addSpend([{ date: '2026-10-02', spend: '33.33' }], 'C');
@@ -432,41 +434,29 @@ describe('advertising in the headline figure and the chart', () => {
     expect(aed.trend.reduce((s, d) => s + centsOf(d.revenue), 0)).toBe(
       centsOf(aed.summary.revenue),
     );
-    // advertising on the day is converted once per day, so the headline and the chart share it
-    expect(centsOf(aed.summary.contributionBeforeAds) - centsOf(aed.summary.adSpend!)).toBe(
-      centsOf(aed.summary.contributionProfit),
-    );
-    // within a cent per spending day of the exact peg conversion of 63.37 USD
+    // advertising on the day is converted once per day; within a cent per spending day of the peg
     expect(Math.abs(Number(aed.summary.adSpend) - 63.37 * 3.6725)).toBeLessThan(0.05);
   });
 });
 
 describe('profit change is compared like for like', () => {
-  it('compares contribution profit when advertising status is the same in both periods', async () => {
+  it('advertising in only one of the two periods does not change the comparison', async () => {
     await calculateAll(a);
-    const o = overviewResponseSchema.parse(
-      (await overview('?preset=custom&from=2026-09-01&to=2026-09-30')).body,
-    );
-    expect(o.deltas.basis).toBe('contribution');
-    expect(o.deltas.basisNote).toBeNull();
-  });
-
-  it('compares before advertising when only one of the two periods has advertising data', async () => {
-    await calculateAll(a);
+    const q = '?preset=custom&from=2026-09-01&to=2026-09-30';
+    const without = overviewResponseSchema.parse((await overview(q)).body);
     await addSpend([{ date: '2026-09-05', spend: '500.00' }]); // September has spend, August does not
-    const o = overviewResponseSchema.parse(
-      (await overview('?preset=custom&from=2026-09-01&to=2026-09-30')).body,
-    );
+    const o = overviewResponseSchema.parse((await overview(q)).body);
     expect(o.summary.statuses.advertising).toBe('confirmed');
     expect(o.previous.statuses.advertising).not.toBe('confirmed');
-    expect(o.deltas.basis).toBe('before_advertising');
-    expect(o.deltas.basisNote).toMatch(/before advertising/);
-    // the change must not include the 500.00 of spend
+    // contribution profit and its change are the same with or without the 500.00
+    expect(o.summary.contributionProfit).toBe(without.summary.contributionProfit);
+    expect(o.deltas.contributionProfit).toBe(without.deltas.contributionProfit);
+    expect(o.deltas).not.toHaveProperty('basis');
     const expected =
-      Number(o.previous.contributionBeforeAds) === 0
+      Number(o.previous.contributionProfit) === 0
         ? null
-        : (Number(o.summary.contributionBeforeAds) - Number(o.previous.contributionBeforeAds)) /
-          Math.abs(Number(o.previous.contributionBeforeAds));
+        : (Number(o.summary.contributionProfit) - Number(o.previous.contributionProfit)) /
+          Math.abs(Number(o.previous.contributionProfit));
     if (expected === null) expect(o.deltas.contributionProfit).toBeNull();
     else expect(o.deltas.contributionProfit).toBeCloseTo(expected, 6);
   });
@@ -648,12 +638,10 @@ describe('costs and channels', () => {
         expect(centsOf(p.revenue) - centsOf(p.contributionProfit)).toBe(centsOf(p.costs));
       }
       expect(o.trend.reduce((s, p) => s + centsOf(p.costs), 0)).toBe(centsOf(o.summary.totalCosts));
-      // costs are product cost + fees + shipping + advertising
+      // costs are product cost + fees + shipping; advertising (77.77) is an operating cost, not in them
       const parts =
-        centsOf(o.summary.cogs) +
-        centsOf(o.summary.paymentFees) +
-        centsOf(o.summary.shippingCost) +
-        centsOf(o.summary.adSpend!);
+        centsOf(o.summary.cogs) + centsOf(o.summary.paymentFees) + centsOf(o.summary.shippingCost);
+      expect(centsOf(o.summary.adSpend!)).toBeGreaterThan(0);
       expect(Math.abs(parts - centsOf(o.summary.totalCosts))).toBeLessThanOrEqual(
         qs === ALL ? 0 : 5, // converted amounts can differ by a rounding cent per day
       );

@@ -4,18 +4,19 @@ One function, `summarizePeriod` (`packages/profit-engine/src/period.ts`), turns 
 
 ## Definitions
 
-| Figure                              | Formula                                                                                                                                                                   |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Net sales                           | gross sales − discounts − product refunds                                                                                                                                 |
-| Shipping charged (net of refunds)   | shipping charged − shipping refunded                                                                                                                                      |
-| **Revenue**                         | net sales + shipping charged (net of refunds). Tax is never revenue.                                                                                                      |
-| Product cost                        | product cost of items sold − cost returned to stock by restocked refunds                                                                                                  |
-| **Contribution before advertising** | revenue − product cost − payment fees − shipping cost                                                                                                                     |
-| **Contribution profit**             | contribution before advertising − advertising, **only when advertising data exists**; otherwise equal to contribution before advertising, and said to exclude advertising |
-| **Contribution margin**             | contribution profit ÷ revenue                                                                                                                                             |
-| **Estimated net profit**            | contribution profit − operating expenses, **only when operating expenses are set up**; otherwise not available                                                            |
-| Refund rate                         | product refunds ÷ gross sales                                                                                                                                             |
-| Average order value                 | revenue ÷ counted orders                                                                                                                                                  |
+| Figure                            | Formula                                                                                                                                                                      |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Net sales                         | gross sales − discounts − product refunds                                                                                                                                    |
+| Shipping charged (net of refunds) | shipping charged − shipping refunded                                                                                                                                         |
+| **Revenue**                       | net sales + shipping charged (net of refunds). Tax is never revenue.                                                                                                         |
+| Product cost                      | product cost of items sold − cost returned to stock by restocked refunds                                                                                                     |
+| **Contribution profit**           | revenue − product cost − payment fees − shipping cost. **Advertising and operating expenses are not taken off.**                                                             |
+| **Contribution margin**           | contribution profit ÷ revenue                                                                                                                                                |
+| Total costs (Overview card)       | product cost + payment fees + shipping cost, equal to revenue − contribution profit. Advertising and operating expenses are shown apart.                                     |
+| **Estimated operating profit**    | contribution profit − advertising (when spend exists) − operating expenses, **only when operating expenses are set up**; otherwise not available. Never called "net profit". |
+| **Operating margin**              | estimated operating profit ÷ revenue                                                                                                                                         |
+| Refund rate                       | product refunds ÷ gross sales                                                                                                                                                |
+| Average order value               | revenue ÷ counted orders                                                                                                                                                     |
 
 All amounts are decimals (`decimal.js` in code, `numeric(19,4)` in the database), rounded half away from zero to the currency's minor unit once per ledger entry. Floating point is never used for money.
 
@@ -32,11 +33,12 @@ All amounts are decimals (`decimal.js` in code, `numeric(19,4)` in the database)
 | product cost 400.00, 20.00 returned to stock | −380.00                                |
 | payment fees                                 | −30.00                                 |
 | shipping cost                                | −25.00                                 |
-| **contribution before advertising**          | **435.00**                             |
+| **contribution profit**                      | **435.00** (margin 435 ÷ 870 = 50.00%) |
 | advertising                                  | −35.00                                 |
-| **contribution profit**                      | **400.00** (margin 400 ÷ 870 = 45.98%) |
 | operating expenses                           | −100.00                                |
-| **estimated net profit**                     | **300.00**                             |
+| **estimated operating profit**               | **300.00** (margin 300 ÷ 870 = 34.48%) |
+
+Advertising never changes contribution profit. It is an operating cost, so it comes off between contribution profit and operating profit, together with the other operating expenses.
 
 ## Data status: zero is not missing
 
@@ -55,13 +57,13 @@ How they are decided:
 - **Product cost, payment fees, shipping cost:** per order the weakest entry wins (missing, then estimated, then confirmed). Product cost is weighted by sales value, fees and shipping by order count. Any missing share makes the figure `missing`; any estimate makes it `estimated`.
 - **Advertising:** `not_configured` with no advertising account; `missing` when an account exists but no spend was imported or entered for the period; `confirmed` once spend exists (0.00 entered counts).
 - **Operating expenses:** `not_configured` until the merchant sets up at least one expense.
-- **Estimated net profit:** `not_configured` without expenses (no number is shown); `estimated` while anything above is missing, estimated or not set up; `confirmed` only when every input is confirmed.
+- **Estimated operating profit:** `not_configured` without expenses (no number is shown); `estimated` while anything above is missing, estimated or not set up; `confirmed` only when every input is confirmed.
 
-The summary also returns `qualifiers`, plain sentences such as "Payment fees are missing for 12 of 25 orders." and "Advertising is not set up, so profit excludes advertising.", which the screens show next to the figures.
+The summary also returns `qualifiers`, plain sentences such as "Payment fees are missing for 12 of 25 orders." and "Advertising is not set up, so operating profit excludes advertising.", which the screens show next to the figures.
 
 ### In reports and exports
 
-The profit and loss ends with a **Data status** column. A cell holds an amount when one is known and a word when none is: **Missing** (a cost unknown on every order), **Not configured** (advertising), **No data** (account, no spend), **Not set up** (operating expenses), **Not available** (net profit without expenses). The same words are written to CSV, so a spreadsheet cannot read them as 0. An amount that is only partly known keeps its figure and its status says **Incomplete**. The order report shows **Missing** in a cost column and "Incomplete: shipping cost missing" in its data column.
+The profit and loss ends with a **Data status** column. A cell holds an amount when one is known and a word when none is: **Missing** (a cost unknown on every order), **Not configured** (advertising), **No data** (account, no spend), **Not set up** (operating expenses), **Not available** (operating profit without expenses). The same words are written to CSV, so a spreadsheet cannot read them as 0. An amount that is only partly known keeps its figure and its status says **Incomplete**. The order report shows **Missing** in a cost column and "Incomplete: shipping cost missing" in its data column.
 
 ## Refunds
 

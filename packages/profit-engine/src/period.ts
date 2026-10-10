@@ -10,10 +10,13 @@ import type { ComponentTotals, CoverageInput, Summary } from './summary.js';
  *
  * Definitions (docs/finance/figures.md):
  *  revenue                 = gross sales - discounts - product refunds + shipping charged (net of refunds)
- *  contributionBeforeAds   = revenue - product cost - payment fees - shipping cost
- *  contributionProfit      = contributionBeforeAds - advertising (only when advertising data exists)
+ *  contributionProfit      = revenue - product cost - payment fees - shipping cost
  *  contributionMargin      = contributionProfit / revenue
- *  estimatedNetProfit      = contributionProfit - operating expenses (only when expenses are set up)
+ *  estimatedOperatingProfit = contributionProfit - advertising (when spend exists) - operating
+ *                            expenses (only when expenses are set up; otherwise not available)
+ *  operatingMargin         = estimatedOperatingProfit / revenue
+ *
+ * Contribution profit is not operating profit, and neither is called "net profit".
  */
 export interface PeriodInputs {
   totals: ComponentTotals;

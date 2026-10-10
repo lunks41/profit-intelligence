@@ -20,12 +20,13 @@ const INFO: Record<string, string> = {
   revenue:
     'Sales before discounts, less discounts and product refunds, plus shipping charged (net of shipping refunds). Tax is not included.',
   contribution:
-    'Revenue minus product costs, payment fees, shipping costs and advertising (when set up). This is not net profit: operating expenses come after it.',
-  net: 'Contribution profit minus operating expenses. Shown only when operating expenses are set up, and called an estimate unless every input is confirmed.',
+    'Revenue minus product costs, payment fees and shipping costs. Advertising and other operating expenses come after it, so this is not operating profit.',
+  operating:
+    'Contribution profit minus advertising and other operating expenses. Shown only when operating expenses are set up, and called an estimate unless every input is confirmed.',
 };
 
 /**
- * Where the revenue goes, line by line, from sales to estimated net profit. Every line says whether
+ * Where the revenue goes, line by line, from sales to estimated operating profit. Every line says whether
  * its figure is confirmed, an estimate, incomplete or missing, or not set up; an unknown cost is a
  * word, never $0.00.
  */

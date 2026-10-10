@@ -17,7 +17,7 @@ export function ProfitPreview() {
     <>
       <PreviewBanner
         phase="Phases 10 and 11"
-        note="Profit and loss from sales to net profit, month by month, with profit leakage findings."
+        note="Profit and loss from sales to operating profit, month by month, with profit leakage findings."
       />
       <s-section heading="Period">
         <s-stack direction="inline" gap="base" alignItems="end">
@@ -39,7 +39,12 @@ export function ProfitPreview() {
         <Kpi label="Contribution profit" value="$32,342" note="Partial: some costs missing" />
         <Kpi label="Advertising" value="$7,200" note="8.7% of revenue" tone="neutral" />
         <Kpi label="Operating expenses" value="$5,400" note="Entered by you" tone="neutral" />
-        <Kpi label="Estimated net profit" value="$19,742" note="Margin 23.9%" tone="success" />
+        <Kpi
+          label="Estimated operating profit"
+          value="$19,742"
+          note="Margin 23.9%"
+          tone="success"
+        />
       </KpiGrid>
 
       <Tabs
@@ -84,7 +89,7 @@ export function ProfitPreview() {
                 ['Operating expenses', '-$5,400', 'Entered by you'],
                 [
                   <s-text key="n" type="strong">
-                    Estimated net profit
+                    Estimated operating profit
                   </s-text>,
                   '$15,278',
                   'Partial',
@@ -99,10 +104,10 @@ export function ProfitPreview() {
               <Line label="Shipping cost" value="4.4%" />
               <Line label="Advertising" value="8.0%" />
               <Line label="Operating expenses" value="6.0%" />
-              <Line label="Net profit" value="17.1%" strong />
+              <Line label="Operating profit" value="17.1%" strong />
             </s-stack>
             <s-text color="subdued">
-              Net profit is called estimated while any cost is estimated or missing.
+              Operating profit is called estimated while any cost is estimated or missing.
             </s-text>
           </s-section>
         </s-grid>
@@ -115,7 +120,7 @@ export function ProfitPreview() {
             keys={[
               { key: 'revenue', name: 'Revenue', color: '#005bd3' },
               { key: 'cost', name: 'Costs', color: '#b98900' },
-              { key: 'profit', name: 'Net profit', color: '#047b5d' },
+              { key: 'profit', name: 'Operating profit', color: '#047b5d' },
             ]}
           />
         </s-section>

@@ -3,7 +3,7 @@ import { formatMoney } from './format';
 import type { Standing } from './breakdown';
 
 export interface CostRow {
-  key: 'cogs' | 'ads' | 'shippingCost' | 'fees';
+  key: 'cogs' | 'shippingCost' | 'fees';
   label: string;
   /** exact amount (positive) when known, otherwise null */
   amount: string | null;
@@ -15,12 +15,20 @@ export interface CostRow {
   detail: string | null;
 }
 
+export interface OperatingLine {
+  amount: string | null;
+  text: string;
+  standing: Standing;
+}
+
 export interface CostBreakdown {
+  /** the variable costs of selling: product cost, shipping and payment fees */
   rows: CostRow[];
-  /** product cost, fees, shipping and advertising together; the same figure as the Costs card */
+  /** those three together; the same figure as the Costs card */
   total: string;
-  /** operating expenses, shown apart because they are not part of the costs above */
-  operatingExpenses: { amount: string | null; text: string; standing: Standing };
+  /** advertising and other operating expenses come after contribution profit, so they are apart */
+  advertising: OperatingLine;
+  operatingExpenses: OperatingLine;
 }
 
 /** "Actual $X, estimated $Y" for the payment fees, or null when none of it is estimated. */
@@ -35,8 +43,8 @@ export function feeDetail(
 }
 
 /**
- * What the costs on the Costs card are made of: product cost, advertising, shipping cost and
- * payment fees, each as an amount and a share of the total shown. A cost with no known amount (a
+ * What the costs on the Costs card are made of: product cost, shipping cost and payment fees, each
+ * as an amount and a share of the total shown. A cost with no known amount (a
  * missing cost, advertising not set up) is a word and is left out of the shares, so the shares of
  * the known costs add up to 100%. Operating expenses are listed separately underneath.
  */
@@ -58,18 +66,6 @@ export function costBreakdown(
       standing:
         st.cogs === 'missing' && allMissing(s.missingShares.cogs) ? 'missing' : standingOf(st.cogs),
       word: 'Missing',
-    },
-    {
-      key: 'ads',
-      label: 'Advertising',
-      amount: st.advertising === 'confirmed' ? (s.adSpend ?? '0.0000') : null,
-      standing:
-        st.advertising === 'confirmed'
-          ? 'confirmed'
-          : st.advertising === 'missing'
-            ? 'no_data'
-            : 'not_set_up',
-      word: st.advertising === 'missing' ? 'No spend' : 'Not set up',
     },
     {
       key: 'shippingCost',
@@ -117,6 +113,16 @@ export function costBreakdown(
         Number(b.amount ?? 0) - Number(a.amount ?? 0),
     );
 
+  const ads: OperatingLine =
+    st.advertising === 'confirmed'
+      ? {
+          amount: s.adSpend ?? '0.0000',
+          text: formatMoney(s.adSpend ?? '0.0000', currency),
+          standing: 'confirmed',
+        }
+      : st.advertising === 'missing'
+        ? { amount: null, text: 'No spend', standing: 'no_data' }
+        : { amount: null, text: 'Not set up', standing: 'not_set_up' };
   const opex =
     st.operatingExpenses === 'confirmed' && s.operatingExpenses !== null
       ? {
@@ -125,5 +131,5 @@ export function costBreakdown(
           standing: 'confirmed' as Standing,
         }
       : { amount: null, text: 'Not set up', standing: 'not_set_up' as Standing };
-  return { rows, total: s.totalCosts, operatingExpenses: opex };
+  return { rows, total: s.totalCosts, advertising: ads, operatingExpenses: opex };
 }

@@ -131,14 +131,18 @@ export const profitSummarySchema = z.object({
   paymentFees: money,
   shippingCost: money,
   adSpend: money.nullable(),
-  contributionBeforeAds: money,
+  /** revenue - product cost - payment fees - shipping cost; advertising is not taken off */
   contributionProfit: money,
-  /** revenue - contribution profit: product cost, fees, shipping and advertising (when set up) */
+  /** the variable costs of selling: product cost, fees and shipping cost (revenue - contribution profit) */
   totalCosts: money,
+  /** rent, salaries, software and other operating expenses; advertising is separate (adSpend) */
   operatingExpenses: money.nullable(),
-  estimatedNetProfit: money.nullable(),
-  netProfitBasis: z.enum(['full', 'contribution_only']),
+  /** contribution profit - advertising - operating expenses; null until expenses are set up */
+  estimatedOperatingProfit: money.nullable(),
+  operatingProfitBasis: z.enum(['full', 'contribution_only']),
   contributionMargin: ratio,
+  /** estimated operating profit / revenue; null when operating profit is not available */
+  operatingMargin: ratio,
   averageOrderValue: money.nullable(),
   refundRate: ratio,
   taxCollected: money,
@@ -150,7 +154,7 @@ export const profitSummarySchema = z.object({
     shippingCost: figureStatusSchema,
     advertising: figureStatusSchema,
     operatingExpenses: figureStatusSchema,
-    estimatedNetProfit: figureStatusSchema,
+    estimatedOperatingProfit: figureStatusSchema,
   }),
   missingShares: z.object({
     cogs: z.string().nullable(),
@@ -249,18 +253,12 @@ export const overviewResponseSchema = z.object({
   deltas: z.object({
     revenue: z.number().nullable(),
     contributionProfit: z.number().nullable(),
-    /** change in total costs; on the same basis as contributionProfit */
+    /** change in total (variable) costs */
     costs: z.number().nullable(),
     orders: z.number().nullable(),
     averageOrderValue: z.number().nullable(),
     /** margin change in percentage points (2.5 = +2.5 pp); null when either margin is undefined */
     marginPoints: z.number().nullable(),
-    /**
-     * What the profit and margin changes compare. "before_advertising" when advertising data
-     * exists in only one of the two periods, so the change is not distorted by it.
-     */
-    basis: z.enum(['contribution', 'before_advertising']),
-    basisNote: z.string().nullable(),
   }),
   /** one point per day, per 7 days or per calendar month; the points add up to the period */
   trendInterval: z.enum(['day', 'week', 'month']),
@@ -388,8 +386,6 @@ export const productListResponseSchema = z.object({
       paymentFees: money,
       shippingCost: money,
       unlinkedCost: money,
-      /** advertising spend of the period, which the Overview subtracts from contribution profit */
-      advertising: money,
     }),
     total: money,
     dashboardContributionProfit: money,
@@ -934,22 +930,22 @@ export const expenseSummaryResponseSchema = z.object({
       byCategory: z.array(z.object({ category: z.string(), amount: money })),
       /** the month's profit and loss, from the same calculation as the Overview */
       revenue: money,
-      /** revenue less product cost, fees, shipping and advertising (when set up) */
+      /** revenue less product cost, fees and shipping; advertising is not taken off */
       contributionProfit: money,
       /** advertising spend in the month, null when no advertising account exists */
       advertising: money.nullable(),
-      /** contribution profit less this month's expenses; null when no expenses are set up */
-      netProfit: money.nullable(),
+      /** contribution profit less advertising and this month's expenses; null when no expenses are set up */
+      operatingProfit: money.nullable(),
       /** true when the month has a missing product cost, fee or shipping cost */
       incomplete: z.boolean(),
     }),
   ),
   /**
-   * Whether net profit can be trusted: "not_configured" when no expenses exist (net profit is not
-   * calculated anywhere), "incomplete" when a month in the list has missing costs (net profit is an
-   * estimate), otherwise "complete".
+   * Whether operating profit can be trusted: "not_configured" when no expenses exist (operating
+   * profit is not calculated anywhere), "incomplete" when a month in the list has missing costs
+   * (operating profit is an estimate), otherwise "complete".
    */
-  netProfitStatus: z.enum(['not_configured', 'incomplete', 'complete']),
+  operatingProfitStatus: z.enum(['not_configured', 'incomplete', 'complete']),
 });
 export type ExpenseSummaryResponse = z.infer<typeof expenseSummaryResponseSchema>;
 
@@ -1014,7 +1010,7 @@ export const marketingResponseSchema = z.object({
     shopifyRevenue: money,
     /** revenue divided by ad spend, null when there is no spend */
     blendedReturn: ratio,
-    /** contribution profit before advertising, divided by ad spend */
+    /** contribution profit, divided by ad spend */
     poas: ratio,
     contributionProfit: money,
     profitAfterAds: money,

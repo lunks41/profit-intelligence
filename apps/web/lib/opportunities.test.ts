@@ -216,13 +216,8 @@ describe('an unusual change in contribution profit', () => {
     expect(list[1]!.title).toBe('Contribution profit rose 50.0%');
   });
 
-  it('says so when the comparison is made before advertising', () => {
-    const f = fell();
-    const before = {
-      ...f,
-      deltas: { ...f.deltas, basis: 'before_advertising' as const },
-    };
-    const [x] = buildOpportunities({ overview: before, leakage: null, missingCostProducts: null });
-    expect(x!.title).toContain('(before advertising)');
+  it('never mentions advertising: contribution profit does not include it', () => {
+    const [x] = buildOpportunities({ overview: fell(), leakage: null, missingCostProducts: null });
+    expect(x!.title).not.toMatch(/advertising/i);
   });
 });

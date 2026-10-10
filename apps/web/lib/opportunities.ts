@@ -38,15 +38,14 @@ function unusualChange(o: OverviewResponse): Opportunity | null {
   const missing = (x: typeof s) => Number(x.missingShares.cogs ?? 0);
   if (missing(s) >= MAX_MISSING_COST_SHARE || missing(p) >= MAX_MISSING_COST_SHARE) return null;
 
-  const beforeAds = d.basis === 'before_advertising';
-  const now = beforeAds ? s.contributionBeforeAds : s.contributionProfit;
-  const was = beforeAds ? p.contributionBeforeAds : p.contributionProfit;
+  const now = s.contributionProfit;
+  const was = p.contributionProfit;
   const fell = change < 0;
   const range = `${shortDate(o.previousPeriod.from)} – ${shortDate(o.previousPeriod.to)}`;
   return {
     id: 'profit_change',
     tone: fell ? 'warning' : 'info',
-    title: `Contribution profit ${fell ? 'fell' : 'rose'} ${formatPercent(Math.abs(change))}${beforeAds ? ' (before advertising)' : ''}`,
+    title: `Contribution profit ${fell ? 'fell' : 'rose'} ${formatPercent(Math.abs(change))}`,
     detail: `${formatMoney(was, currency.code)} in ${range}, ${formatMoney(now, currency.code)} now.`,
     why: 'A change this size is worth a look. Check discounts, refunds, product mix and costs for these dates.',
     action: { label: 'See the monthly trend', href: '/profit?tab=trend' },

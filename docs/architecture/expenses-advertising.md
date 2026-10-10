@@ -13,7 +13,7 @@ Tables: `f_expense_category`, `f_expense`, `f_expense_override`. All have forced
 - **Creating is safe to retry:** the form sends a `requestKey`; the same key in the same shop returns the first expense instead of adding another.
 - **Audit:** every create, change, stop, removal and month edit is written to `a_audit_log` with who, what, old and new value, and shown in plain words on the Expenses screen.
 
-Net profit on the Overview is contribution profit minus advertising and operating expenses. When no expense exists the figure is "contribution only", never a net profit that silently ignores costs.
+Estimated operating profit is contribution profit minus advertising and operating expenses (contribution profit itself never includes advertising). When no expense exists the figure is "contribution only", never a operating profit that silently ignores costs.
 
 ## Advertising
 
@@ -32,4 +32,4 @@ Tables: `f_ad_account`, `f_ad_spend_daily`.
 
 ## Monthly profit and loss
 
-The expenses summary has, for each of the last six months, revenue, contribution profit, advertising, this month's expenses (recurring and one-time) and net profit, all from `summarizePeriod`, so a finished month equals the Overview for the same dates. `netProfitStatus` is `not_configured` when no expenses exist (the page says net profit is not available), `incomplete` when a month has a missing cost, fee or shipping cost (net profit is an estimate), otherwise `complete`.
+The expenses summary has, for each of the last six months, revenue, contribution profit, advertising, this month's expenses (recurring and one-time) and operating profit, all from `summarizePeriod`, so a finished month equals the Overview for the same dates. `operatingProfitStatus` is `not_configured` when no expenses exist (the page says operating profit is not available), `incomplete` when a month has a missing cost, fee or shipping cost (operating profit is an estimate), otherwise `complete`.

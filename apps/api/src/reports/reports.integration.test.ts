@@ -257,7 +257,6 @@ describe('report preview', () => {
     const o = await overviewSummary();
     expect(line('Revenue').at(-2)).toBe(o.revenue);
     expect(line('Contribution profit').at(-2)).toBe(o.contributionProfit);
-    expect(line('Contribution before advertising').at(-2)).toBe(o.contributionBeforeAds);
     expect(line('Sales before discounts').at(-2)).toBe(o.grossSales);
   });
 
@@ -273,7 +272,7 @@ describe('report preview', () => {
     }
   });
 
-  it('within a month the lines work out: revenue less costs is contribution, less ads and expenses is net', async () => {
+  it('within a month the lines work out: revenue less costs is contribution, less advertising and expenses is operating profit', async () => {
     await calculateAll(a);
     const t = reportTableSchema.parse((await preview('profit_loss')).body);
     const all = [...t.rows, ...t.totalRows];
@@ -285,10 +284,7 @@ describe('report preview', () => {
     for (let i = 1; i < t.columns.length - 1; i++) {
       expect(
         v('Revenue', i) + v('Product cost', i) + v('Payment fees', i) + v('Shipping cost', i),
-      ).toBe(v('Contribution before advertising', i));
-      expect(v('Contribution before advertising', i) + v('Advertising', i)).toBe(
-        v('Contribution profit', i),
-      );
+      ).toBe(v('Contribution profit', i));
     }
   });
 
@@ -311,18 +307,26 @@ describe('report preview', () => {
     });
     const t = reportTableSchema.parse((await preview('profit_loss')).body);
     const all = [...t.rows, ...t.totalRows];
-    expect(all.find((r) => r[0] === 'Advertising')!.at(-2)).toBe('-250.5000');
-    expect(all.find((r) => r[0] === 'Operating expenses')!.at(-2)).toBe('-9290.3200'); // 9 months + 9 of 31 days of October
+    expect(all.find((r) => r[0] === 'Operating expenses: advertising')!.at(-2)).toBe('-250.5000');
+    expect(all.find((r) => r[0] === 'Operating expenses: other')!.at(-2)).toBe('-9290.3200'); // 9 months + 9 of 31 days of October
     const o = await overviewSummary();
     expect(all.find((r) => r[0] === 'Contribution profit')!.at(-2)).toBe(o.contributionProfit);
-    expect(all.find((r) => r[0] === 'Estimated net profit')!.at(-2)).toBe(o.estimatedNetProfit);
-    // month by month: contribution less expenses is net profit (net is only an amount here
-    // because expenses exist)
-    const v = (label: string, i: number) => cents(all.find((r) => r[0] === label)![i]!);
+    expect(all.find((r) => r[0] === 'Estimated operating profit')!.at(-2)).toBe(
+      o.estimatedOperatingProfit,
+    );
+    // month by month: contribution less advertising and expenses is operating profit (an amount
+    // here only because expenses exist)
+    // a month with no advertising data shows the words No data: nothing was taken off
+    const v = (label: string, i: number) => {
+      const n = cents(all.find((r) => r[0] === label)![i]!);
+      return Number.isNaN(n) ? 0 : n;
+    };
     for (let i = 1; i < t.columns.length - 1; i++) {
-      expect(v('Contribution profit', i) + v('Operating expenses', i)).toBe(
-        v('Estimated net profit', i),
-      );
+      expect(
+        v('Contribution profit', i) +
+          v('Operating expenses: advertising', i) +
+          v('Operating expenses: other', i),
+      ).toBe(v('Estimated operating profit', i));
     }
   });
 
@@ -792,19 +796,19 @@ describe('unknown is never shown as zero', () => {
     const o = await overviewSummary();
     expect(o.statuses.advertising).toBe('not_configured');
     expect(o.statuses.operatingExpenses).toBe('not_configured');
-    expect(o.estimatedNetProfit).toBeNull();
+    expect(o.estimatedOperatingProfit).toBeNull();
     expect(o.adSpend).toBeNull();
     expect(o.qualifiers.join(' ')).toMatch(/Advertising is not set up/);
     expect(o.qualifiers.join(' ')).toMatch(/No operating expenses are set up/);
 
     const p = await pnl();
-    expect(p.total('Advertising')).toBe('Not configured');
-    expect(p.total('Operating expenses')).toBe('Not set up');
-    expect(p.total('Estimated net profit')).toBe('Not available');
-    expect(p.status('Estimated net profit')).toBe('Needs operating expenses');
-    expect(p.status('Contribution profit')).toMatch(/excludes advertising/);
-    // with nothing taken off for advertising, contribution profit equals contribution before it
-    expect(p.total('Contribution profit')).toBe(p.total('Contribution before advertising'));
+    expect(p.total('Operating expenses: advertising')).toBe('Not configured');
+    expect(p.total('Operating expenses: other')).toBe('Not set up');
+    expect(p.total('Estimated operating profit')).toBe('Not available');
+    expect(p.status('Estimated operating profit')).toBe('Needs operating expenses');
+    // contribution profit never depended on advertising, so its status does not mention it
+    expect(p.status('Contribution profit')).not.toMatch(/advertising/i);
+    expect(p.total('Contribution profit')).toBe(o.contributionProfit);
 
     const m = await marketingOverview();
     expect(m.totals.hasData).toBe(false);
@@ -827,7 +831,7 @@ describe('unknown is never shown as zero', () => {
     expect(o.statuses.paymentFees).toBe('estimated');
     expect(p.status('Payment fees')).toBe('Estimated');
     // contribution is then never presented as confirmed
-    expect(p.status('Contribution before advertising')).toBe('Incomplete');
+    expect(p.status('Contribution profit')).toBe('Incomplete');
   });
 
   it('an advertising account with no spend is "no data", then the spend appears everywhere', async () => {
@@ -838,7 +842,7 @@ describe('unknown is never shown as zero', () => {
     let o = await overviewSummary();
     expect(o.statuses.advertising).toBe('missing');
     expect(o.adSpend).toBeNull();
-    expect((await pnl()).total('Advertising')).toBe('No data');
+    expect((await pnl()).total('Operating expenses: advertising')).toBe('No data');
     const m1 = await marketingOverview();
     expect(m1.totals.hasAccounts).toBe(true);
     expect(m1.totals.hasData).toBe(false);
@@ -850,7 +854,7 @@ describe('unknown is never shown as zero', () => {
     // spend entered as exactly 0.00 is a confirmed zero
     expect(o.statuses.advertising).toBe('confirmed');
     expect(o.adSpend).toBe('0.0000');
-    expect((await pnl()).total('Advertising')).toBe('0.0000');
+    expect((await pnl()).total('Operating expenses: advertising')).toBe('0.0000');
   });
 });
 
@@ -884,16 +888,16 @@ describe('the same period gives the same totals on every screen', () => {
     // revenue
     expect(p.total('Revenue')).toBe(o.revenue);
     expect(m.totals.shopifyRevenue).toBe(o.revenue);
-    // contribution before advertising
-    expect(p.total('Contribution before advertising')).toBe(o.contributionBeforeAds);
-    expect(m.totals.contributionProfit).toBe(o.contributionBeforeAds);
-    // advertising
-    expect(p.total('Advertising')).toBe(neg(o.adSpend!));
-    expect(m.totals.spend).toBe(o.adSpend);
-    // contribution profit (after advertising)
+    // contribution profit (advertising is not taken off)
     expect(p.total('Contribution profit')).toBe(o.contributionProfit);
-    expect(m.totals.profitAfterAds).toBe(o.contributionProfit);
+    expect(m.totals.contributionProfit).toBe(o.contributionProfit);
     expect(products.totalRows.at(-1)![8]).toBe(o.contributionProfit);
+    // advertising is an operating cost, below contribution profit
+    expect(p.total('Operating expenses: advertising')).toBe(neg(o.adSpend!));
+    expect(m.totals.spend).toBe(o.adSpend);
+    expect(cents(m.totals.contributionProfit) - cents(m.totals.profitAfterAds)).toBe(
+      cents(o.adSpend!),
+    );
     // the lines that build revenue, exactly as the dashboard breakdown shows them
     expect(p.total('Sales before discounts')).toBe(o.grossSales);
     expect(p.total('Discounts')).toBe(neg(o.discounts));
@@ -909,13 +913,13 @@ describe('the same period gives the same totals on every screen', () => {
     // costs
     expect(p.total('Product cost')).toBe(neg(o.cogs));
     expect(p.total('Payment fees')).toBe(neg(o.paymentFees));
-    // operating expenses and net profit
-    expect(p.total('Operating expenses')).toBe(neg(o.operatingExpenses!));
-    expect(p.total('Estimated net profit')).toBe(o.estimatedNetProfit);
+    // operating expenses and estimated operating profit
+    expect(p.total('Operating expenses: other')).toBe(neg(o.operatingExpenses!));
+    expect(p.total('Estimated operating profit')).toBe(o.estimatedOperatingProfit);
     // and the arithmetic itself, in whole cents
-    expect(cents(o.contributionBeforeAds) - cents(o.adSpend!)).toBe(cents(o.contributionProfit));
-    expect(cents(o.contributionProfit) - cents(o.operatingExpenses!)).toBe(
-      cents(o.estimatedNetProfit!),
+    expect(cents(o.revenue) - cents(o.totalCosts)).toBe(cents(o.contributionProfit));
+    expect(cents(o.contributionProfit) - cents(o.adSpend!) - cents(o.operatingExpenses!)).toBe(
+      cents(o.estimatedOperatingProfit!),
     );
   });
 

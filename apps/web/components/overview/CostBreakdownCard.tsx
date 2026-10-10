@@ -11,7 +11,6 @@ import { CardHeader, CardPeriodFilter, useCardOverview } from './card-parts';
 
 const BAR: Record<string, string> = {
   cogs: '#d72c0d',
-  ads: '#005bd3',
   fees: '#b98900',
   shippingCost: '#7b4bd6',
 };
@@ -107,11 +106,18 @@ export function CostBreakdownCard({ page }: { page: OverviewResponse }) {
               </>
             </div>
             <s-stack direction="inline" justifyContent="space-between" gap="base">
-              <s-text type="strong">Total costs</s-text>
+              <s-text type="strong">Total costs (product, shipping, fees)</s-text>
               <s-text type="strong">{formatMoney(b.total, cur)}</s-text>
             </s-stack>
+            <s-text color="subdued">
+              Operating costs come after contribution profit and are not in the total above.
+            </s-text>
             <s-stack direction="inline" justifyContent="space-between" gap="base">
-              <s-text color="subdued">Operating expenses (not included above)</s-text>
+              <s-text color="subdued">Advertising</s-text>
+              <s-text color="subdued">{b.advertising.text}</s-text>
+            </s-stack>
+            <s-stack direction="inline" justifyContent="space-between" gap="base">
+              <s-text color="subdued">Other operating expenses</s-text>
               <s-text color="subdued">{b.operatingExpenses.text}</s-text>
             </s-stack>
           </div>

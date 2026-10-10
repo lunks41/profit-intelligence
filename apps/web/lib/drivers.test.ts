@@ -12,7 +12,6 @@ const base = {
   paymentFees: '30.0000',
   shippingCost: '20.0000',
   adSpend: null,
-  contributionBeforeAds: '550.0000',
   contributionProfit: '550.0000',
   refundRate: '0.0455',
   missingCostShare: '0.0000',
@@ -35,8 +34,6 @@ const input = (
   fees: { actual: '30.0000', estimated: '0.0000', estimatedShare: '0.0000' },
   deltas: {
     contributionProfit: null,
-    basis: 'contribution',
-    basisNote: null,
   } as unknown as OverviewResponse['deltas'],
   ...extra,
 });
@@ -58,7 +55,6 @@ describe('what changed', () => {
     const now = make({
       productRefunds: '250.0000',
       revenue: '800.0000',
-      contributionBeforeAds: '350.0000',
       contributionProfit: '350.0000',
       refundRate: '0.2273',
     });
@@ -80,7 +76,6 @@ describe('what changed', () => {
       cogs: '600.0000',
       paymentFees: '45.0000',
       shippingCost: '35.0000',
-      contributionBeforeAds: '650.0000',
       contributionProfit: '650.0000',
       orders: 140,
     });
@@ -98,7 +93,6 @@ describe('what changed', () => {
   it('flags missing product costs that appeared, and says the change is a data effect', () => {
     const now = make({
       cogs: '200.0000',
-      contributionBeforeAds: '750.0000',
       contributionProfit: '750.0000',
       missingCostShare: '0.2500',
       partial: true,
@@ -112,7 +106,6 @@ describe('what changed', () => {
   it('explains a shipping change and marks estimated shipping', () => {
     const now = make({
       shippingCost: '120.0000',
-      contributionBeforeAds: '450.0000',
       contributionProfit: '450.0000',
       statuses: { cogs: 'confirmed', paymentFees: 'confirmed', shippingCost: 'estimated' },
     });
@@ -126,7 +119,6 @@ describe('what changed', () => {
       input(
         make({
           paymentFees: '80.0000',
-          contributionBeforeAds: '500.0000',
           contributionProfit: '500.0000',
         }),
         base,
@@ -138,35 +130,15 @@ describe('what changed', () => {
     expect(w.caveats.join(' ')).toContain('estimates from your fee rule');
   });
 
-  it('leaves advertising out unless both periods have it', () => {
+  it('advertising is an operating cost: it is never a driver of contribution profit', () => {
     const now = make({
-      adSpend: '200.0000',
-      contributionProfit: '350.0000',
+      adSpend: '500.0000',
+      contributionProfit: '550.0000',
     });
-    const w = whatChanged(input(now, base))!;
-    expect(w.drivers.find((d) => d.key === 'advertising')).toBeUndefined();
-    const both = whatChanged(
-      input(now, make({ adSpend: '50.0000', contributionProfit: '500.0000' })),
-    )!;
-    expect(both.drivers.find((d) => d.key === 'advertising')).toMatchObject({
-      key: 'advertising',
-      effect: -150,
-    });
-  });
-
-  it('uses the before-advertising profit when the comparison is on that basis', () => {
-    const now = make({ adSpend: '200.0000', contributionProfit: '350.0000' });
-    const w = whatChanged(
-      input(now, base, {
-        deltas: {
-          contributionProfit: 0,
-          basis: 'before_advertising',
-          basisNote: 'Advertising data exists in only one of the two periods.',
-        } as unknown as OverviewResponse['deltas'],
-      }),
-    )!;
-    expect(w.direction).toBe('flat');
-    expect(w.headline).toContain('Profit before advertising is unchanged');
-    expect(w.basisNote).toContain('only one of the two periods');
+    const w = whatChanged(input(now, make({ adSpend: '50.0000' })))!;
+    expect(w.direction).toBe('flat'); // same contribution profit, only advertising differs
+    expect(w.drivers).toEqual([]);
+    expect(w.headline).toContain('Contribution profit is unchanged');
+    expect(w.drivers.some((d) => (d.key as string) === 'advertising')).toBe(false);
   });
 });

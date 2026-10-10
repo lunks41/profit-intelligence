@@ -62,24 +62,40 @@ describe('summarize', () => {
     expect(withTax.contributionProfit).toBe(without.contributionProfit);
   });
 
-  it('subtracts advertising spend only when connected', () => {
-    expect(summarize(entries, { orderCount: 4 }).adSpend).toBeNull();
+  it('advertising spend never changes contribution profit; it is taken off at operating profit', () => {
+    const base = summarize(entries, { orderCount: 4 });
+    expect(base.adSpend).toBeNull();
     const s = summarize(entries, {
       orderCount: 4,
       adSpend: { amount: '100.0000', status: 'actual' },
     });
     expect(s.adSpend).toBe('100.0000');
-    expect(s.contributionProfit).toBe('230.0000');
+    expect(s.contributionProfit).toBe(base.contributionProfit); // 330, with or without advertising
+    expect(s.totalCosts).toBe(base.totalCosts);
+    expect(s.estimatedOperatingProfit).toBeNull(); // no operating expenses set up yet
   });
 
-  it('net profit is only "full" when operating expenses were entered (D4)', () => {
+  it('operating profit is only available when operating expenses were entered (D4)', () => {
     const none = summarize(entries, { orderCount: 4 });
-    expect(none).toMatchObject({ netProfitBasis: 'contribution_only', estimatedNetProfit: null });
+    expect(none).toMatchObject({
+      operatingProfitBasis: 'contribution_only',
+      estimatedOperatingProfit: null,
+      operatingMargin: null,
+    });
     const some = summarize(entries, {
       orderCount: 4,
       operatingExpenses: { amount: '120.0000', status: 'actual' },
     });
-    expect(some).toMatchObject({ netProfitBasis: 'full', estimatedNetProfit: '210.0000' });
+    expect(some).toMatchObject({
+      operatingProfitBasis: 'full',
+      estimatedOperatingProfit: '210.0000',
+    });
+    const withAds = summarize(entries, {
+      orderCount: 4,
+      adSpend: { amount: '100.0000', status: 'actual' },
+      operatingExpenses: { amount: '120.0000', status: 'actual' },
+    });
+    expect(withAds.estimatedOperatingProfit).toBe('110.0000'); // 330 - 100 advertising - 120 expenses
   });
 
   it('empty period: zeros, and ratios are null instead of NaN or Infinity', () => {

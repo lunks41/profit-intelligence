@@ -6,7 +6,7 @@ Package `@pi/reports` builds reports; the API shows them and the worker prepares
 
 `profit_loss`, `products`, `orders`, `marketing`, `expenses` (`packages/reports/src/builders.ts`). A report is a plain table of strings: money as exact decimals, formatted only for reading.
 
-- **Profit and loss:** one column per calendar month plus a total. Every line adds up across months to its total, and within a month revenue less costs gives contribution profit, less advertising and expenses gives net profit. Tested to the cent against the Overview.
+- **Profit and loss:** one column per calendar month plus a total. Every line adds up across months to its total, and within a month revenue less costs gives contribution profit, less advertising and other operating expenses gives estimated operating profit. Tested to the cent against the Overview.
 - **Products:** uses the approved allocation rule (see profitability.md) and ends with the reconciliation to the Overview figure.
 - **Orders:** only counted orders, up to 50,000 rows (the report says when it stopped).
 

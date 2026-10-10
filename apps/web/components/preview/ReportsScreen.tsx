@@ -28,7 +28,7 @@ export function ReportsPreview() {
               {[
                 [
                   'Profit and loss',
-                  'Sales down to net profit for any period, with monthly columns.',
+                  'Sales down to operating profit for any period, with monthly columns.',
                 ],
                 ['Product profitability', 'Profit, margin and cost data for every product.'],
                 ['Order profitability', 'Every order with its profit and what is missing.'],
@@ -68,7 +68,7 @@ export function ReportsPreview() {
                 ['Contribution profit', '$26,900', '$25,100', '$29,900', '$81,900'],
                 ['Advertising', '-$6,200', '-$6,500', '-$7,100', '-$19,800'],
                 ['Operating expenses', '-$4,700', '-$4,700', '-$5,200', '-$14,600'],
-                ['Estimated net profit', '$16,000', '$13,900', '$17,600', '$47,500'],
+                ['Estimated operating profit', '$16,000', '$13,900', '$17,600', '$47,500'],
               ]}
             />
           </s-section>

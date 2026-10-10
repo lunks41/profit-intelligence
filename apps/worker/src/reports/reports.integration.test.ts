@@ -655,12 +655,11 @@ describe('exports and scheduled reports carry the same figures as the screen', (
     const total = (label: string) => rows.find((r) => r[0] === label)!.at(-2)!;
     const status = (label: string) => rows.find((r) => r[0] === label)!.at(-1)!;
     expect(total('Revenue')).toBe(summary.revenue);
-    expect(total('Contribution before advertising')).toBe(summary.contributionBeforeAds);
     expect(total('Contribution profit')).toBe(summary.contributionProfit);
-    expect(total('Advertising')).toBe('Not configured');
-    expect(total('Operating expenses')).toBe('Not set up');
-    expect(total('Estimated net profit')).toBe('Not available');
-    expect(status('Contribution profit')).toMatch(/excludes advertising/);
+    expect(total('Operating expenses: advertising')).toBe('Not configured');
+    expect(total('Operating expenses: other')).toBe('Not set up');
+    expect(total('Estimated operating profit')).toBe('Not available');
+    expect(status('Contribution profit')).not.toMatch(/advertising/i);
     // shipping cost has no rule in this fixture, so it is not a confirmed zero
     expect(summary.statuses.shippingCost).toBe('missing');
     expect(status('Shipping cost')).not.toBe('Confirmed');

@@ -161,11 +161,11 @@ export function figuresFrom(s: Summary): Figures {
     st.operatingExpenses === 'not_configured'
       ? { text: 'Not set up', status: 'Not set up' }
       : confirmed(neg(s.operatingExpenses ?? '0'));
-  const net: Figure =
-    s.estimatedNetProfit === null
+  const operating: Figure =
+    s.estimatedOperatingProfit === null
       ? { text: 'Not available', status: 'Needs operating expenses' }
       : {
-          text: s.estimatedNetProfit,
+          text: s.estimatedOperatingProfit,
           status: `${base === 'Confirmed' ? 'Estimated' : base}${adsNote}`,
         };
 
@@ -178,11 +178,10 @@ export function figuresFrom(s: Summary): Figures {
     cogs: costFigure(neg(s.cogs), st.cogs, s.missingShares.cogs),
     fees: costFigure(neg(s.paymentFees), st.paymentFees, s.missingShares.paymentFees),
     shippingCost: costFigure(neg(s.shippingCost), st.shippingCost, s.missingShares.shippingCost),
-    beforeAds: { text: s.contributionBeforeAds, status: base },
+    contribution: { text: s.contributionProfit, status: base },
     ads,
-    contribution: { text: s.contributionProfit, status: `${base}${adsNote}` },
     opex,
-    net,
+    operating,
   };
 }
 
@@ -195,11 +194,10 @@ const PNL_LINES: Array<{ key: string; label: string; bold?: boolean }> = [
   { key: 'cogs', label: 'Product cost' },
   { key: 'fees', label: 'Payment fees' },
   { key: 'shippingCost', label: 'Shipping cost' },
-  { key: 'beforeAds', label: 'Contribution before advertising', bold: true },
-  { key: 'ads', label: 'Advertising' },
   { key: 'contribution', label: 'Contribution profit', bold: true },
-  { key: 'opex', label: 'Operating expenses' },
-  { key: 'net', label: 'Estimated net profit', bold: true },
+  { key: 'ads', label: 'Operating expenses: advertising' },
+  { key: 'opex', label: 'Operating expenses: other' },
+  { key: 'operating', label: 'Estimated operating profit', bold: true },
 ];
 
 async function profitLoss(
@@ -259,15 +257,14 @@ async function products(
   const sum = (f: (r: (typeof rows)[number]) => string) =>
     toStored(rows.reduce((a, r) => a.plus(dec(f(r))), new D(0)));
   const un = Object.values(unallocated).reduce((a, v) => a.plus(v), new D(0));
-  const spend = ads.byAccount.reduce((a, x) => a.plus(dec(x.spend)), new D(0));
   const productProfit = sum((r) => r.profit);
-  const total = dec(productProfit).plus(un).minus(spend);
+  const total = dec(productProfit).plus(un);
   const overview = summarizePeriod({
     totals: agg.totals,
     coverage: agg.coverage,
     anyMissing: agg.anyMissing,
     orderCount: agg.orderCount,
-    ads: { configured: ads.hasAccounts, hasData: ads.hasData, spend: toStored(spend) },
+    ads: { configured: ads.hasAccounts, hasData: ads.hasData, spend: totalAdSpend(ads.byAccount) },
     operatingExpenses: null,
   }).contributionProfit;
 
@@ -322,7 +319,6 @@ async function products(
     totalRows: [
       blank('All products', productProfit),
       blank('Not tied to a product (shipping, fees)', toStored(un)),
-      ...(ads.hasData ? [blank('Advertising', toStored(spend.neg()))] : []),
       blank('Contribution profit (matches the Overview)', toStored(total)),
     ],
     notes: [

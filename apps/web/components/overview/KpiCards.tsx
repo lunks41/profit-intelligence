@@ -13,7 +13,6 @@ import { Change, Kpi } from '../common/kpi';
 export function KpiCards({ data }: { data: OverviewResponse }) {
   const { summary: s, deltas, previousPeriod } = data;
   const cur = data.currency.code;
-  const beforeAds = deltas.basis === 'before_advertising';
   const spark = sparkSeries(data.trend);
   const estimates = [s.statuses.cogs, s.statuses.paymentFees, s.statuses.shippingCost].includes(
     'estimated',
@@ -23,7 +22,6 @@ export function KpiCards({ data }: { data: OverviewResponse }) {
   ) : estimates ? (
     <s-badge tone="info">Includes estimates</s-badge>
   ) : null;
-  const suffix = beforeAds ? 'before advertising' : null;
 
   return (
     <s-stack gap="small">
@@ -40,13 +38,12 @@ export function KpiCards({ data }: { data: OverviewResponse }) {
           icon="wallet"
           label="Costs"
           value={formatMoney(s.totalCosts, cur)}
-          info="Everything taken off revenue to reach contribution profit: product cost, payment fees, shipping cost and advertising (when set up). Operating expenses are separate."
+          info="The costs of selling what you sold: product cost, payment fees and shipping cost. Advertising and other operating expenses are separate and come after contribution profit."
           change={
             <Change
               delta={describeDelta(deltas.costs)}
               previous={previousPeriod}
               goodWhenUp={false}
-              suffix={suffix}
             />
           }
           notes={
@@ -65,20 +62,13 @@ export function KpiCards({ data }: { data: OverviewResponse }) {
           icon="chart-vertical"
           label="Contribution profit"
           value={formatMoney(s.contributionProfit, cur)}
-          info="Revenue minus product cost, payment fees, shipping cost and advertising (when advertising data exists). Operating expenses are not taken off, so this is not net profit."
+          info="Revenue minus product cost, payment fees and shipping cost. Advertising and other operating expenses are not taken off, so this is not operating profit."
           change={
-            <Change
-              delta={describeDelta(deltas.contributionProfit)}
-              previous={previousPeriod}
-              suffix={suffix}
-            />
+            <Change delta={describeDelta(deltas.contributionProfit)} previous={previousPeriod} />
           }
           notes={
             <s-stack direction="inline" gap="small" alignItems="center">
               {gap}
-              {s.statuses.advertising !== 'confirmed' && (
-                <s-text color="subdued">Excludes advertising</s-text>
-              )}
             </s-stack>
           }
           spark={spark.profit}
@@ -88,18 +78,11 @@ export function KpiCards({ data }: { data: OverviewResponse }) {
           label="Contribution margin"
           value={formatPercent(s.contributionMargin)}
           info="Contribution profit divided by revenue."
-          change={
-            <Change
-              delta={describePoints(deltas.marginPoints)}
-              previous={previousPeriod}
-              suffix={suffix}
-            />
-          }
+          change={<Change delta={describePoints(deltas.marginPoints)} previous={previousPeriod} />}
           notes={gap}
           spark={spark.margin}
         />
       </s-grid>
-      {deltas.basisNote && <s-text color="subdued">{deltas.basisNote}</s-text>}
     </s-stack>
   );
 }

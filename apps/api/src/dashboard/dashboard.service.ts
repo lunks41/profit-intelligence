@@ -182,7 +182,6 @@ export class DashboardService {
       }
       return days;
     };
-    const adDaily = adByDay(adNow);
     const adDisplayedTotal = (ad: Awaited<ReturnType<typeof getAdSpend>>) =>
       toStored(
         [...adByDay(ad)].reduce(
@@ -237,14 +236,12 @@ export class DashboardService {
         coverage: NO_COVERAGE,
         anyMissing: false,
       });
-      const profit = dec(s.contributionProfit).minus(
-        dec(display(adDaily.get(date) ?? '0.0000', date)),
-      );
+      // contribution profit never includes advertising, so neither does the trend
       return {
         date,
         revenue: s.revenue,
-        costs: toStored(dec(s.revenue).minus(profit)),
-        contributionProfit: toStored(profit),
+        costs: s.totalCosts,
+        contributionProfit: s.contributionProfit,
         estimatedFees: toStored(dec(day?.totals[ESTIMATED_FEES] ?? '0').neg()),
         orders: day?.orders ?? 0,
       };
@@ -255,19 +252,10 @@ export class DashboardService {
       query.interval === 'auto' ? intervalFor(range.days) : query.interval,
     );
 
-    // Profit is compared like for like. When advertising data exists in only one of the two periods
-    // the comparison leaves advertising out of both, and says so.
-    const adsKnown = (p: ProfitSummary) => p.statuses.advertising === 'confirmed';
-    const beforeAds = comparable && adsKnown(summary) !== adsKnown(previous);
-    const marginOf = (p: ProfitSummary) => {
-      if (!beforeAds) return p.contributionMargin;
-      return dec(p.revenue).isZero()
-        ? null
-        : toStored(dec(p.contributionBeforeAds).div(dec(p.revenue)).toDecimalPlaces(4));
-    };
+    // Contribution profit never includes advertising, so the two periods are always comparable.
     const dataQuality = dataQualityOf(aggNow.coverage, summary);
-    const marginNow = marginOf(summary);
-    const marginBefore = marginOf(previous);
+    const marginNow = summary.contributionMargin;
+    const marginBefore = previous.contributionMargin;
     const marginPoints =
       marginNow !== null && marginBefore !== null
         ? (Number(marginNow) - Number(marginBefore)) * 100
@@ -291,25 +279,14 @@ export class DashboardService {
       previous,
       deltas: {
         revenue: relative(summary.revenue, previous.revenue),
-        costs: beforeAds
-          ? relative(
-              toStored(dec(summary.revenue).minus(dec(summary.contributionBeforeAds))),
-              toStored(dec(previous.revenue).minus(dec(previous.contributionBeforeAds))),
-            )
-          : relative(summary.totalCosts, previous.totalCosts),
-        contributionProfit: beforeAds
-          ? relative(summary.contributionBeforeAds, previous.contributionBeforeAds)
-          : relative(summary.contributionProfit, previous.contributionProfit),
+        costs: relative(summary.totalCosts, previous.totalCosts),
+        contributionProfit: relative(summary.contributionProfit, previous.contributionProfit),
         orders: relative(String(summary.orders), String(previous.orders)),
         averageOrderValue:
           summary.averageOrderValue && previous.averageOrderValue
             ? relative(summary.averageOrderValue, previous.averageOrderValue)
             : null,
         marginPoints,
-        basis: beforeAds ? ('before_advertising' as const) : ('contribution' as const),
-        basisNote: beforeAds
-          ? 'Advertising data exists in only one of the two periods, so the change is shown before advertising.'
-          : null,
       },
       trendInterval,
       trend,
