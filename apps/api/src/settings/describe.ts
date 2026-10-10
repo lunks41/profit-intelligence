@@ -54,6 +54,8 @@ export function describeAudit(r: { action: string; oldValue: unknown; newValue: 
         ? `Turned on alert emails to ${list.join(', ')}`
         : 'Turned off alert emails';
     }
+    case 'expense_category.set_class':
+      return `Set the cost class of the category "${s(n?.name)}" to ${s(n?.class)} (was ${s(o?.class)})`;
     case 'profit.recalculated':
       return `Recalculation finished: ${s(n?.orders)} orders, ${s(n?.changed)} changed, ${s(n?.nowComplete)} now complete`;
     case 'profit.recalculate_everything':

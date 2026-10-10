@@ -11,7 +11,9 @@ import type {
   ExpenseRow,
   ExpenseSummaryResponse,
 } from '@pi/contracts';
-import { apiDelete, apiPost, apiPut } from '../../lib/api';
+import { apiDelete, apiGet, apiPost, apiPut } from '../../lib/api';
+import { downloadText } from '../../lib/import-summary';
+import { CLASS_LABEL, overlapWarning } from '../../lib/expense-class';
 import { formatMoney, formatPercent, longDate } from '../../lib/format';
 import { SampleBars } from '../preview/ui';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
@@ -230,6 +232,9 @@ function AddExpense({
   const [frequency, setFrequency] = useState<'monthly' | 'yearly'>('monthly');
   const [start, setStart] = useState(todayLocal());
   const [end, setEnd] = useState('');
+  const [reference, setReference] = useState('');
+  const [description, setDescription] = useState('');
+  const [foreign, setForeign] = useState('');
   const [touched, setTouched] = useState(false);
   // One key per open form: pressing Save twice, or a retry, cannot add the expense twice.
   const [requestKey] = useState(() => crypto.randomUUID());
@@ -239,10 +244,13 @@ function AddExpense({
   const amountOk = isAmount(amount);
   const startOk = /^\d{4}-\d{2}-\d{2}$/.test(start);
   const endOk = end === '' || (/^\d{4}-\d{2}-\d{2}$/.test(end) && end >= start);
+  const currencyOk = foreign === '' || /^[A-Z]{3}$/.test(foreign);
+  const picked = categories.find((c) => c.id === categoryId);
+  const warning = picked ? overlapWarning(picked.class) : null;
 
   async function save() {
     setTouched(true);
-    if (!nameOk || !amountOk || !startOk || !endOk || !categoryId) return;
+    if (!nameOk || !amountOk || !startOk || !endOk || !currencyOk || !categoryId) return;
     const ok = await run(() =>
       apiPost('/expenses', {
         name: name.trim(),
@@ -252,6 +260,9 @@ function AddExpense({
         ...(kind === 'recurring' ? { frequency } : {}),
         startDate: start,
         ...(kind === 'recurring' && end ? { endDate: end } : {}),
+        ...(reference.trim() ? { reference: reference.trim() } : {}),
+        ...(description.trim() ? { description: description.trim() } : {}),
+        ...(foreign && foreign !== currency ? { currency: foreign } : {}),
         requestKey,
       }),
     );
@@ -270,12 +281,30 @@ function AddExpense({
             onInput={(e) => setName(e.currentTarget.value)}
           />
           <s-text-field
-            label={`Amount (${currency})`}
+            label={`Amount (${foreign || currency})`}
             value={amount}
             error={touched && !amountOk ? 'Enter a number such as 1200.00' : undefined}
             onInput={(e) => setAmount(e.currentTarget.value)}
           />
+          <s-text-field
+            label={`Currency (blank = ${currency})`}
+            placeholder={currency}
+            value={foreign}
+            error={touched && !currencyOk ? 'Use a three-letter code such as EUR' : undefined}
+            onInput={(e) => setForeign(e.currentTarget.value.toUpperCase())}
+          />
           <CategoryDropdown value={categoryId} categories={categories} onChange={setCategoryId} />
+          <s-text-field
+            label="Reference (optional)"
+            placeholder="Invoice 1042"
+            value={reference}
+            onInput={(e) => setReference(e.currentTarget.value)}
+          />
+          <s-text-field
+            label="Description (optional)"
+            value={description}
+            onInput={(e) => setDescription(e.currentTarget.value)}
+          />
           <Dropdown
             label="Repeats"
             value={kind === 'one_time' ? 'once' : frequency}
@@ -306,6 +335,17 @@ function AddExpense({
             />
           )}
         </s-grid>
+        {warning && (
+          <s-banner tone="warning" heading="This could be counted twice">
+            <s-paragraph>{warning}</s-paragraph>
+          </s-banner>
+        )}
+        {foreign && foreign !== currency && (
+          <s-text color="subdued">
+            The amount is converted to {currency} once, at the exchange rate of the expense date,
+            and marked as an estimate when that rate is not from the day itself.
+          </s-text>
+        )}
         <FormError message={error} />
         <div>
           <s-button variant="primary" disabled={busy} onClick={() => void save()}>
@@ -331,7 +371,10 @@ function List({
   const [search, setSearch] = useState('');
   const [applied, setApplied] = useState('');
   const [kind, setKind] = useState<'all' | 'one_time'>('all');
+  const [categoryId, setCategoryId] = useState('');
+  const [status, setStatus] = useState('all');
   const [selected, setSelected] = useState<ExpenseRow | null>(null);
+  const exportCsv = useAction();
 
   useEffect(() => {
     const t = setTimeout(() => setApplied(search.trim()), 350);
@@ -340,6 +383,8 @@ function List({
 
   const q = new URLSearchParams({ filter: mode === 'recurring' ? 'recurring' : kind });
   if (applied) q.set('search', applied);
+  if (categoryId) q.set('categoryId', categoryId);
+  if (status !== 'all') q.set('status', status);
   q.set('_', String(version));
   const { data, error, loading, reload } = useApi<ExpenseListResponse>(`/expenses?${q}`);
 
@@ -358,10 +403,42 @@ function List({
           >
             <FilterSearch
               label="Search"
-              placeholder="Name or category"
+              placeholder="Name, category or reference"
               value={search}
               onChange={setSearch}
             />
+            <ShowDropdown
+              chip
+              label="Category"
+              value={categoryId}
+              options={[
+                { value: '', label: 'All categories' },
+                ...categories.map((c) => ({ value: c.id, label: c.name })),
+              ]}
+              onChange={setCategoryId}
+            />
+            <ShowDropdown
+              chip
+              label="Status"
+              value={status}
+              options={[
+                { value: 'all', label: 'Any status' },
+                { value: 'active', label: 'Active' },
+                { value: 'scheduled', label: 'Scheduled' },
+                { value: 'ended', label: 'Ended' },
+              ]}
+              onChange={setStatus}
+            />
+            <s-button
+              variant="tertiary"
+              disabled={exportCsv.busy}
+              onClick={async () => {
+                const file = await exportCsv.run(() => apiGet<{ csv: string }>('/expenses/export'));
+                if (file) downloadText('expenses.csv', file.csv);
+              }}
+            >
+              Export CSV
+            </s-button>
             {mode === 'all' && (
               <ShowDropdown
                 chip
@@ -375,6 +452,7 @@ function List({
               />
             )}
           </div>
+          <FormError message={exportCsv.error} />
           {error && <ErrorBanner message={error} onRetry={() => void reload()} />}
           {loading && !data && <Loading what="expenses" />}
           {data && data.rows.length === 0 && (
@@ -408,8 +486,18 @@ function List({
                 <s-table-body>
                   {data.rows.map((r) => (
                     <s-table-row key={r.id}>
-                      <s-table-cell>{r.name}</s-table-cell>
-                      <s-table-cell>{r.category}</s-table-cell>
+                      <s-table-cell>
+                        <s-stack gap="none">
+                          <s-text>{r.name}</s-text>
+                          {r.reference && <s-text color="subdued">Ref. {r.reference}</s-text>}
+                          {r.description && <s-text color="subdued">{r.description}</s-text>}
+                        </s-stack>
+                      </s-table-cell>
+                      <s-table-cell>
+                        {r.category}
+                        <br />
+                        <s-text color="subdued">{CLASS_LABEL[r.categoryClass]}</s-text>
+                      </s-table-cell>
                       <s-table-cell>
                         {r.kind === 'one_time'
                           ? 'One time'
@@ -417,7 +505,18 @@ function List({
                             ? 'Yearly'
                             : 'Monthly'}
                       </s-table-cell>
-                      <s-table-cell>{formatMoney(r.amount, data.currency)}</s-table-cell>
+                      <s-table-cell>
+                        {formatMoney(r.amount, data.currency)}
+                        {r.originalAmount && r.originalCurrency && (
+                          <>
+                            <br />
+                            <s-text color="subdued">
+                              {formatMoney(r.originalAmount, r.originalCurrency)} at {r.fxRate}
+                              {r.fxEstimated ? ' (estimated rate)' : ''}
+                            </s-text>
+                          </>
+                        )}
+                      </s-table-cell>
                       <s-table-cell>{formatMoney(r.thisMonth, data.currency)}</s-table-cell>
                       <s-table-cell>{r.nextCharge ? longDate(r.nextCharge) : '—'}</s-table-cell>
                       <s-table-cell>

@@ -628,6 +628,257 @@ describe('expenses', () => {
   });
 });
 
+describe('expense details: reference, description and other currencies', () => {
+  const list = async (qs = '', token?: string) =>
+    expenseListResponseSchema.parse((await json('GET', `/expenses${qs}`, token)).body);
+  // exchange rates are shared by every shop, so each test starts with none
+  beforeEach(() => admin.query('truncate o_exchange_rate'));
+  afterAll(() => admin.query('truncate o_exchange_rate'));
+  const rate = (day: string, quote: string, value: string) =>
+    admin.query(
+      'insert into o_exchange_rate (quote, rate_date, rate, source) values ($1, $2, $3, $4) on conflict do nothing',
+      [quote, day, value, 'test'],
+    );
+
+  it('keeps a reference and a description, finds the expense by them, and exports them', async () => {
+    const created = await addExpense({
+      name: 'Photo shoot',
+      kind: 'one_time',
+      frequency: undefined,
+      startDate: '2026-09-10',
+      reference: 'Invoice 1042',
+      description: 'Autumn product photos, studio hire',
+    });
+    expect(created.res.statusCode).toBe(201);
+    const all = await list();
+    expect(all.rows[0]).toMatchObject({
+      reference: 'Invoice 1042',
+      description: 'Autumn product photos, studio hire',
+      currency: 'USD',
+      originalAmount: null,
+      originalCurrency: null,
+      fxEstimated: false,
+    });
+    expect((await list('?search=invoice%201042')).rows).toHaveLength(1);
+    expect((await list('?search=studio')).rows).toHaveLength(1);
+    expect((await list('?search=nothing-like-this')).rows).toHaveLength(0);
+
+    const file = await json('GET', '/expenses/export');
+    expect(file.res.statusCode).toBe(200);
+    const lines = (file.body.csv as string).replace(/^﻿/, '').split('\r\n');
+    expect(lines[0]).toContain('Reference');
+    expect(lines[0]).toContain('Amount (USD)');
+    expect(lines[1]).toContain('Photo shoot');
+    expect(lines[1]).toContain('Invoice 1042');
+  });
+
+  it('refuses a reference or description that is empty or too long', async () => {
+    for (const bad of [{ reference: 'x'.repeat(61) }, { description: 'y'.repeat(501) }]) {
+      expect((await addExpense(bad)).res.statusCode).toBe(400);
+    }
+  });
+
+  it('converts an expense in another currency once, at the rate of its date, and keeps the original', async () => {
+    await rate('2026-09-10', 'USD', '1.1000000000'); // 1 EUR = 1.10 USD
+    const res = await addExpense({
+      name: 'EU supplier',
+      kind: 'one_time',
+      frequency: undefined,
+      startDate: '2026-09-10',
+      amount: '100',
+      currency: 'EUR',
+    });
+    expect(res.res.statusCode).toBe(201);
+    const row = (await list()).rows.find((r) => r.name === 'EU supplier')!;
+    expect(row).toMatchObject({
+      amount: '110.0000',
+      currency: 'USD',
+      originalAmount: '100.0000',
+      originalCurrency: 'EUR',
+      fxRateDate: '2026-09-10',
+      fxEstimated: false,
+    });
+    expect(Number(row.fxRate)).toBeCloseTo(1.1, 8);
+    // it counts in the month it is dated, in the shop currency
+    const sep = expenseSummaryResponseSchema.parse((await json('GET', '/expenses/summary')).body);
+    expect(sep.months.find((m) => m.month.startsWith('2026-09'))!.total).toBe('110.0000');
+    // and the export shows both amounts and the rate
+    const csv = (await json('GET', '/expenses/export')).body.csv as string;
+    expect(csv).toContain('110.0000');
+    expect(csv).toContain('EUR');
+  });
+
+  it('marks the conversion as an estimate when the rate is not from the day itself', async () => {
+    await rate('2026-09-07', 'USD', '1.2000000000');
+    const res = await addExpense({
+      name: 'Old rate',
+      kind: 'one_time',
+      frequency: undefined,
+      startDate: '2026-09-10',
+      amount: '50',
+      currency: 'EUR',
+    });
+    expect(res.res.statusCode).toBe(201);
+    const row = (await list()).rows.find((r) => r.name === 'Old rate')!;
+    expect(row.amount).toBe('60.0000');
+    expect(row.fxRateDate).toBe('2026-09-07');
+    expect(row.fxEstimated).toBe(true);
+  });
+
+  it('says so when there is no rate, and is not fooled by a bad code or the shop currency', async () => {
+    const none = await addExpense({ amount: '10', currency: 'GBP', startDate: '2026-09-10' });
+    expect(none.res.statusCode).toBe(400);
+    expect(none.body.error.code).toBe('no_exchange_rate');
+    expect((await addExpense({ currency: 'eur' })).res.statusCode).toBe(400);
+    const same = await addExpense({ name: 'Same currency', currency: 'USD', amount: '25' });
+    expect(same.res.statusCode).toBe(201);
+    const row = (await list()).rows.find((r) => r.name === 'Same currency')!;
+    expect(row).toMatchObject({ amount: '25.0000', originalAmount: null, originalCurrency: null });
+  });
+
+  it('changing the amount drops the foreign details; keeping it keeps them; the reference stays', async () => {
+    await rate('2026-09-10', 'USD', '1.1000000000');
+    const id = (
+      await addExpense({
+        name: 'Foreign monthly',
+        amount: '100',
+        currency: 'EUR',
+        startDate: '2026-09-10',
+        reference: 'PO-7',
+      })
+    ).body.id;
+    const kept = await json('POST', `/expenses/${id}/change`, 'id-exp-a', {
+      name: 'Foreign monthly (renamed)',
+      effectiveFrom: '2026-10-01',
+    });
+    expect(kept.res.statusCode).toBeLessThan(300);
+    let rows = (await list()).rows.filter((r) => r.name.startsWith('Foreign monthly'));
+    const renamed = rows.find((r) => r.name.endsWith('(renamed)'))!;
+    expect(renamed.reference).toBe('PO-7');
+    expect(renamed.originalCurrency).toBe('EUR');
+    const changed = await json('POST', `/expenses/${kept.body.id}/change`, 'id-exp-a', {
+      amount: '130',
+      effectiveFrom: '2026-11-01',
+    });
+    expect(changed.res.statusCode).toBeLessThan(300);
+    rows = (await list()).rows.filter((r) => r.name.startsWith('Foreign monthly'));
+    const latest = rows.find((r) => r.amount === '130.0000')!;
+    expect(latest.reference).toBe('PO-7');
+    expect(latest.originalCurrency).toBeNull();
+  });
+
+  it('filters by category and by status, and everything is per shop', async () => {
+    await addExpense({
+      name: 'Past',
+      kind: 'one_time',
+      frequency: undefined,
+      startDate: '2026-01-05',
+    });
+    await addExpense({ name: 'Running', startDate: '2026-01-01' });
+    const softwareId = await category('Software');
+    await addExpense({ name: 'Tool', categoryId: softwareId, startDate: '2026-01-01' });
+    const software = await list(`?categoryId=${softwareId}`);
+    expect(software.rows.map((r) => r.name)).toEqual(['Tool']);
+    const scheduled = await addExpense({ name: 'Soon', startDate: '2026-10-20' });
+    expect(scheduled.res.statusCode).toBe(201);
+    expect((await list('?status=scheduled')).rows.map((r) => r.name)).toEqual(['Soon']);
+    expect((await list('?status=active')).rows.map((r) => r.name)).toEqual(
+      expect.arrayContaining(['Running', 'Tool']),
+    );
+    expect((await list('', 'id-exp-b')).rows).toEqual([]);
+    expect((await call('GET', '/expenses?status=bogus')).statusCode).toBe(400);
+    expect((await app.inject({ method: 'GET', url: '/api/v1/expenses/export' })).statusCode).toBe(
+      401,
+    );
+  });
+});
+
+describe('what kind of cost a category holds', () => {
+  const categories = async (token?: string) =>
+    categoryListResponseSchema.parse((await json('GET', '/expenses/categories', token)).body)
+      .categories;
+
+  it('starts from the name: marketing is advertising, everything standard else is operating', async () => {
+    const byName = Object.fromEntries((await categories()).map((c) => [c.name, c.class]));
+    expect(byName.Marketing).toBe('advertising');
+    expect(byName.Premises).toBe('operating');
+    expect(byName.Salaries).toBe('operating');
+  });
+
+  it('a new category takes its class from its name unless one is given', async () => {
+    await json('POST', '/expenses/categories', 'id-exp-a', { name: 'Courier and packaging' });
+    await json('POST', '/expenses/categories', 'id-exp-a', { name: 'Stock purchases' });
+    await json('POST', '/expenses/categories', 'id-exp-a', {
+      name: 'Odd jobs',
+      class: 'logistics',
+    });
+    const byName = Object.fromEntries((await categories()).map((c) => [c.name, c.class]));
+    expect(byName['Courier and packaging']).toBe('logistics');
+    expect(byName['Stock purchases']).toBe('product');
+    expect(byName['Odd jobs']).toBe('logistics');
+  });
+
+  it('can be changed, is recorded in the history, and refuses an unknown class or another shop', async () => {
+    const premises = (await categories()).find((c) => c.name === 'Premises')!;
+    const res = await json('PUT', `/expenses/categories/${premises.id}`, 'id-exp-a', {
+      class: 'logistics',
+    });
+    expect(res.res.statusCode).toBe(200);
+    expect((await categories()).find((c) => c.id === premises.id)!.class).toBe('logistics');
+    const hist = auditResponseSchema.parse((await json('GET', '/expenses/history')).body);
+    expect(hist.rows[0]!.summary).toBe(
+      'Set the cost class of the category "Premises" to logistics (was operating)',
+    );
+    expect(
+      (await call('PUT', `/expenses/categories/${premises.id}`, 'id-exp-a', { class: 'nonsense' }))
+        .statusCode,
+    ).toBe(400);
+    expect(
+      (await call('PUT', `/expenses/categories/${premises.id}`, 'id-exp-b', { class: 'product' }))
+        .statusCode,
+    ).toBe(404);
+    // the other shop's category is untouched
+    expect((await categories('id-exp-b')).find((c) => c.name === 'Premises')!.class).toBe(
+      'operating',
+    );
+  });
+
+  it('this month by class adds up to this month, and a class change moves the amount', async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const premises = await category('Premises');
+    const marketing = await category('Marketing');
+    await addExpense({
+      name: 'Rent',
+      amount: '1000',
+      categoryId: premises,
+      kind: 'one_time',
+      frequency: undefined,
+      startDate: today,
+    });
+    await addExpense({
+      name: 'Influencer',
+      amount: '300',
+      categoryId: marketing,
+      kind: 'one_time',
+      frequency: undefined,
+      startDate: today,
+    });
+    const read = async () =>
+      expenseSummaryResponseSchema.parse((await json('GET', '/expenses/summary')).body);
+    const before = await read();
+    const byClass = Object.fromEntries(before.thisMonthByClass.map((c) => [c.class, c.amount]));
+    expect(byClass.operating).toBe('1000.0000');
+    expect(byClass.advertising).toBe('300.0000');
+    expect(before.thisMonthByClass.reduce((s, c) => s + cents(c.amount), 0)).toBe(
+      cents(before.thisMonth),
+    );
+    await json('PUT', `/expenses/categories/${premises}`, 'id-exp-a', { class: 'product' });
+    const after = await read();
+    expect(after.thisMonthByClass.find((c) => c.class === 'product')!.amount).toBe('1000.0000');
+    expect(after.thisMonth).toBe(before.thisMonth); // reclassifying never changes the total
+  });
+});
+
 describe('advertising', () => {
   const account = async (name = 'Meta manual', token?: string) =>
     (await json('POST', '/marketing/accounts', token, { provider: 'manual', name })).body;

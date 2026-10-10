@@ -756,11 +756,21 @@ export const fExpenseCategory = pgTable(
     tenantId: uuid('tenant_id').notNull(),
     shopId: uuid('shop_id').notNull(),
     name: text('name').notNull(),
+    /**
+     * What kind of cost the category holds: product (purchases, which are already in profit through
+     * product costs), logistics (shipping and handling, partly in order-level shipping costs),
+     * advertising, or operating. It tells the merchant where a cost could be counted twice.
+     */
+    class: text('class').notNull().default('operating'),
     createdAt: createdAt(),
     archivedAt: tsz('archived_at'),
   },
   (t) => [
     primaryKey({ name: 'pk_f_expense_category', columns: [t.id] }),
+    check(
+      'ck_f_expense_category_class',
+      sql`${t.class} in ('product', 'logistics', 'advertising', 'operating')`,
+    ),
     foreignKey({
       name: 'fk_f_expense_category_shop',
       columns: [t.tenantId, t.shopId],
@@ -798,6 +808,20 @@ export const fExpense = pgTable(
     replacesId: uuid('replaces_id'),
     /** Client-supplied key making a create request safe to retry. */
     requestKey: text('request_key'),
+    /** The merchant's own reference (an invoice or receipt number). */
+    reference: text('reference'),
+    description: text('description'),
+    /**
+     * When the expense was typed in another currency: the amount as typed, its currency, and the rate
+     * and rate date used to convert it once into `amount` (shop currency). All null for shop-currency
+     * expenses.
+     */
+    originalAmount: money('original_amount'),
+    originalCurrency: char('original_currency', { length: 3 }),
+    fxRate: numeric('fx_rate', { precision: 18, scale: 10 }),
+    fxRateDate: dateOnly('fx_rate_date'),
+    /** True when the rate was older than the expense date or not from the reference source on the day. */
+    fxEstimated: boolean('fx_estimated').notNull().default(false),
     createdBy: text('created_by'),
     createdAt: createdAt(),
     revokedAt: tsz('revoked_at'),
@@ -818,6 +842,18 @@ export const fExpense = pgTable(
         or (${t.kind} = 'recurring' and ${t.frequency} in ('monthly', 'yearly'))`,
     ),
     check('ck_f_expense_dates', sql`${t.endDate} is null or ${t.endDate} >= ${t.startDate}`),
+    check(
+      'ck_f_expense_reference',
+      sql`${t.reference} is null or length(btrim(${t.reference})) between 1 and 60`,
+    ),
+    check(
+      'ck_f_expense_description',
+      sql`${t.description} is null or length(btrim(${t.description})) between 1 and 500`,
+    ),
+    check(
+      'ck_f_expense_foreign',
+      sql`(${t.originalAmount} is null) = (${t.originalCurrency} is null) and (${t.originalAmount} is null) = (${t.fxRate} is null)`,
+    ),
     index('ix_f_expense_shop').on(t.shopId, t.startDate),
     uniqueIndex('uq_f_expense_request_key')
       .on(t.shopId, t.requestKey)

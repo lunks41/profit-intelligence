@@ -25,6 +25,19 @@ export const DEFAULT_CATEGORIES = [
   'Other',
 ];
 
+export const EXPENSE_CLASSES = ['product', 'logistics', 'advertising', 'operating'] as const;
+export type ExpenseClass = (typeof EXPENSE_CLASSES)[number];
+
+/** The class a new category gets from its name (the same words the migration used for old ones). */
+export function classForName(name: string): ExpenseClass {
+  const n = name.toLowerCase();
+  if (/(market|advert|promo|influenc)/.test(n)) return 'advertising';
+  if (/(shipping|logistic|courier|warehous|packag|fulfil|customs|freight)/.test(n))
+    return 'logistics';
+  if (/(product|inventory|supplier|procure|stock|purchase)/.test(n)) return 'product';
+  return 'operating';
+}
+
 async function audit(
   tx: Tx,
   scope: ShopScope,
@@ -56,6 +69,7 @@ async function audit(
 export interface CategoryRow {
   id: string;
   name: string;
+  class: ExpenseClass;
   expenseCount: number;
 }
 
@@ -72,6 +86,7 @@ async function ensureDefaultCategories(tx: Tx, scope: ShopScope) {
           tenantId: scope.tenantId,
           shopId: scope.shopId,
           name,
+          class: classForName(name),
         })),
       )
       .onConflictDoNothing();
@@ -84,14 +99,19 @@ export async function listCategories(db: Db, scope: ShopScope): Promise<Category
     await ensureDefaultCategories(tx, scope);
     const list = rows(
       await tx.execute(sql`
-        select c.id::text as id, c.name,
+        select c.id::text as id, c.name, c.class,
                (select count(*)::int from f_expense e
                  where e.category_id = c.id and e.revoked_at is null) as n
           from f_expense_category c
          where c.shop_id = ${scope.shopId} and c.archived_at is null
          order by lower(c.name)`),
     );
-    return list.map((x) => ({ id: String(x.id), name: String(x.name), expenseCount: Number(x.n) }));
+    return list.map((x) => ({
+      id: String(x.id),
+      name: String(x.name),
+      class: String(x.class) as ExpenseClass,
+      expenseCount: Number(x.n),
+    }));
   });
 }
 
@@ -100,6 +120,7 @@ export async function createCategory(
   scope: ShopScope,
   name: string,
   actor: string,
+  cls?: ExpenseClass,
 ): Promise<{ id: string; created: boolean }> {
   return withTenant(db, scope.tenantId, async (tx) => {
     await ensureDefaultCategories(tx, scope);
@@ -117,16 +138,56 @@ export async function createCategory(
     if (found) return { id: found.id, created: false };
     const [row] = await tx
       .insert(fExpenseCategory)
-      .values({ tenantId: scope.tenantId, shopId: scope.shopId, name: clean })
+      .values({
+        tenantId: scope.tenantId,
+        shopId: scope.shopId,
+        name: clean,
+        class: cls ?? classForName(clean),
+      })
       .returning({ id: fExpenseCategory.id });
     await audit(tx, scope, {
       actor,
       action: 'expense_category.create',
       entity: 'f_expense_category',
       entityId: row!.id,
-      newValue: { name: clean },
+      newValue: { name: clean, class: cls ?? classForName(clean) },
     });
     return { id: row!.id, created: true };
+  });
+}
+
+/** Changes what kind of cost a category holds (audited). Returns false when it is not found. */
+export async function setCategoryClass(
+  db: Db,
+  scope: ShopScope,
+  id: string,
+  cls: ExpenseClass,
+  actor: string,
+): Promise<boolean> {
+  return withTenant(db, scope.tenantId, async (tx) => {
+    const [old] = await tx
+      .select({ name: fExpenseCategory.name, class: fExpenseCategory.class })
+      .from(fExpenseCategory)
+      .where(
+        and(
+          eq(fExpenseCategory.id, id),
+          eq(fExpenseCategory.shopId, scope.shopId),
+          isNull(fExpenseCategory.archivedAt),
+        ),
+      );
+    if (!old) return false;
+    if (old.class !== cls) {
+      await tx.update(fExpenseCategory).set({ class: cls }).where(eq(fExpenseCategory.id, id));
+      await audit(tx, scope, {
+        actor,
+        action: 'expense_category.set_class',
+        entity: 'f_expense_category',
+        entityId: id,
+        oldValue: { name: old.name, class: old.class },
+        newValue: { name: old.name, class: cls },
+      });
+    }
+    return true;
   });
 }
 
@@ -175,6 +236,15 @@ export interface ExpenseRecord {
   startDate: string;
   endDate: string | null;
   createdAt: string;
+  categoryClass: ExpenseClass;
+  reference: string | null;
+  description: string | null;
+  /** the amount as typed when it was in another currency, with that currency and the rate used */
+  originalAmount: string | null;
+  originalCurrency: string | null;
+  fxRate: string | null;
+  fxRateDate: string | null;
+  fxEstimated: boolean;
 }
 
 export interface OverrideRecord {
@@ -194,7 +264,9 @@ export async function loadExpenses(
       await tx.execute(sql`
         select e.id::text as id, e.category_id::text as category_id, c.name as category_name, e.name,
                e.amount::text as amount, e.currency, e.kind, e.frequency, e.start_date::text as start_date,
-               e.end_date::text as end_date, e.created_at::text as created_at
+               e.end_date::text as end_date, e.created_at::text as created_at, c.class as category_class,
+               e.reference, e.description, e.original_amount::text as original_amount, e.original_currency,
+               e.fx_rate::text as fx_rate, e.fx_rate_date::text as fx_rate_date, e.fx_estimated
           from f_expense e join f_expense_category c on c.id = e.category_id
          where e.shop_id = ${scope.shopId} and e.revoked_at is null
          order by e.start_date desc, e.created_at desc`),
@@ -218,6 +290,14 @@ export async function loadExpenses(
         startDate: String(x.start_date),
         endDate: str(x.end_date),
         createdAt: String(x.created_at),
+        categoryClass: String(x.category_class) as ExpenseClass,
+        reference: str(x.reference),
+        description: str(x.description),
+        originalAmount: str(x.original_amount),
+        originalCurrency: str(x.original_currency),
+        fxRate: str(x.fx_rate),
+        fxRateDate: str(x.fx_rate_date),
+        fxEstimated: Boolean(x.fx_estimated),
       })),
       overrides: ov.map((x) => ({
         expenseId: String(x.expense_id),
@@ -241,6 +321,13 @@ export interface NewExpense {
   /** makes a retried request return the original instead of adding a second expense */
   requestKey: string | null;
   replacesId?: string | null;
+  reference?: string | null;
+  description?: string | null;
+  originalAmount?: string | null;
+  originalCurrency?: string | null;
+  fxRate?: string | null;
+  fxRateDate?: string | null;
+  fxEstimated?: boolean;
   actor: string;
 }
 
@@ -283,6 +370,13 @@ async function insertExpense(tx: Tx, scope: ShopScope, input: NewExpense) {
       endDate: input.endDate,
       replacesId: input.replacesId ?? null,
       requestKey: input.requestKey,
+      reference: input.reference?.trim() || null,
+      description: input.description?.trim() || null,
+      originalAmount: input.originalAmount ?? null,
+      originalCurrency: input.originalCurrency ?? null,
+      fxRate: input.fxRate ?? null,
+      fxRateDate: input.fxRateDate ?? null,
+      fxEstimated: input.fxEstimated ?? false,
       createdBy: input.actor,
     })
     .onConflictDoNothing()
@@ -319,6 +413,10 @@ export async function createExpense(
         kind: input.kind,
         frequency: input.frequency,
         startDate: input.startDate,
+        ...(input.reference ? { reference: input.reference.trim() } : {}),
+        ...(input.originalCurrency
+          ? { original: `${input.originalAmount} ${input.originalCurrency}`, rate: input.fxRate }
+          : {}),
       },
     });
     return { id: row.id, created: true };
@@ -394,6 +492,18 @@ export async function changeExpense(
       endDate: old.kind === 'recurring' ? old.endDate : null,
       requestKey: null,
       replacesId: old.id,
+      reference: old.reference,
+      description: old.description,
+      // a new amount is in the shop currency, so the foreign details of the old one no longer describe it
+      ...(change.amount === undefined || change.amount === old.amount
+        ? {
+            originalAmount: old.originalAmount,
+            originalCurrency: old.originalCurrency,
+            fxRate: old.fxRate,
+            fxRateDate: old.fxRateDate,
+            fxEstimated: old.fxEstimated,
+          }
+        : {}),
       actor: change.actor,
     });
     await audit(tx, scope, {

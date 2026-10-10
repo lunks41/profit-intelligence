@@ -831,18 +831,34 @@ const uuidString = z.string().regex(/^[0-9a-f-]{36}$/i);
 const monthStartString = isoDate.refine((d) => d.endsWith('-01'), 'Use the first day of a month');
 const nameString = z.string().trim().min(1).max(120);
 
+/**
+ * What a category's costs are: product (purchases, already in profit through product costs),
+ * logistics (shipping and handling, partly in order-level shipping costs), advertising, or operating.
+ */
+export const expenseClassSchema = z.enum(['product', 'logistics', 'advertising', 'operating']);
+export type ExpenseClassName = z.infer<typeof expenseClassSchema>;
+
 export const categoryRowSchema = z.object({
   id: z.string(),
   name: z.string(),
+  class: expenseClassSchema,
   expenseCount: z.number(),
 });
 export const categoryListResponseSchema = z.object({ categories: z.array(categoryRowSchema) });
 export type CategoryListResponse = z.infer<typeof categoryListResponseSchema>;
-export const categoryBodySchema = z.object({ name: z.string().trim().min(1).max(60) });
+export const categoryBodySchema = z.object({
+  name: z.string().trim().min(1).max(60),
+  /** defaults from the name (marketing is advertising, shipping is logistics, and so on) */
+  class: expenseClassSchema.optional(),
+});
+export const categoryClassBodySchema = z.object({ class: expenseClassSchema });
 
 export const expenseListQuerySchema = z.object({
   filter: z.enum(['all', 'recurring', 'one_time']).default('all'),
+  /** matches the name, category, reference or description */
   search: z.string().trim().max(100).optional(),
+  categoryId: uuidString.optional(),
+  status: z.enum(['all', 'active', 'scheduled', 'ended']).default('all'),
 });
 
 export const createExpenseBodySchema = z
@@ -856,6 +872,14 @@ export const createExpenseBodySchema = z
     endDate: isoDate.optional(),
     /** a fresh value per form, so a retried request does not add the expense twice */
     requestKey: z.string().min(8).max(80).optional(),
+    /** an invoice or receipt number of the merchant's own */
+    reference: z.string().trim().min(1).max(60).optional(),
+    description: z.string().trim().min(1).max(500).optional(),
+    /** the currency `amount` is in; the shop currency when left out. It is converted once, at the rate of the expense date. */
+    currency: z
+      .string()
+      .regex(/^[A-Z]{3}$/, 'Use a three-letter currency code such as EUR')
+      .optional(),
   })
   .superRefine((v, ctx) => {
     if (v.kind === 'recurring' && !v.frequency) {
@@ -912,6 +936,17 @@ export const expenseRowSchema = z.object({
   /** what this expense adds to the current calendar month */
   thisMonth: money,
   status: z.enum(['active', 'scheduled', 'ended']),
+  /** the currency of `amount`: always the shop currency */
+  currency: z.string(),
+  reference: z.string().nullable(),
+  description: z.string().nullable(),
+  categoryClass: expenseClassSchema,
+  /** when it was typed in another currency: that amount and currency, and whether the rate was only an estimate */
+  originalAmount: money.nullable(),
+  originalCurrency: z.string().nullable(),
+  fxRate: z.string().nullable(),
+  fxRateDate: z.string().nullable(),
+  fxEstimated: z.boolean(),
   overrides: z.array(
     z.object({ month: z.string(), amount: money.nullable(), skipped: z.boolean() }),
   ),
@@ -932,6 +967,8 @@ export const expenseSummaryResponseSchema = z.object({
   recurringPerMonth: money,
   recurringCount: z.number(),
   oneTimeThisMonth: money,
+  /** this month's expenses by what kind of cost they are; the amounts add up to `thisMonth` */
+  thisMonthByClass: z.array(z.object({ class: expenseClassSchema, amount: money })),
   /** expenses over revenue for the last 30 days, null when there is no revenue */
   shareOfRevenue: ratio,
   months: z.array(

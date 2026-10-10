@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import {
   categoryBodySchema,
+  categoryClassBodySchema,
   changeExpenseBodySchema,
   createExpenseBodySchema,
   expenseListQuerySchema,
@@ -59,7 +60,13 @@ export class ExpensesController {
 
   @Post('categories')
   addCategory(@Tenant() t: TenantContext, @Body() body: unknown) {
-    return this.service.addCategory(t, parse(categoryBodySchema, body).name);
+    const b = parse(categoryBodySchema, body);
+    return this.service.addCategory(t, b.name, b.class);
+  }
+
+  @Put('categories/:id')
+  setCategoryClass(@Tenant() t: TenantContext, @Param('id') id: string, @Body() body: unknown) {
+    return this.service.setCategoryClass(t, uuid(id), parse(categoryClassBodySchema, body).class);
   }
 
   @Delete('categories/:id')
@@ -75,6 +82,11 @@ export class ExpensesController {
   @Get('history')
   history(@Tenant() t: TenantContext): Promise<AuditResponse> {
     return this.service.history(t);
+  }
+
+  @Get('export')
+  exportCsv(@Tenant() t: TenantContext) {
+    return this.service.exportCsv(t);
   }
 
   @Get()

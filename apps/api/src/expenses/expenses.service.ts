@@ -5,6 +5,7 @@ import type {
   CreateExpenseBody,
   ExpenseListResponse,
   ExpenseRow,
+  ExpenseClassName,
   ExpenseSummaryResponse,
 } from '@pi/contracts';
 import {
@@ -13,18 +14,21 @@ import {
   changeExpense,
   createCategory,
   createExpense,
+  loadExchangeRates,
   getAdSpend,
   getProfitAggregate,
   getShopOverview,
   listAudit,
   listCategories,
   loadExpenses,
+  setCategoryClass,
   setExpenseOverride,
   stopExpense,
 } from '@pi/db';
 import type { Db, ExpenseRecord } from '@pi/db';
 import {
   D,
+  convertMoney,
   dec,
   expensesForPeriod,
   monthStart,
@@ -36,7 +40,9 @@ import {
   daysInMonth,
 } from '@pi/profit-engine';
 import type { ExpenseInput } from '@pi/profit-engine';
+import { csvCell } from '@pi/reports';
 import type { TenantContext } from '../auth/installation.service.js';
+import { buildFx } from '../dashboard/currency.js';
 import { addDays } from '../dashboard/range.js';
 import { describeAudit } from '../settings/describe.js';
 import { DB } from '../tokens.js';
@@ -93,8 +99,15 @@ export class ExpensesService {
     return { categories: await listCategories(this.db, scope) };
   }
 
-  async addCategory(scope: TenantContext, name: string) {
-    return createCategory(this.db, scope, name, actorOf(scope));
+  async addCategory(scope: TenantContext, name: string, cls?: ExpenseClassName) {
+    return createCategory(this.db, scope, name, actorOf(scope), cls);
+  }
+
+  async setCategoryClass(scope: TenantContext, id: string, cls: ExpenseClassName) {
+    if (!(await setCategoryClass(this.db, scope, id, cls, actorOf(scope)))) {
+      throw new NotFoundException({ code: 'not_found', message: 'Category not found' });
+    }
+    return { class: cls };
   }
 
   async removeCategory(scope: TenantContext, id: string) {
@@ -106,30 +119,48 @@ export class ExpensesService {
 
   async list(
     scope: TenantContext,
-    q: { filter: 'all' | 'recurring' | 'one_time'; search?: string },
+    q: {
+      filter: 'all' | 'recurring' | 'one_time';
+      search?: string;
+      categoryId?: string;
+      status?: 'all' | 'active' | 'scheduled' | 'ended';
+    },
   ): Promise<ExpenseListResponse> {
     const { currency, today } = await this.shop(scope);
     const { expenses, overrides } = await loadExpenses(this.db, scope);
     const from = monthStart(today);
     const month = { from, to: lastOfMonth(today) };
     const needle = q.search?.toLowerCase();
+    const statusOf = (e: (typeof expenses)[number]) =>
+      e.startDate > today
+        ? ('scheduled' as const)
+        : e.endDate !== null && e.endDate < today
+          ? ('ended' as const)
+          : ('active' as const);
     const rows: ExpenseRow[] = expenses
       .filter((e) => q.filter === 'all' || e.kind === q.filter)
+      .filter((e) => !q.categoryId || e.categoryId === q.categoryId)
+      .filter((e) => !q.status || q.status === 'all' || statusOf(e) === q.status)
       .filter(
         (e) =>
           !needle ||
-          e.name.toLowerCase().includes(needle) ||
-          e.categoryName.toLowerCase().includes(needle),
+          [e.name, e.categoryName, e.reference ?? '', e.description ?? ''].some((v) =>
+            v.toLowerCase().includes(needle),
+          ),
       )
       .map((e) => {
         const mine = overrides.filter((o) => o.expenseId === e.id);
-        const status =
-          e.startDate > today
-            ? 'scheduled'
-            : e.endDate !== null && e.endDate < today
-              ? 'ended'
-              : 'active';
+        const status = statusOf(e);
         return {
+          currency,
+          reference: e.reference,
+          description: e.description,
+          categoryClass: e.categoryClass,
+          originalAmount: e.originalAmount,
+          originalCurrency: e.originalCurrency,
+          fxRate: e.fxRate,
+          fxRateDate: e.fxRateDate,
+          fxEstimated: e.fxEstimated,
           id: e.id,
           name: e.name,
           categoryId: e.categoryId,
@@ -239,6 +270,13 @@ export class ExpensesService {
       recurringPerMonth: toStored(recurring.toDecimalPlaces(2)),
       recurringCount: active.length,
       oneTimeThisMonth: toStored(oneTime),
+      thisMonthByClass: (['product', 'logistics', 'advertising', 'operating'] as const).map((c) => {
+        const ofClass = expenses.filter((e) => e.categoryClass === c).map(toInput);
+        return {
+          class: c,
+          amount: expensesForPeriod(ofClass, overrides, thisMonthRange, currency).total,
+        };
+      }),
       shareOfRevenue: dec(revenue).isZero()
         ? null
         : dec(spend30).div(dec(revenue)).toDecimalPlaces(4).toFixed(4),
@@ -256,11 +294,50 @@ export class ExpensesService {
     const { currency, today } = await this.shop(scope);
     this.checkDate(body.startDate, today, 'start date');
     if (body.endDate) this.checkDate(body.endDate, today, 'end date');
+
+    // An expense typed in another currency is converted once, into the shop currency, at the rate of
+    // its date (today for a date in the future). The amount as typed and the rate stay on the row.
+    let amount = body.amount;
+    let foreign: {
+      originalAmount: string;
+      originalCurrency: string;
+      fxRate: string;
+      fxRateDate: string;
+      fxEstimated: boolean;
+    } | null = null;
+    if (body.currency && body.currency !== currency) {
+      const rateDay = body.startDate > today ? today : body.startDate;
+      const stored = await loadExchangeRates(this.db, { from: addDays(rateDay, -14), to: rateDay });
+      const c = convertMoney(
+        body.amount,
+        body.currency,
+        currency,
+        rateDay,
+        buildFx(stored).provider,
+      );
+      if (c.status === 'missing') {
+        throw new BadRequestException({
+          code: 'no_exchange_rate',
+          message: `No exchange rate from ${body.currency} to ${currency} is available for ${rateDay}. Enter the amount in ${currency}, or try again later.`,
+        });
+      }
+      amount = toStored(c.amount);
+      foreign = {
+        originalAmount: toStored(body.amount),
+        originalCurrency: body.currency,
+        fxRate: c.rate,
+        fxRateDate: c.rateDate,
+        fxEstimated: c.status !== 'actual',
+      };
+    }
     try {
       return await createExpense(this.db, scope, {
         categoryId: body.categoryId,
         name: body.name,
-        amount: body.amount,
+        amount,
+        reference: body.reference ?? null,
+        description: body.description ?? null,
+        ...(foreign ?? {}),
         currency,
         kind: body.kind,
         frequency: body.kind === 'recurring' ? (body.frequency ?? 'monthly') : null,
@@ -323,6 +400,61 @@ export class ExpensesService {
       return this.fail(e);
     }
     return { saved: true };
+  }
+
+  /** Every expense as a CSV: the shop-currency amount, the amount as typed, the rate, and the status. */
+  async exportCsv(scope: TenantContext): Promise<{ csv: string }> {
+    const list = await this.list(scope, { filter: 'all', status: 'all' });
+    const head = [
+      'Name',
+      'Reference',
+      'Description',
+      'Category',
+      'Kind of cost',
+      'Repeats',
+      `Amount (${list.currency})`,
+      'Amount as typed',
+      'Currency as typed',
+      'Exchange rate',
+      'Rate date',
+      'Rate is an estimate',
+      'Starts',
+      'Ends',
+      'Status',
+    ];
+    const label = {
+      product: 'Product',
+      logistics: 'Shipping and logistics',
+      advertising: 'Advertising',
+      operating: 'Operating',
+    };
+    const lines = list.rows.map((r) =>
+      [
+        r.name,
+        r.reference ?? '',
+        r.description ?? '',
+        r.category,
+        label[r.categoryClass],
+        r.kind === 'one_time' ? 'One time' : r.frequency === 'yearly' ? 'Yearly' : 'Monthly',
+        r.amount,
+        r.originalAmount ?? '',
+        r.originalCurrency ?? '',
+        r.fxRate ?? '',
+        r.fxRateDate ?? '',
+        r.originalCurrency ? (r.fxEstimated ? 'Yes' : 'No') : '',
+        r.startDate,
+        r.endDate ?? '',
+        r.status,
+      ].map((v, i) => csvCell(v, i === 6 || i === 7 ? 'money' : 'text')),
+    );
+    return {
+      csv:
+        '\uFEFF' +
+        [head.map((h) => csvCell(h, 'text')).join(','), ...lines.map((l) => l.join(','))].join(
+          '\r\n',
+        ) +
+        '\r\n',
+    };
   }
 
   async history(scope: TenantContext): Promise<AuditResponse> {
