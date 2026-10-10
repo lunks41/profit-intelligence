@@ -167,7 +167,17 @@ export async function loadOrderBundle(
 }
 
 export type OrderSort = 'date' | 'name' | 'revenue' | 'cogs' | 'profit' | 'margin';
-export type OrderFilter = 'all' | 'loss' | 'missing_cost' | 'refunded' | 'excluded';
+export type OrderFilter =
+  | 'all'
+  | 'loss'
+  | 'missing_cost'
+  | 'refunded'
+  | 'excluded'
+  | 'estimated_fees'
+  | 'missing_fees'
+  | 'incomplete_refunds'
+  | 'missing_country'
+  | 'missing_weight';
 
 export interface OrderListQuery {
   filter: OrderFilter;
@@ -224,7 +234,17 @@ export async function listOrders(
           ? sql`recognized and partial`
           : q.filter === 'refunded'
             ? sql`recognized and financial_status in ('PARTIALLY_REFUNDED', 'REFUNDED')`
-            : sql`true`;
+            : q.filter === 'estimated_fees'
+              ? sql`recognized and fees_status = 'estimated'`
+              : q.filter === 'missing_fees'
+                ? sql`recognized and fees_status = 'missing'`
+                : q.filter === 'incomplete_refunds'
+                  ? sql`recognized and 'refund_lines_incomplete' = any(flags)`
+                  : q.filter === 'missing_country'
+                    ? sql`recognized and ships and ship_country is null`
+                    : q.filter === 'missing_weight'
+                      ? sql`recognized and missing_weight`
+                      : sql`true`;
   const search = q.search
     ? sql`and name ilike ${'%' + q.search.replace(/[%_\\]/g, '\\$&') + '%'}`
     : sql``;
@@ -236,7 +256,17 @@ export async function listOrders(
     const base = sql`
       with src as (
         select o.shopify_id::text as id, o.name, p.order_date, o.financial_status, o.currency,
-               p.recognized, p.exclusion_reason, p.partial, p.flags,
+               p.recognized, p.exclusion_reason, p.partial, p.flags, o.ship_country,
+               exists (
+                 select 1 from t_order_line_item l
+                  where l.order_id = o.id and l.requires_shipping
+               ) as ships,
+               exists (
+                 select 1 from t_order_line_item l
+                 left join t_product_variant v
+                   on v.shop_id = o.shop_id and v.shopify_id = l.variant_shopify_id
+                 where l.order_id = o.id and l.requires_shipping and v.weight_grams is null
+               ) as missing_weight,
                (select coalesce(sum(e.amount) filter (where e.component in ('gross_sales','discounts','product_refund','shipping_revenue','shipping_refund')), 0)
                   from f_profit_entry e where e.order_id = o.id) as revenue,
                (select coalesce(sum(e.amount) filter (where e.component in ('cogs','cogs_reversal')), 0)

@@ -1,6 +1,6 @@
 'use client';
 
-import { Dropdown, CategoryDropdown, ShowDropdown } from '../dropdown';
+import { Dropdown, CategoryDropdown, FilterSearch, ShowDropdown } from '../dropdown';
 
 import { useEffect, useState } from 'react';
 import type {
@@ -284,15 +284,24 @@ function List({
     <>
       <s-section heading={mode === 'recurring' ? 'Recurring expenses' : 'All expenses'}>
         <s-stack gap="base">
-          <s-grid gridTemplateColumns={FILTER_GRID} gap="base" alignItems="end">
-            <s-search-field
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'flex-start',
+              alignItems: 'flex-end',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+            }}
+          >
+            <FilterSearch
               label="Search"
               placeholder="Name or category"
               value={search}
-              onInput={(e) => setSearch(e.currentTarget.value)}
+              onChange={setSearch}
             />
             {mode === 'all' && (
               <ShowDropdown
+                chip
                 label="Show"
                 value={kind}
                 options={[
@@ -302,7 +311,7 @@ function List({
                 onChange={(v) => setKind(v as 'all' | 'one_time')}
               />
             )}
-          </s-grid>
+          </div>
           {error && <ErrorBanner message={error} onRetry={() => void reload()} />}
           {loading && !data && <Loading what="expenses" />}
           {data && data.rows.length === 0 && (

@@ -25,6 +25,13 @@ export interface ProfitAggregate {
   orderCount: number;
 }
 
+/**
+ * Pseudo component in the totals: the estimated part of the payment fees (a signed amount like the
+ * real components). It is not a ledger component; it lets the currency conversion and the trend
+ * carry the split between actual and estimated fees.
+ */
+export const ESTIMATED_FEES = 'payment_fees_estimated';
+
 const range = (r: DateRange) => sql`${r.from}::date and ${r.to}::date`;
 
 /**
@@ -42,6 +49,13 @@ export async function getProfitAggregate(
         from f_profit_entry
        where shop_id = ${scope.shopId} and entry_date between ${range(r)}
        group by component`);
+
+    // The part of the payment fees that is an estimate (a rule, not a fee Shopify reported).
+    const estFees = await tx.execute(sql`
+      select sum(amount)::text as total
+        from f_profit_entry
+       where shop_id = ${scope.shopId} and component = 'payment_fees' and status = 'estimated'
+         and entry_date between ${range(r)}`);
 
     const cost = await tx.execute(sql`
       select status, coalesce(sum(basis_amount), 0)::numeric(19,4)::text as basis
@@ -87,9 +101,17 @@ export async function getProfitAggregate(
     };
 
     return {
-      totals: Object.fromEntries(
-        (totals.rows as { component: string; total: string }[]).map((x) => [x.component, x.total]),
-      ),
+      totals: {
+        ...Object.fromEntries(
+          (totals.rows as { component: string; total: string }[]).map((x) => [
+            x.component,
+            x.total,
+          ]),
+        ),
+        ...((estFees.rows[0] as { total: string | null }).total === null
+          ? {}
+          : { [ESTIMATED_FEES]: (estFees.rows[0] as { total: string }).total }),
+      },
       coverage: {
         cost: costRows.length
           ? {
@@ -184,6 +206,12 @@ export async function getDailyTotals(
        where shop_id = ${scope.shopId} and entry_date between ${range(r)}
        group by entry_date, component
        order by entry_date`);
+    const est = await tx.execute(sql`
+      select entry_date::text as d, sum(amount)::text as total
+        from f_profit_entry
+       where shop_id = ${scope.shopId} and component = 'payment_fees' and status = 'estimated'
+         and entry_date between ${range(r)}
+       group by entry_date`);
     const orders = await tx.execute(sql`
       select order_date::text as d, count(*)::int as n
         from f_order_profit
@@ -197,6 +225,8 @@ export async function getDailyTotals(
     };
     for (const x of rows.rows as { d: string; component: string; total: string }[])
       day(x.d).totals[x.component] = x.total;
+    for (const x of est.rows as { d: string; total: string }[])
+      day(x.d).totals[ESTIMATED_FEES] = x.total;
     for (const x of orders.rows as { d: string; n: number }[]) day(x.d).orders = x.n;
     return [...byDay.values()].sort((a, b) => a.date.localeCompare(b.date));
   });
@@ -241,6 +271,48 @@ export async function getOrderAttention(
       confirmedLoss: { count: l.confirmed, amount: l.confirmed_amount },
       possibleLoss: l.possible,
       flagged: (flagged.rows[0] as { n: number }).n,
+    };
+  });
+}
+
+export interface PeriodGaps {
+  missingCountry: number;
+  missingWeight: number;
+  incompleteRefunds: number;
+}
+
+/** Orders in the period a shipping rule or a refund import cannot fully price. */
+export async function periodGaps(db: Db, scope: ShopScope, r: DateRange): Promise<PeriodGaps> {
+  return withTenant(db, scope.tenantId, async (tx) => {
+    const res = await tx.execute(sql`
+      select
+        count(*) filter (
+          where o.ship_country is null
+            and exists (
+              select 1 from t_order_line_item l
+               where l.order_id = o.id and l.requires_shipping
+            )
+        )::int as missing_country,
+        count(*) filter (
+          where exists (
+            select 1 from t_order_line_item l
+            left join t_product_variant v
+              on v.shop_id = o.shop_id and v.shopify_id = l.variant_shopify_id
+            where l.order_id = o.id and l.requires_shipping and v.weight_grams is null
+          )
+        )::int as missing_weight,
+        count(*) filter (where 'refund_lines_incomplete' = any(p.flags))::int as incomplete_refunds
+        from t_order o
+        join f_order_profit p on p.order_id = o.id
+       where o.shop_id = ${scope.shopId}
+         and p.recognized
+         and p.order_date between ${range(r)}`);
+    const row = res.rows[0] as
+      { missing_country: number; missing_weight: number; incomplete_refunds: number } | undefined;
+    return {
+      missingCountry: Number(row?.missing_country ?? 0),
+      missingWeight: Number(row?.missing_weight ?? 0),
+      incompleteRefunds: Number(row?.incomplete_refunds ?? 0),
     };
   });
 }

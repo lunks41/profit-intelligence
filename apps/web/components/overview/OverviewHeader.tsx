@@ -1,6 +1,7 @@
 'use client';
 
 import type { PeriodPreset } from '@pi/contracts';
+import type { FreshnessView } from '../../lib/freshness';
 import { periodLabel } from '../../lib/format';
 import { CurrencyDropdown } from '../dropdown';
 
@@ -27,6 +28,7 @@ export function OverviewHeader({
   currency,
   currencies,
   updatedAt,
+  freshness,
   loading,
   preset,
   onPreset,
@@ -38,6 +40,8 @@ export function OverviewHeader({
   currency: string | null;
   currencies: string[];
   updatedAt: Date | null;
+  /** when the last import from Shopify finished, and what that means for the figures */
+  freshness: FreshnessView | null;
   loading: boolean;
   preset: PeriodPreset;
   onPreset: (preset: PeriodPreset) => void;
@@ -67,6 +71,21 @@ export function OverviewHeader({
         <s-text color="subdued">{facts.length > 0 ? facts.join('  ·  ') : 'Loading…'}</s-text>
       </s-stack>
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem 1rem' }}>
+        {freshness && (
+          <s-badge
+            tone={
+              freshness.tone === 'critical'
+                ? 'critical'
+                : freshness.tone === 'caution'
+                  ? 'warning'
+                  : freshness.tone === 'info'
+                    ? 'info'
+                    : 'success'
+            }
+          >
+            {freshness.badge}
+          </s-badge>
+        )}
         <s-text color="subdued">
           {loading ? 'Updating…' : updatedAt ? `Updated ${clock(updatedAt)}` : ''}
         </s-text>

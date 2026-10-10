@@ -12,6 +12,7 @@ import {
   loadOrdersForProfit,
   replaceProfitEntries,
   setMissingCogsThreshold,
+  upsertExchangeRates,
   upsertOrders,
   withTenant,
 } from '@pi/db';
@@ -243,6 +244,24 @@ describe('GET /api/v1/dashboard/overview', () => {
     );
     expect(narrow.summary.orders).toBeLessThan(whole.summary.orders);
     expect(Number(narrow.summary.grossSales)).toBeLessThan(Number(whole.summary.grossSales));
+  });
+
+  it('splits payment fees into reported and estimated, in every currency, and in the trend', async () => {
+    await calculateAll(a);
+    for (const qs of [ALL, `${ALL}&currency=AED`, `${ALL}&interval=month`]) {
+      const o = overviewResponseSchema.parse((await overview(qs)).body);
+      const cents = (v: string) => Math.round(Number(v) * 100);
+      // the two parts add up to the fees in the summary, to the cent
+      expect(cents(o.fees.actual) + cents(o.fees.estimated)).toBe(cents(o.summary.paymentFees));
+      // the fixture has a fee rule, so some fees are estimates, and never more than all of them
+      expect(cents(o.fees.estimated)).toBeGreaterThan(0);
+      expect(Number(o.fees.estimatedShare)).toBeGreaterThan(0);
+      expect(Number(o.fees.estimatedShare)).toBeLessThanOrEqual(1);
+      // the trend carries the same estimated amount and never more than the costs of a point
+      const trendTotal = o.trend.reduce((a, t) => a + cents(t.estimatedFees), 0);
+      expect(Math.abs(trendTotal - cents(o.fees.estimated))).toBeLessThanOrEqual(o.trend.length);
+      for (const t of o.trend) expect(cents(t.estimatedFees)).toBeLessThanOrEqual(cents(t.costs));
+    }
   });
 
   it('reports alerts: missing costs, fees, shipping and awaiting payment', async () => {
@@ -678,5 +697,116 @@ describe('costs and channels', () => {
     expect(o.channels).toEqual([]);
     expect(o.summary.totalCosts).toBe('0.0000');
     expect(o.deltas.costs).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+// Any currency: the stored ECB reference rates, crossed through the euro
+// ---------------------------------------------------------------------------------------------
+
+async function storeRates(rows: Array<{ date: string; quote: string; rate: string }>) {
+  await admin.query('truncate o_exchange_rate');
+  await upsertExchangeRates(db, rows, 'test');
+}
+
+/** every day of 2026 up to 9 October has a EUR/USD of 1.10 and EUR/GBP of 0.85, EUR/INR 95 */
+function yearOfRates() {
+  const rows: Array<{ date: string; quote: string; rate: string }> = [];
+  for (
+    let d = new Date('2025-12-20T00:00:00Z');
+    d <= new Date('2026-10-09T00:00:00Z');
+    d = new Date(d.getTime() + 86_400_000)
+  ) {
+    const day = d.toISOString().slice(0, 10);
+    if ([0, 6].includes(d.getUTCDay())) continue; // the ECB does not publish on weekends
+    rows.push({ date: day, quote: 'USD', rate: '1.1000000000' });
+    rows.push({ date: day, quote: 'GBP', rate: '0.8500000000' });
+    rows.push({ date: day, quote: 'INR', rate: '95.0000000000' });
+  }
+  return rows;
+}
+
+describe('display currencies from the exchange rates', () => {
+  it('offers only the peg partner while no rates are stored, and refuses a currency with no rate', async () => {
+    await admin.query('truncate o_exchange_rate');
+    await calculateAll(a);
+    const o = overviewResponseSchema.parse((await overview(ALL)).body);
+    expect(o.currency.available).toEqual(['USD', 'AED']);
+    const res = await overview(`${ALL}&currency=GBP`);
+    expect(res.res.statusCode).toBe(400);
+  });
+
+  it('offers every currency the stored rates can price, the shop currency first', async () => {
+    await storeRates(yearOfRates());
+    await calculateAll(a);
+    const o = overviewResponseSchema.parse((await overview(ALL)).body);
+    expect(o.currency.available[0]).toBe('USD');
+    expect(o.currency.available).toEqual(
+      expect.arrayContaining(['USD', 'AED', 'EUR', 'GBP', 'INR']),
+    );
+    expect(new Set(o.currency.available).size).toBe(o.currency.available.length);
+  });
+
+  it('shows the figures in euros at the rate of each day, and the chart still adds up', async () => {
+    await storeRates(yearOfRates());
+    await calculateAll(a);
+    await addSpend([{ date: '2026-09-07', spend: '100.00' }]);
+    const usd = overviewResponseSchema.parse((await overview(ALL)).body);
+    const eur = overviewResponseSchema.parse((await overview(`${ALL}&currency=EUR`)).body);
+    expect(eur.currency).toMatchObject({ code: 'EUR', shopCode: 'USD', converted: true });
+    expect(eur.currency.note).toContain('ECB');
+    // 1 EUR = 1.10 USD all year, so each amount is its USD amount divided by 1.1, within a cent a day
+    const days = usd.period.days;
+    expect(Math.abs(Number(eur.summary.revenue) - Number(usd.summary.revenue) / 1.1)).toBeLessThan(
+      0.01 * days,
+    );
+    expect(eur.summary.orders).toBe(usd.summary.orders); // counts do not convert
+    // the chart and the channels add up to the converted headline, advertising included
+    expect(eur.trend.reduce((s, p) => s + centsOf(p.revenue), 0)).toBe(
+      centsOf(eur.summary.revenue),
+    );
+    expect(eur.trend.reduce((s, p) => s + centsOf(p.contributionProfit), 0)).toBe(
+      centsOf(eur.summary.contributionProfit),
+    );
+    expect(eur.channels.reduce((s, c) => s + centsOf(c.revenue), 0)).toBe(
+      centsOf(eur.summary.revenue),
+    );
+  });
+
+  it('crosses two non-euro currencies through the euro (USD to GBP and to INR)', async () => {
+    await storeRates(yearOfRates());
+    await calculateAll(a);
+    const usd = overviewResponseSchema.parse((await overview(ALL)).body);
+    const gbp = overviewResponseSchema.parse((await overview(`${ALL}&currency=GBP`)).body);
+    const inr = overviewResponseSchema.parse((await overview(`${ALL}&currency=INR`)).body);
+    // USD to GBP = 0.85 / 1.10, USD to INR = 95 / 1.10
+    expect(
+      Math.abs(Number(gbp.summary.revenue) - (Number(usd.summary.revenue) * 0.85) / 1.1),
+    ).toBeLessThan(0.01 * usd.period.days);
+    expect(
+      Math.abs(Number(inr.summary.revenue) - (Number(usd.summary.revenue) * 95) / 1.1),
+    ).toBeLessThan(0.01 * usd.period.days);
+  });
+
+  it('a period the stored rates do not reach falls back to the shop currency and says why', async () => {
+    // rates exist only for the last few days, but the period starts in January
+    await storeRates(yearOfRates().filter((r) => r.date >= '2026-10-01'));
+    await calculateAll(a);
+    const o = overviewResponseSchema.parse((await overview(`${ALL}&currency=EUR`)).body);
+    expect(o.currency.converted).toBe(false);
+    expect(o.currency.code).toBe('USD');
+    expect(o.currency.note).toMatch(/No exchange rate|rate/);
+  });
+
+  it('AED still uses the fixed peg, with or without stored rates', async () => {
+    await storeRates(yearOfRates());
+    await calculateAll(a);
+    const usd = overviewResponseSchema.parse((await overview(ALL)).body);
+    const aed = overviewResponseSchema.parse((await overview(`${ALL}&currency=AED`)).body);
+    expect(aed.currency.converted).toBe(true);
+    expect(aed.currency.note).toContain('peg');
+    expect(
+      Math.abs(Number(aed.summary.revenue) - Number(usd.summary.revenue) * 3.6725),
+    ).toBeLessThan(0.01 * usd.period.days + 0.01);
   });
 });

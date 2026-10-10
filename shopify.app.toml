@@ -13,7 +13,7 @@ dev_store_url = "profit-intelligence-dev.myshopify.com"
 [access_scopes]
 # Least privilege: read-only. The test-data seeder needs write scopes: see docs/development/test-data.md
 # (add them only for seeding a development store, never in a released version).
-scopes = "read_orders,read_products,read_inventory"
+scopes = "read_orders,read_products,read_inventory,read_shopify_payments_accounts,read_shopify_payments_payouts"
 use_legacy_install_flow = false
 
 [auth]

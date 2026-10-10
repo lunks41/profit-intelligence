@@ -308,6 +308,41 @@ describe('product costs', () => {
       [],
     );
   });
+
+  it('imports a cost from a CSV and bulk-edits variants, and refuses an unknown collection', async () => {
+    const list = costListResponseSchema.parse((await json('GET', '/costs?pageSize=100')).body);
+    const variant = list.rows[0]!;
+    const imported = await json('POST', '/costs/import', 'id-set-a', {
+      csv: `sku,variant_id,cost,effective_from\n,${variant.variantShopifyId},3.25,2026-01-01\n`,
+    });
+    expect(imported.res.statusCode).toBe(201);
+    expect(imported.body.saved).toBe(1);
+    const after = costListResponseSchema
+      .parse((await json('GET', '/costs?pageSize=100')).body)
+      .rows.find((r) => r.variantShopifyId === variant.variantShopifyId)!;
+    expect(after.merchantCost?.amount).toBe('3.2500');
+
+    const bulk = await json('POST', '/costs/bulk', 'id-set-a', {
+      amount: '2.00',
+      effectiveFrom: '2026-02-01',
+      by: 'product',
+      value: variant.productTitle,
+    });
+    expect(bulk.res.statusCode).toBe(201);
+    expect(bulk.body.saved).toBeGreaterThan(0);
+
+    const missing = await json('POST', '/costs/bulk', 'id-set-a', {
+      amount: '2.00',
+      effectiveFrom: '2026-02-01',
+      by: 'collection',
+      value: 'No such collection',
+    });
+    expect(missing.res.statusCode).toBe(400);
+
+    const file = await json('GET', '/costs/export');
+    expect(file.body.csv).toContain(variant.variantShopifyId);
+    expect(file.body.csv).toContain('effective_from');
+  });
 });
 
 describe('payment fee rules', () => {
@@ -449,6 +484,55 @@ describe('shipping cost rules', () => {
   ])('rejects %s', async (_l, body) => {
     const { res } = await json('POST', '/shipping-rules', 'id-set-a', body);
     expect(res.statusCode).toBe(400);
+  });
+
+  it('keeps a country rule beside a catch-all on the same date, and a CSV import replaces both', async () => {
+    expect(
+      (
+        await call('POST', '/shipping-rules', 'id-set-a', {
+          mode: 'flat',
+          amount: '9.00',
+          effectiveFrom: '2026-01-01',
+        })
+      ).statusCode,
+    ).toBe(201);
+    expect(
+      (
+        await call('POST', '/shipping-rules', 'id-set-a', {
+          mode: 'flat',
+          amount: '6.00',
+          countries: ['US'],
+          weightMinGrams: 0,
+          weightMaxGrams: 1000,
+          effectiveFrom: '2026-01-01',
+        })
+      ).statusCode,
+    ).toBe(201);
+    const listed = rulesResponseSchema.parse((await json('GET', '/rules')).body).shippingRules;
+    expect(listed).toHaveLength(2);
+    expect(listed.find((r) => r.countries.includes('US'))).toMatchObject({
+      amount: '6.0000',
+      weightMaxGrams: 1000,
+    });
+
+    const imported = await json('POST', '/shipping-rules/import', 'id-set-a', {
+      csv: `zone,countries,weight_min_g,weight_max_g,mode,amount,percent,effective_from
+Domestic,US,,,per_kilogram,4.50,,2026-01-01
+`,
+    });
+    expect(imported.res.statusCode).toBe(201);
+    const after = rulesResponseSchema.parse((await json('GET', '/rules')).body).shippingRules;
+    expect(after).toEqual([
+      expect.objectContaining({
+        mode: 'per_kilogram',
+        zone: 'Domestic',
+        countries: ['US'],
+        amount: '4.5000',
+      }),
+    ]);
+    const file = await json('GET', '/shipping-rules/export');
+    expect(file.body.csv).toContain('per_kilogram');
+    expect(file.body.csv).toContain('Domestic');
   });
 
   it('keeps rules per shop', async () => {

@@ -81,6 +81,7 @@ async function seedCatalog(who: InstallResult, noCost: number[] = []) {
           priceAmount: '100.0000',
           inventoryItemShopifyId: null,
           unitCostAmount: noCost.includes(v) ? null : '10.0000',
+          weightGrams: null,
           shopifyUpdatedAt: when,
         })),
       })),

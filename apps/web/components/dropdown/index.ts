@@ -1,6 +1,7 @@
 export { Dropdown, type DropdownOption } from './Dropdown';
 export { CategoryDropdown } from './category-dropdown';
 export { CurrencyDropdown } from './currency-dropdown';
+export { FilterSearch } from './filter-search';
 export { FileTypeDropdown } from './file-type-dropdown';
 export { PERIOD_OPTIONS, PeriodDropdown } from './period-dropdown';
 export { ReportDropdown } from './report-dropdown';

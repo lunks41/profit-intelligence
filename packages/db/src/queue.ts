@@ -56,6 +56,8 @@ export const PROFIT_QUEUE = 'profit.recalculate';
 export const RECONCILE_QUEUE = 'maintenance.reconcile';
 export const CLEANUP_QUEUE = 'maintenance.cleanup';
 export const ADS_QUEUE = 'ads.sync';
+export const FX_QUEUE = 'fx.refresh';
+export const ALERT_EMAIL_QUEUE = 'alerts.email';
 export const MONITOR_QUEUE = 'ops.monitor';
 export const LEAKAGE_QUEUE = 'leakage.scan';
 export const EXPORT_QUEUE = 'report.export';
@@ -168,6 +170,12 @@ export async function startQueue(connectionString: string): Promise<PgBoss> {
   await boss.createQueue(LEAKAGE_QUEUE, { retryLimit: 1, retryDelay: 120, expireInSeconds: 1800 });
   await boss.createQueue(MONITOR_QUEUE, { retryLimit: 1, retryDelay: 60, expireInSeconds: 600 });
   await boss.createQueue(ADS_QUEUE, { retryLimit: 2, retryDelay: 120, expireInSeconds: 1800 });
+  await boss.createQueue(FX_QUEUE, { retryLimit: 3, retryDelay: 600, expireInSeconds: 900 });
+  await boss.createQueue(ALERT_EMAIL_QUEUE, {
+    retryLimit: 1,
+    retryDelay: 120,
+    expireInSeconds: 600,
+  });
   return boss;
 }
 

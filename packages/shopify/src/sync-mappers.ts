@@ -23,6 +23,11 @@ export function parseGid(gid: unknown): number {
 
 const optGid = (gid: unknown): number | null => (gid ? parseGid(gid) : null);
 
+function countryCode(value: unknown): string | null {
+  const code = typeof value === 'string' ? value.trim().toUpperCase() : '';
+  return /^[A-Z]{2}$/.test(code) ? code : null;
+}
+
 const MONEY_RE = /^-?\d+(\.\d+)?$/;
 
 /** Reads `{ shopMoney: { amount } }` as a decimal string normalised to 4 decimal places. */
@@ -69,7 +74,23 @@ export interface MappedVariant {
   priceAmount: string;
   inventoryItemShopifyId: number | null;
   unitCostAmount: string | null;
+  weightGrams: number | null;
   shopifyUpdatedAt: Date;
+}
+
+const GRAMS: Record<string, number> = {
+  GRAMS: 1,
+  KILOGRAMS: 1000,
+  OUNCES: 28.349523125,
+  POUNDS: 453.59237,
+};
+
+/** Shopify weight to whole grams. Unknown units and bad numbers become null, never zero. */
+export function weightToGrams(value: unknown, unit: unknown): number | null {
+  const n = typeof value === 'number' ? value : Number(value);
+  const factor = typeof unit === 'string' ? GRAMS[unit] : undefined;
+  if (!Number.isFinite(n) || n < 0 || factor === undefined) return null;
+  return Math.round(n * factor);
 }
 
 export interface MappedProduct {
@@ -80,6 +101,7 @@ export interface MappedProduct {
   productType: string;
   vendor: string;
   isGiftCard: boolean;
+  collectionTitles: string[];
   shopifyUpdatedAt: Date;
 }
 
@@ -94,6 +116,10 @@ export function mapVariant(productShopifyId: number, v: Json): MappedVariant {
     unitCostAmount: v.inventoryItem?.unitCost?.amount
       ? normalizeMoney(String(v.inventoryItem.unitCost.amount))
       : null,
+    weightGrams: weightToGrams(
+      v.inventoryItem?.measurement?.weight?.value,
+      v.inventoryItem?.measurement?.weight?.unit,
+    ),
     shopifyUpdatedAt: date(v.updatedAt),
   };
 }
@@ -113,6 +139,10 @@ export function mapProduct(node: Json): {
       productType: String(node.productType ?? ''),
       vendor: String(node.vendor ?? ''),
       isGiftCard: Boolean(node.isGiftCard),
+      collectionTitles: (node.collections?.nodes ?? [])
+        .map((c: Json) => String(c?.title ?? '').trim())
+        .filter(Boolean)
+        .slice(0, 20),
       shopifyUpdatedAt: date(node.updatedAt),
     },
     variants: (node.variants?.nodes ?? []).map((v: Json) => mapVariant(shopifyId, v)),
@@ -190,6 +220,9 @@ export interface MappedOrder {
   presentmentTotalAmount: string | null;
   tags: string[];
   sourceName: string | null;
+  shipCountry: string | null;
+  /** Shopify returned more refund line items than one page; the rest were not imported. */
+  refundLinesIncomplete: boolean;
 }
 
 export interface MappedOrderBundle {
@@ -200,6 +233,8 @@ export interface MappedOrderBundle {
   /** Nested lists Shopify said it truncated; the sync reports these instead of hiding them. */
   truncated: { lineItems: boolean; refundLineItems: boolean };
   lineItemsAfter: string | null;
+  /** Refunds with more line items than the first page: where to continue reading each one. */
+  refundLinesAfter: Array<{ refundGid: string; refundShopifyId: number; after: string | null }>;
 }
 
 export function mapLineItem(l: Json): MappedLineItem {
@@ -215,6 +250,18 @@ export function mapLineItem(l: Json): MappedLineItem {
     discountAmount: money(l.totalDiscountSet, '0'),
     taxAmount: sumMoney((l.taxLines ?? []).map((t: Json) => money(t.priceSet))),
     requiresShipping: Boolean(l.requiresShipping),
+  };
+}
+
+/** One refund line item as the database stores it. */
+export function mapRefundLine(rl: Json) {
+  return {
+    shopifyId: parseGid(rl.id),
+    lineItemShopifyId: parseGid(rl.lineItem?.id),
+    quantity: Number(rl.quantity),
+    subtotalAmount: money(rl.subtotalSet, '0'),
+    taxAmount: money(rl.totalTaxSet, '0'),
+    restockType: rl.restockType ? String(rl.restockType) : null,
   };
 }
 
@@ -250,6 +297,10 @@ export function mapOrder(node: Json): MappedOrderBundle {
         : null,
     tags: (node.tags ?? []).map(String),
     sourceName: node.sourceName ? String(node.sourceName) : null,
+    shipCountry: countryCode(node.shippingAddress?.countryCodeV2),
+    refundLinesIncomplete: (node.refunds ?? []).some(
+      (r: Json) => r.refundLineItems?.pageInfo?.hasNextPage,
+    ),
   };
 
   const refunds: MappedRefund[] = (node.refunds ?? []).map((r: Json) => ({
@@ -259,14 +310,7 @@ export function mapOrder(node: Json): MappedOrderBundle {
     processedAt: optDate(r.processedAt) ?? date(r.createdAt),
     totalAmount: money(r.totalRefundedSet, '0'),
     note: r.note ? String(r.note) : null,
-    lines: (r.refundLineItems?.nodes ?? []).map((rl: Json) => ({
-      shopifyId: parseGid(rl.id),
-      lineItemShopifyId: parseGid(rl.lineItem?.id),
-      quantity: Number(rl.quantity),
-      subtotalAmount: money(rl.subtotalSet, '0'),
-      taxAmount: money(rl.totalTaxSet, '0'),
-      restockType: rl.restockType ? String(rl.restockType) : null,
-    })),
+    lines: (r.refundLineItems?.nodes ?? []).map(mapRefundLine),
   }));
 
   const transactions: MappedTransaction[] = (node.transactions ?? []).map((t: Json) => {
@@ -299,5 +343,12 @@ export function mapOrder(node: Json): MappedOrderBundle {
       ),
     },
     lineItemsAfter: node.lineItems?.pageInfo?.endCursor ?? null,
+    refundLinesAfter: (node.refunds ?? [])
+      .filter((r: Json) => r.refundLineItems?.pageInfo?.hasNextPage)
+      .map((r: Json) => ({
+        refundGid: String(r.id),
+        refundShopifyId: parseGid(r.id),
+        after: r.refundLineItems.pageInfo.endCursor ?? null,
+      })),
   };
 }

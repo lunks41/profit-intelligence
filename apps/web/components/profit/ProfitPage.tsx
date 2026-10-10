@@ -11,7 +11,9 @@ import type {
 import { describeDelta, describePoints, formatMoney, formatPercent } from '../../lib/format';
 import { sparkSeries } from '../../lib/series';
 import { buildListQuery } from '../../lib/query';
+import { DataQualityCard } from '../overview/DataQualityCard';
 import { FilterBar, type Filters } from '../overview/OverviewView';
+import { describeFreshness } from '../../lib/freshness';
 import { QualifiersBanner } from '../common';
 import { SampleBars } from '../preview/ui';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
@@ -47,8 +49,17 @@ export function ProfitPage() {
 
   return (
     <>
-      <FilterBar filters={filters} currencies={[]} onChange={setFilters} />
+      <FilterBar
+        chip
+        filters={filters}
+        currencies={overview.data?.currency.available ?? []}
+        onChange={setFilters}
+      />
+      {overview.data && <Freshness data={overview.data} />}
       {overview.data && <Kpis data={overview.data} />}
+      {overview.data && (
+        <DataQualityCard quality={overview.data.dataQuality} issues={overview.data.issues} />
+      )}
       {overview.data && <QualifiersBanner qualifiers={overview.data.summary.qualifiers} />}
       <s-stack direction="inline" gap="small">
         {(
@@ -110,6 +121,30 @@ export function ProfitPage() {
   );
 }
 
+function Freshness({ data }: { data: OverviewResponse }) {
+  const view = describeFreshness(data.freshness, data.period, new Date());
+  return (
+    <s-stack gap="small">
+      <s-text color="subdued">
+        Last successful import:{' '}
+        {data.freshness.lastSuccessAt
+          ? new Date(data.freshness.lastSuccessAt).toLocaleString()
+          : 'never'}
+        . {view.badge}
+        {view.detail ? `. ${view.detail}` : ''}
+      </s-text>
+      {data.currency.note && <s-text color="subdued">{data.currency.note}</s-text>}
+    </s-stack>
+  );
+}
+
+function times(numerator: string, denominator: string | null): string {
+  if (denominator === null) return '—';
+  const den = Number(denominator);
+  if (!den) return '—';
+  return `${(Number(numerator) / den).toFixed(2)}x`;
+}
+
 function Kpis({ data }: { data: OverviewResponse }) {
   const s = data.summary;
   const cur = data.currency.code;
@@ -157,6 +192,19 @@ function Kpis({ data }: { data: OverviewResponse }) {
         }
         spark={spark.margin}
       />
+      {s.adSpend !== null && (
+        <Kpi
+          icon="chart-vertical"
+          label="Ad spend"
+          value={formatMoney(s.adSpend, cur)}
+          info="Spend imported for this period, in the display currency. Blended ROAS is revenue divided by that spend. POAS is contribution profit before advertising, divided by that spend."
+          change={
+            <s-text color="subdued">
+              ROAS {times(s.revenue, s.adSpend)} · POAS {times(s.contributionBeforeAds, s.adSpend)}
+            </s-text>
+          }
+        />
+      )}
       <Kpi
         icon="target"
         label="Estimated net profit"

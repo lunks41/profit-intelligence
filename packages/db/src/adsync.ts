@@ -9,6 +9,10 @@ export interface AdAccountToSync extends ShopScope {
   provider: string;
   name: string;
   externalId: string | null;
+  /** encrypted platform token; the worker decrypts it and does not log it */
+  encryptedAccessToken: string | null;
+  /** set by the sync after decryption; never stored */
+  accessToken?: string;
 }
 
 /**
@@ -24,7 +28,7 @@ export async function listAdAccountsForSync(
   return withSystem(db, async (tx) => {
     const res = await tx.execute(sql`
       select a.tenant_id::text as tenant_id, a.shop_id::text as shop_id, a.id::text as id,
-             a.provider, a.name, a.external_id
+             a.provider, a.name, a.external_id, a.encrypted_access_token
         from f_ad_account a join m_shop s on s.id = a.shop_id
        where a.archived_at is null and s.status = 'active' and a.status <> 'disconnected'
          and a.provider in (${sql.join(
@@ -38,6 +42,8 @@ export async function listAdAccountsForSync(
       provider: String(x.provider),
       name: String(x.name),
       externalId: x.external_id === null ? null : String(x.external_id),
+      encryptedAccessToken:
+        x.encrypted_access_token === null ? null : String(x.encrypted_access_token),
     }));
   });
 }

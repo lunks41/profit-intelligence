@@ -88,9 +88,9 @@ function Preview({ onQueued }: { onQueued: () => void }) {
 
   return (
     <>
-      <FilterBar filters={filters} currencies={[]} onChange={setFilters}>
-        <ReportDropdown value={kind} onChange={(v) => setKind(v as typeof kind)} />
-        <FileTypeDropdown value={format} onChange={setFormat} />
+      <FilterBar chip filters={filters} currencies={[]} onChange={setFilters}>
+        <ReportDropdown chip value={kind} onChange={(v) => setKind(v as typeof kind)} />
+        <FileTypeDropdown chip value={format} onChange={setFormat} />
         <s-button variant="primary" disabled={download.busy} onClick={() => void queueExport()}>
           Prepare download
         </s-button>

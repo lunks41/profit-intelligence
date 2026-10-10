@@ -1,7 +1,7 @@
 'use client';
 
 import { QualifiersBanner } from '../common';
-import { ShowDropdown } from '../dropdown';
+import { FilterSearch, ShowDropdown } from '../dropdown';
 
 import { useEffect, useState } from 'react';
 import type { PeriodPreset, ProductDetailResponse, ProductListResponse } from '@pi/contracts';
@@ -63,6 +63,7 @@ export function ProductsPage() {
   return (
     <>
       <FilterBar
+        chip
         filters={filters}
         currencies={[]}
         onChange={(f) => {
@@ -70,13 +71,14 @@ export function ProductsPage() {
           setPage(1);
         }}
       >
-        <s-search-field
+        <FilterSearch
           label="Search by name"
           placeholder="Product name"
           value={search}
-          onInput={(e) => setSearch(e.currentTarget.value)}
+          onChange={setSearch}
         />
         <ShowDropdown
+          chip
           label="Show"
           value={filter}
           options={[
@@ -90,6 +92,7 @@ export function ProductsPage() {
           }}
         />
         <SortControls
+          chip
           options={SORTS}
           sort={sort}
           dir={dir}

@@ -12,14 +12,25 @@ import {
   getProfitAggregate,
   getShopOverview,
   listAdAccounts,
+  loadExchangeRates,
   upsertAdSpend,
 } from '@pi/db';
 import type { Db } from '@pi/db';
-import { D, businessDate, dec, summarizePeriod, toStored, totalAdSpend } from '@pi/profit-engine';
+import {
+  D,
+  businessDate,
+  convertMoney,
+  dec,
+  summarizePeriod,
+  toStored,
+  totalAdSpend,
+} from '@pi/profit-engine';
+import type { TokenCrypto } from '@pi/shopify';
 import type { TenantContext } from '../auth/installation.service.js';
+import { buildFx } from '../dashboard/currency.js';
 import { InvalidRangeError, addDays, eachDay, resolveRange } from '../dashboard/range.js';
 import { EntitlementsService } from '../billing/entitlements.service.js';
-import { DB } from '../tokens.js';
+import { DB, TOKEN_CRYPTO } from '../tokens.js';
 
 const actorOf = (t: TenantContext) => (t.userId ? `shopify-user:${t.userId}` : 'merchant');
 
@@ -33,14 +44,14 @@ export const PROVIDERS: AdProvidersResponse['providers'] = [
   {
     id: 'meta',
     name: 'Meta Ads',
-    available: false,
-    note: 'Automatic import needs a Meta developer app and review. Not connected yet.',
+    available: true,
+    note: 'Paste the ad account id and an access token. Spend imports every day at 06:00 UTC. Campaign-to-order matching comes later.',
   },
   {
     id: 'google',
     name: 'Google Ads',
-    available: false,
-    note: 'Automatic import needs a Google Ads developer token. Not connected yet.',
+    available: true,
+    note: 'Paste the customer id and an access token. Spend imports every day at 06:00 UTC. The server also needs a Google Ads developer token.',
   },
   {
     id: 'tiktok',
@@ -58,6 +69,7 @@ export class MarketingService {
   constructor(
     @Inject(DB) private readonly db: Db,
     @Inject(EntitlementsService) private readonly entitlements: EntitlementsService,
+    @Inject(TOKEN_CRYPTO) private readonly crypto: TokenCrypto,
   ) {}
 
   providers(): AdProvidersResponse {
@@ -84,6 +96,49 @@ export class MarketingService {
       getAdSpend(this.db, scope, range),
       getProfitAggregate(this.db, scope, range),
     ]);
+
+    let fxNote: string | null = null;
+    const currencyOf = new Map(ads.byAccount.map((a) => [a.accountId, a.currency.trim()]));
+    if ([...currencyOf.values()].some((c) => c !== shop.currency)) {
+      const fx = buildFx(
+        await loadExchangeRates(this.db, { from: addDays(range.from, -10), to: range.to }),
+      );
+      const convertAt = (amount: string, from: string, date: string): string | null => {
+        if (from === shop.currency) return amount;
+        const c = convertMoney(amount, from, shop.currency, date, fx.provider);
+        if (c.status === 'missing') {
+          fxNote =
+            'Some ad spend is in a currency with no exchange rate yet, so that spend is left out of the totals.';
+          return null;
+        }
+        return toStored(c.amount);
+      };
+      const sums = new Map<string, InstanceType<typeof D>>();
+      for (const d of ads.daily) {
+        const next = convertAt(d.spend, currencyOf.get(d.accountId) ?? shop.currency, d.date);
+        d.spend = next ?? '0.0000';
+        sums.set(d.accountId, (sums.get(d.accountId) ?? new D(0)).plus(dec(d.spend)));
+      }
+      for (const a of ads.byAccount) {
+        const from = currencyOf.get(a.accountId) ?? shop.currency;
+        if (from === shop.currency) continue;
+        a.spend = toStored(sums.get(a.accountId) ?? new D(0));
+        const sales = convertAt(a.reportedSales, from, range.to);
+        if (sales) a.reportedSales = sales;
+      }
+      for (const c of ads.byCampaign) {
+        const from = currencyOf.get(c.accountId) ?? shop.currency;
+        if (from === shop.currency) continue;
+        const spendRow = convertAt(c.spend, from, range.to);
+        const sales = convertAt(c.reportedSales, from, range.to);
+        if (spendRow) c.spend = spendRow;
+        if (sales) c.reportedSales = sales;
+      }
+      if (!fxNote) {
+        fxNote =
+          'Ad spend in another currency is converted into the store currency at the daily rate.';
+      }
+    }
 
     const spend = ads.byAccount.reduce((a, x) => a.plus(dec(x.spend)), new D(0));
     const reported = ads.byAccount.reduce((a, x) => a.plus(dec(x.reportedSales)), new D(0));
@@ -122,13 +177,17 @@ export class MarketingService {
         platformReportedSales: toStored(reported),
         shopifyRevenue: before.revenue,
         blendedReturn: ratioOf(before.revenue, toStored(spend)),
+        poas: ratioOf(before.contributionBeforeAds, toStored(spend)),
         contributionProfit: before.contributionBeforeAds,
         profitAfterAds: after.contributionProfit,
         hasData: ads.hasData,
         hasAccounts: ads.hasAccounts,
-        qualifiers: after.qualifiers.filter(
-          (q) => q.startsWith('Advertising') || q.startsWith('No advertising'),
-        ),
+        qualifiers: [
+          ...after.qualifiers.filter(
+            (q) => q.startsWith('Advertising') || q.startsWith('No advertising'),
+          ),
+          ...(fxNote ? [fxNote] : []),
+        ],
       },
       channels: ads.byAccount.map((x) => ({
         accountId: x.accountId,
@@ -158,7 +217,10 @@ export class MarketingService {
     };
   }
 
-  async addAccount(scope: TenantContext, body: { provider: string; name: string }) {
+  async addAccount(
+    scope: TenantContext,
+    body: { provider: string; name: string; externalId?: string; accessToken?: string },
+  ) {
     const provider = PROVIDERS.find((p) => p.id === body.provider);
     if (!provider?.available) {
       throw new BadRequestException({
@@ -167,13 +229,23 @@ export class MarketingService {
           `${provider?.name ?? body.provider} cannot be connected yet. ${provider?.note ?? ''}`.trim(),
       });
     }
+    const connected = body.provider === 'meta' || body.provider === 'google';
+    if (connected && (!body.externalId || !body.accessToken)) {
+      throw new BadRequestException({
+        code: 'invalid_input',
+        message: 'An account id and an access token are required to connect this platform.',
+      });
+    }
     const shop = await getShopOverview(this.db, scope);
     if (!shop) throw new BadRequestException({ code: 'shop_not_found', message: 'Shop not found' });
     await this.entitlements.assertAdAccount(scope);
+    const encrypted = body.accessToken ? this.crypto.encrypt(body.accessToken).value : null;
     return createAdAccount(this.db, scope, {
       provider: body.provider,
       name: body.name,
       currency: shop.currency,
+      externalId: body.externalId ?? null,
+      encryptedAccessToken: encrypted,
       actor: actorOf(scope),
     });
   }

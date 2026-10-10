@@ -2,7 +2,8 @@
 
 import type { OverviewResponse } from '@pi/contracts';
 import { breakdownRows, STANDING_LABEL, type Standing } from '../../lib/breakdown';
-import { periodLabel } from '../../lib/format';
+import { feeDetail } from '../../lib/costs';
+import { formatMoney, periodLabel } from '../../lib/format';
 import { InfoTip } from '../common';
 
 const TONE: Record<Standing, 'success' | 'info' | 'caution' | 'neutral' | 'critical'> = {
@@ -42,7 +43,7 @@ export function ProfitBreakdown({ data }: { data: OverviewResponse }) {
           <s-table-header>Data</s-table-header>
         </s-table-header-row>
         <s-table-body>
-          {rows.map((r) => (
+          {rows.flatMap((r) => [
             <s-table-row key={r.key}>
               <s-table-cell>
                 <s-stack direction="inline" alignItems="center" gap="small-300">
@@ -62,8 +63,21 @@ export function ProfitBreakdown({ data }: { data: OverviewResponse }) {
                   <s-badge tone={TONE[r.standing]}>{STANDING_LABEL[r.standing]}</s-badge>
                 )}
               </s-table-cell>
-            </s-table-row>
-          ))}
+            </s-table-row>,
+            r.key === 'fees' && feeDetail(data.fees, data.currency.code) ? (
+              <s-table-row key="fees-estimated">
+                <s-table-cell>
+                  <s-text color="subdued">{`   Payment fees: ${feeDetail(data.fees, data.currency.code)}`}</s-text>
+                </s-table-cell>
+                <s-table-cell>
+                  <s-text color="subdued">{`Estimated ${formatMoney(data.fees.estimated, data.currency.code)}`}</s-text>
+                </s-table-cell>
+                <s-table-cell>
+                  <s-badge tone="info">Estimated</s-badge>
+                </s-table-cell>
+              </s-table-row>
+            ) : null,
+          ])}
         </s-table-body>
       </s-table>
     </s-section>

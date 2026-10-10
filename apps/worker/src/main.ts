@@ -6,6 +6,8 @@ import {
   PROFIT_QUEUE,
   PURGE_QUEUE,
   ADS_QUEUE,
+  FX_QUEUE,
+  ALERT_EMAIL_QUEUE,
   MONITOR_QUEUE,
   LEAKAGE_QUEUE,
   DELIVER_QUEUE,
@@ -32,6 +34,8 @@ import type {
 } from '@pi/db';
 import { createShopifyGraphql, createTokenCrypto } from '@pi/shopify';
 import { syncAdAccounts } from './ads/sync.js';
+import { emailAlerts } from './alerts/email.js';
+import { refreshExchangeRates } from './fx/refresh.js';
 import { problemsOf, runMonitor } from './monitoring/monitor.js';
 import { scanLeakage } from './leakage/scan.js';
 import { deliverExport, processExport } from './reports/export.js';
@@ -139,13 +143,25 @@ await boss.work(MONITOR_QUEUE, { batchSize: 1 }, async () => {
 });
 await boss.schedule(MONITOR_QUEUE, '*/15 * * * *');
 await boss.work(ADS_QUEUE, { batchSize: 1 }, async () => {
-  await syncAdAccounts({ db, log });
+  await syncAdAccounts({ db, log, decrypt: (value) => crypto.decrypt(value) });
 });
 await boss.schedule(ADS_QUEUE, '0 6 * * *');
+// Exchange rates: the ECB publishes around 16:00 CET on working days; check again in the evening.
+await boss.work(FX_QUEUE, { batchSize: 1 }, async () => {
+  await refreshExchangeRates({ db, log });
+});
+await boss.schedule(FX_QUEUE, '30 17 * * *');
+// Alert emails: new warnings and serious findings go to the addresses each shop chose.
+await boss.work(ALERT_EMAIL_QUEUE, { batchSize: 1 }, async () => {
+  await emailAlerts({ db, log, mail, apiKey: env.SHOPIFY_API_KEY });
+});
+await boss.schedule(ALERT_EMAIL_QUEUE, '*/15 * * * *');
+// and now, so a fresh install has rates without waiting for the evening
+void refreshExchangeRates({ db, log });
 await boss.schedule(RECONCILE_QUEUE, '0 3 * * *');
 await boss.schedule(CLEANUP_QUEUE, '30 3 * * *');
 log.info(
-  'processing: sync, webhooks, purge; scheduled: reconcile 03:00 UTC, cleanup 03:30 UTC, leakage 05:00 UTC, ads 06:00 UTC',
+  'processing: sync, webhooks, purge; scheduled: reconcile 03:00 UTC, cleanup 03:30 UTC, leakage 05:00 UTC, ads 06:00 UTC, exchange rates 17:30 UTC, alert emails every 15 minutes',
 );
 
 // Health: process is up and the database answers.

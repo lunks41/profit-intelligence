@@ -4,34 +4,48 @@ import type {
   CostHistoryResponse,
   CostListQuery,
   CostListResponse,
+  BulkCostBody,
   FeeRuleBody,
+  ProductCostImportBody,
   RulesResponse,
   SetCostBody,
   ShippingRuleBody,
+  ShippingRulesImportBody,
 } from '@pi/contracts';
 import {
   costTotals,
   enqueueProfitRecalc,
+  getAlertEmailRecipients,
   getLeakageSettings,
   getMissingCogsThreshold,
   getShopOverview,
   listAudit,
+  listCostCatalog,
   listCostHistory,
   listCostRows,
   listRules,
   logAudit,
+  replaceShippingCostRules,
   revokePaymentFeeRule,
   revokeProductCost,
   revokeShippingCostRule,
+  setAlertEmailRecipients,
   setLeakageSettings,
   setMissingCogsThreshold,
   setPaymentFeeRule,
   setProductCost,
+  setProductCosts,
   setShippingCostRule,
   variantBelongsToShop,
 } from '@pi/db';
 import type { Db } from '@pi/db';
-import { businessDate } from '@pi/profit-engine';
+import {
+  businessDate,
+  formatProductCostCsv,
+  formatShippingRulesCsv,
+  parseProductCostCsv,
+  parseShippingRulesCsv,
+} from '@pi/profit-engine';
 import type { PgBoss } from 'pg-boss';
 import type { TenantContext } from '../auth/installation.service.js';
 import { DB, QUEUE } from '../tokens.js';
@@ -130,12 +144,143 @@ export class SettingsService {
     return { revoked: true };
   }
 
+  async exportCosts(scope: TenantContext) {
+    const { today } = await this.shop(scope);
+    const catalog = await listCostCatalog(this.db, scope, today);
+    return {
+      csv: formatProductCostCsv(
+        catalog.map((r) => ({
+          sku: r.sku,
+          variantId: r.variantShopifyId,
+          product: r.productTitle,
+          variant: r.variantTitle && r.variantTitle !== 'Default Title' ? r.variantTitle : '',
+          vendor: r.vendor,
+          collection: r.collections.join('; '),
+          cost: r.cost ? r.cost.replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '') : '',
+          effectiveFrom: r.effectiveFrom ?? '',
+        })),
+      ),
+    };
+  }
+
+  async importCosts(scope: TenantContext, body: ProductCostImportBody) {
+    const { currency, today } = await this.shop(scope);
+    const parsed = parseProductCostCsv(body.csv);
+    const catalog = await listCostCatalog(this.db, scope, today);
+    const byId = new Map(catalog.map((r) => [r.variantShopifyId, r]));
+    const bySku = new Map<string, typeof catalog>();
+    for (const row of catalog) {
+      if (!row.sku) continue;
+      const key = row.sku.toLowerCase();
+      bySku.set(key, [...(bySku.get(key) ?? []), row]);
+    }
+    const errors: string[] = [];
+    const rows: { variantShopifyId: number; amount: string; effectiveFrom: string }[] = [];
+    parsed.rows.forEach((line, i) => {
+      const rowNo = i + 2;
+      if (line.effectiveFrom > today || line.effectiveFrom < '2000-01-01') {
+        errors.push(`row ${rowNo}: the date cannot be in the future or before 2000`);
+        return;
+      }
+      let match = line.variantId ? byId.get(line.variantId) : undefined;
+      if (line.variantId && !match) errors.push(`row ${rowNo}: variant was not found`);
+      if (!line.variantId && line.sku) {
+        const hits = bySku.get(line.sku.toLowerCase()) ?? [];
+        if (hits.length === 0) errors.push(`row ${rowNo}: SKU ${line.sku} was not found`);
+        else if (hits.length > 1)
+          errors.push(`row ${rowNo}: SKU ${line.sku} matches more than one variant`);
+        else match = hits[0];
+      }
+      if (match) {
+        rows.push({
+          variantShopifyId: Number(match.variantShopifyId),
+          amount: line.cost,
+          effectiveFrom: line.effectiveFrom,
+        });
+      }
+    });
+    const messages = [...parsed.errors, ...errors];
+    if (body.preview) {
+      return {
+        preview: true as const,
+        matched: messages.length ? 0 : rows.length,
+        skipped: parsed.skipped,
+        invalid: messages.length,
+        messages: messages.slice(0, 12),
+      };
+    }
+    if (errors.length || parsed.errors.length) {
+      throw new BadRequestException({
+        code: 'invalid_input',
+        message: messages.slice(0, 8).join('; '),
+      });
+    }
+    const saved = await setProductCosts(this.db, scope, {
+      rows,
+      currency,
+      source: 'import',
+      actor: actorOf(scope),
+      reason: 'Imported from a file',
+    });
+    return { ...saved, matched: rows.length, skipped: parsed.skipped, invalid: 0, messages: [] };
+  }
+
+  async bulkCosts(scope: TenantContext, body: BulkCostBody) {
+    const { currency, today } = await this.shop(scope);
+    this.checkDate(body.effectiveFrom, today);
+    const catalog = await listCostCatalog(this.db, scope, today);
+    const needle = body.value.trim().toLowerCase();
+    const tokens = body.value
+      .split(/[\s,]+/)
+      .map((t) => t.trim())
+      .filter(Boolean);
+    const matched =
+      body.by === 'vendor'
+        ? catalog.filter((r) => r.vendor.toLowerCase() === needle)
+        : body.by === 'product'
+          ? catalog.filter(
+              (r) =>
+                r.productShopifyId === body.value.trim() || r.productTitle.toLowerCase() === needle,
+            )
+          : body.by === 'collection'
+            ? catalog.filter((r) => r.collections.some((c) => c.toLowerCase() === needle))
+            : catalog.filter(
+                (r) =>
+                  tokens.includes(r.variantShopifyId) ||
+                  (r.sku != null && tokens.some((t) => t.toLowerCase() === r.sku!.toLowerCase())),
+              );
+    if (!matched.length) {
+      throw new BadRequestException({
+        code: 'invalid_input',
+        message: 'No products matched. Check the name, and sync products if this is a collection.',
+      });
+    }
+    if (matched.length > 5000) {
+      throw new BadRequestException({
+        code: 'invalid_input',
+        message: `That matches ${matched.length} variants. Narrow it and try again.`,
+      });
+    }
+    return setProductCosts(this.db, scope, {
+      rows: matched.map((r) => ({
+        variantShopifyId: Number(r.variantShopifyId),
+        amount: body.amount,
+        effectiveFrom: body.effectiveFrom,
+      })),
+      currency,
+      source: 'manual',
+      actor: actorOf(scope),
+      reason: `Bulk edit by ${body.by}`,
+    });
+  }
+
   async rules(scope: TenantContext): Promise<RulesResponse> {
     const { currency, today } = await this.shop(scope);
-    const [lists, threshold, limits] = await Promise.all([
+    const [lists, threshold, limits, alertEmails] = await Promise.all([
       listRules(this.db, scope),
       getMissingCogsThreshold(this.db, scope),
       getLeakageSettings(this.db, scope),
+      getAlertEmailRecipients(this.db, scope),
     ]);
     return {
       currency,
@@ -149,14 +294,19 @@ export class SettingsService {
       })),
       shippingRules: lists.shippingRules.map((r) => ({
         id: r.id,
-        mode: r.mode as 'flat' | 'percent_of_shipping_charged',
+        mode: r.mode as 'flat' | 'percent_of_shipping_charged' | 'per_kilogram',
         amount: r.amount,
         percent: r.percent,
         effectiveFrom: r.effectiveFrom,
+        zone: r.zone,
+        countries: r.countries,
+        weightMinGrams: r.weightMinGrams,
+        weightMaxGrams: r.weightMaxGrams,
       })),
       gateways: lists.gateways,
       missingCostWarningPct: threshold,
       limits,
+      alertEmails,
     };
   }
 
@@ -185,11 +335,72 @@ export class SettingsService {
     this.checkDate(body.effectiveFrom, today);
     return setShippingCostRule(this.db, scope, {
       mode: body.mode,
-      amount: body.mode === 'flat' ? body.amount : null,
-      percent: body.mode === 'flat' ? null : body.percent,
+      amount: body.mode === 'percent_of_shipping_charged' ? null : body.amount,
+      percent: body.mode === 'percent_of_shipping_charged' ? body.percent : null,
       effectiveFrom: body.effectiveFrom,
+      zone: body.zone ?? null,
+      countries: body.countries ?? [],
+      weightMinGrams: body.weightMinGrams ?? null,
+      weightMaxGrams: body.weightMaxGrams ?? null,
       actor: actorOf(scope),
     });
+  }
+
+  async importShippingRules(scope: TenantContext, body: ShippingRulesImportBody) {
+    const { today } = await this.shop(scope);
+    const parsed = parseShippingRulesCsv(body.csv);
+    const seen = new Set<string>();
+    const duplicate: string[] = [];
+    for (const rule of parsed.rules) {
+      this.checkDate(rule.effectiveFrom, today);
+      const key = [
+        rule.zone ?? '',
+        rule.countries.join(','),
+        rule.weightMinGrams ?? '',
+        rule.weightMaxGrams ?? '',
+        rule.effectiveFrom,
+      ].join('|');
+      if (seen.has(key)) {
+        duplicate.push('Two rows describe the same zone, countries, weight and date');
+      }
+      seen.add(key);
+    }
+    const messages = [...parsed.errors, ...duplicate];
+    if (body.preview) {
+      return {
+        preview: true as const,
+        matched: messages.length ? 0 : parsed.rules.length,
+        skipped: 0,
+        invalid: messages.length,
+        messages: messages.slice(0, 12),
+      };
+    }
+    if (messages.length) {
+      throw new BadRequestException({
+        code: 'invalid_input',
+        message: messages.slice(0, 8).join('; '),
+      });
+    }
+    const saved = await replaceShippingCostRules(this.db, scope, parsed.rules, actorOf(scope));
+    return { ...saved, matched: parsed.rules.length, skipped: 0, invalid: 0, messages: [] };
+  }
+
+  async exportShippingRules(scope: TenantContext) {
+    const lists = await listRules(this.db, scope);
+    return {
+      csv: formatShippingRulesCsv(
+        lists.shippingRules.map((r) => ({
+          zone: r.zone,
+          countries: r.countries,
+          weightMinGrams: r.weightMinGrams,
+          weightMaxGrams: r.weightMaxGrams,
+          mode: r.mode as 'flat' | 'percent_of_shipping_charged' | 'per_kilogram',
+          amount: r.amount,
+          percent: r.percent,
+          effectiveFrom: r.effectiveFrom,
+        })),
+      ),
+    };
   }
 
   async removeShippingRule(scope: TenantContext, id: string) {
@@ -205,6 +416,11 @@ export class SettingsService {
   ) {
     await setLeakageSettings(this.db, scope, body, actorOf(scope));
     return this.rules(scope).then((r) => r.limits);
+  }
+
+  async setAlertEmails(scope: TenantContext, recipients: string[]) {
+    await setAlertEmailRecipients(this.db, scope, recipients, actorOf(scope));
+    return { alertEmails: recipients };
   }
 
   async setThreshold(scope: TenantContext, pct: string) {

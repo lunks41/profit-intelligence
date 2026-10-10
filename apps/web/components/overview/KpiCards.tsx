@@ -50,7 +50,14 @@ export function KpiCards({ data }: { data: OverviewResponse }) {
             />
           }
           notes={
-            s.partial ? <s-badge tone="caution">Some costs missing, so this is low</s-badge> : null
+            <s-stack gap="small-300">
+              {s.partial && <s-badge tone="caution">Some costs missing, so this is low</s-badge>}
+              {Number(data.fees.estimated) > 0 && (
+                <s-badge tone="info">
+                  {`Includes ${formatMoney(data.fees.estimated, cur)} of estimated payment fees`}
+                </s-badge>
+              )}
+            </s-stack>
           }
           spark={spark.costs}
         />

@@ -9,6 +9,7 @@ import { SyncNotice } from '../sync/SyncNotice';
 import { SyncSection } from '../sync/SyncSection';
 import { useSyncStatus } from '../sync/useSyncStatus';
 import { Opportunities } from './Opportunities';
+import { describeFreshness } from '../../lib/freshness';
 import { OverviewHeader } from './OverviewHeader';
 import { RecentOrders } from './RecentOrders';
 import { SecondaryInsights } from './SecondaryInsights';
@@ -84,6 +85,7 @@ export function OverviewPage() {
         currency={data ? data.currency.code : null}
         currencies={data?.currency.available ?? []}
         updatedAt={updatedAt}
+        freshness={data ? describeFreshness(data.freshness, data.period, new Date()) : null}
         loading={loading}
         preset={filters.preset}
         onPreset={(preset) => change({ ...filters, preset })}

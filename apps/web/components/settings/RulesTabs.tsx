@@ -4,7 +4,7 @@ import { Dropdown } from '../dropdown';
 
 import { useState } from 'react';
 import type { RulesResponse } from '@pi/contracts';
-import { apiDelete, apiPost } from '../../lib/api';
+import { apiDelete, apiGet, apiPost } from '../../lib/api';
 import { formatMoney, longDate } from '../../lib/format';
 import { FormError, isAmount, isPercent, todayLocal, useAction } from './shared';
 
@@ -155,32 +155,126 @@ export function FeesTab({ rules, onChanged }: { rules: RulesResponse; onChanged:
   );
 }
 
+type ShipMode = 'flat' | 'percent_of_shipping_charged' | 'per_kilogram';
+
+function shipMethod(mode: ShipMode): string {
+  if (mode === 'flat') return 'Flat amount per order';
+  if (mode === 'per_kilogram') return 'Amount per kilogram';
+  return 'Percent of shipping charged';
+}
+
+function shipWhere(r: RulesResponse['shippingRules'][number]): string {
+  const place = r.zone || (r.countries.length ? r.countries.join(', ') : 'Any country');
+  if (r.weightMinGrams == null && r.weightMaxGrams == null) return place;
+  const max = r.weightMaxGrams == null ? 'any' : `${r.weightMaxGrams}g`;
+  return `${place}, ${r.weightMinGrams ?? 0}g to ${max}`;
+}
+
+function parseCountries(raw: string): string[] | null {
+  const codes = raw
+    .split(/[, ]+/)
+    .map((c) => c.trim().toUpperCase())
+    .filter(Boolean);
+  if (codes.some((c) => !/^[A-Z]{2}$/.test(c))) return null;
+  return [...new Set(codes)].sort();
+}
+
+function parseGrams(raw: string): number | null | undefined {
+  const text = raw.trim();
+  if (!text) return null;
+  if (!/^\d{1,7}$/.test(text)) return undefined;
+  return Number(text);
+}
+
 export function ShippingTab({ rules, onChanged }: { rules: RulesResponse; onChanged: Reload }) {
-  const [mode, setMode] = useState<'flat' | 'percent_of_shipping_charged'>('flat');
+  const [mode, setMode] = useState<ShipMode>('flat');
   const [value, setValue] = useState('');
   const [from, setFrom] = useState(todayLocal());
+  const [zone, setZone] = useState('');
+  const [countries, setCountries] = useState('');
+  const [weightMin, setWeightMin] = useState('');
+  const [weightMax, setWeightMax] = useState('');
+  const [csv, setCsv] = useState('');
+  const [preview, setPreview] = useState<{
+    matched: number;
+    skipped: number;
+    invalid: number;
+    messages: string[];
+  } | null>(null);
   const [touched, setTouched] = useState(false);
   const { busy, error, run } = useAction();
   const cur = rules.currency;
 
   const valueOk =
-    mode === 'flat'
-      ? isAmount(value)
-      : /^\d{1,4}(\.\d{1,4})?$/.test(value.trim()) && Number(value) <= 1000;
+    mode === 'percent_of_shipping_charged'
+      ? /^\d{1,4}(\.\d{1,4})?$/.test(value.trim()) && Number(value) <= 1000
+      : isAmount(value);
   const dateOk = from <= todayLocal() && /^\d{4}-\d{2}-\d{2}$/.test(from);
+  const countryList = parseCountries(countries);
+  const minG = parseGrams(weightMin);
+  const maxG = parseGrams(weightMax);
+  const weightOk =
+    minG !== undefined &&
+    maxG !== undefined &&
+    maxG !== 0 &&
+    (minG == null || maxG == null || minG < maxG);
 
   async function add() {
     setTouched(true);
-    if (!valueOk || !dateOk) return;
+    if (!valueOk || !dateOk || countryList === null || !weightOk) return;
+    const match = {
+      zone: zone.trim() || null,
+      countries: countryList,
+      weightMinGrams: minG,
+      weightMaxGrams: maxG,
+      effectiveFrom: from,
+    };
     const body =
-      mode === 'flat'
-        ? { mode, amount: value.trim(), effectiveFrom: from }
-        : { mode, percent: value.trim(), effectiveFrom: from };
+      mode === 'percent_of_shipping_charged'
+        ? { mode, percent: value.trim(), ...match }
+        : { mode, amount: value.trim(), ...match };
     if (await run(() => apiPost('/settings/shipping-rules', body))) {
       setValue('');
+      setZone('');
+      setCountries('');
+      setWeightMin('');
+      setWeightMax('');
       setTouched(false);
       onChanged();
     }
+  }
+
+  async function previewCsv() {
+    if (!csv.trim()) return;
+    const result = await run(() =>
+      apiPost<{ matched: number; skipped: number; invalid: number; messages: string[] }>(
+        '/settings/shipping-rules/import',
+        { csv, preview: true },
+      ),
+    );
+    if (result) setPreview(result);
+  }
+
+  async function importCsv() {
+    if (!csv.trim()) return;
+    if (await run(() => apiPost('/settings/shipping-rules/import', { csv }))) {
+      setPreview(null);
+      setCsv('');
+      onChanged();
+    }
+  }
+
+  async function exportCsv() {
+    const file = await run(() => apiGet<{ csv: string }>('/settings/shipping-rules/export'));
+    if (!file) return;
+    const url = URL.createObjectURL(new Blob([file.csv], { type: 'text/csv' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'shipping-cost-rules.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
   }
 
   return (
@@ -189,7 +283,7 @@ export function ShippingTab({ rules, onChanged }: { rules: RulesResponse; onChan
         <s-banner tone="warning" heading="No shipping cost rule yet">
           <s-paragraph>
             Shopify does not report what you pay carriers, so shipping cost counts as unknown until
-            you add a rule.
+            you add a rule. A rule can apply to every order, or only to a country and a weight.
           </s-paragraph>
         </s-banner>
       )}
@@ -198,7 +292,8 @@ export function ShippingTab({ rules, onChanged }: { rules: RulesResponse; onChan
           {rules.shippingRules.length > 0 && (
             <s-table>
               <s-table-header-row>
-                <s-table-header listSlot="primary">Rule</s-table-header>
+                <s-table-header listSlot="primary">Where</s-table-header>
+                <s-table-header>Method</s-table-header>
                 <s-table-header format="numeric">Value</s-table-header>
                 <s-table-header>Applies from</s-table-header>
                 <s-table-header>Action</s-table-header>
@@ -206,11 +301,14 @@ export function ShippingTab({ rules, onChanged }: { rules: RulesResponse; onChan
               <s-table-body>
                 {rules.shippingRules.map((r) => (
                   <s-table-row key={r.id}>
+                    <s-table-cell>{shipWhere(r)}</s-table-cell>
+                    <s-table-cell>{shipMethod(r.mode)}</s-table-cell>
                     <s-table-cell>
-                      {r.mode === 'flat' ? 'Flat amount per order' : 'Percent of shipping charged'}
-                    </s-table-cell>
-                    <s-table-cell>
-                      {r.mode === 'flat' ? formatMoney(r.amount, cur) : `${r.percent}%`}
+                      {r.mode === 'percent_of_shipping_charged'
+                        ? `${r.percent}%`
+                        : r.mode === 'per_kilogram'
+                          ? `${formatMoney(r.amount, cur)} / kg`
+                          : formatMoney(r.amount, cur)}
                     </s-table-cell>
                     <s-table-cell>{longDate(r.effectiveFrom)}</s-table-cell>
                     <s-table-cell>
@@ -231,18 +329,55 @@ export function ShippingTab({ rules, onChanged }: { rules: RulesResponse; onChan
             gap="base"
             alignItems="end"
           >
+            <s-text-field
+              label="Zone name"
+              placeholder="Domestic"
+              value={zone}
+              onInput={(e) => setZone(e.currentTarget.value)}
+            />
+            <s-text-field
+              label="Countries"
+              placeholder="US, CA"
+              details="Leave blank for every country"
+              value={countries}
+              error={
+                touched && countryList === null ? 'Use two-letter codes such as US' : undefined
+              }
+              onInput={(e) => setCountries(e.currentTarget.value)}
+            />
+            <s-text-field
+              label="From grams"
+              placeholder="0"
+              value={weightMin}
+              error={touched && !weightOk ? 'Check the weight band' : undefined}
+              onInput={(e) => setWeightMin(e.currentTarget.value)}
+            />
+            <s-text-field
+              label="Up to grams"
+              placeholder="1000"
+              details="Orders at this weight use the next band"
+              value={weightMax}
+              onInput={(e) => setWeightMax(e.currentTarget.value)}
+            />
             <Dropdown
               label="Method"
               value={mode}
               options={[
                 { value: 'flat', label: 'Flat amount per order' },
+                { value: 'per_kilogram', label: 'Amount per kilogram' },
                 { value: 'percent_of_shipping_charged', label: 'Percent of shipping charged' },
               ]}
-              onChange={(v) => setMode(v as typeof mode)}
+              onChange={(v) => setMode(v as ShipMode)}
             />
             <s-text-field
-              label={mode === 'flat' ? `Amount per order (${cur})` : 'Percent of shipping charged'}
-              placeholder={mode === 'flat' ? '6.00' : '80'}
+              label={
+                mode === 'percent_of_shipping_charged'
+                  ? 'Percent of shipping charged'
+                  : mode === 'per_kilogram'
+                    ? `Amount per kilogram (${cur})`
+                    : `Amount per order (${cur})`
+              }
+              placeholder={mode === 'percent_of_shipping_charged' ? '80' : '6.00'}
               value={value}
               error={touched && !valueOk ? 'Enter a number' : undefined}
               onInput={(e) => setValue(e.currentTarget.value)}
@@ -260,7 +395,46 @@ export function ShippingTab({ rules, onChanged }: { rules: RulesResponse; onChan
               Add rule
             </s-button>
           </div>
-          <s-text color="subdued">Only orders that ship have a shipping cost. {RECALC_NOTE}</s-text>
+          <s-text color="subdued">
+            A country rule wins over a rule for every country, and a weight band wins over a rule
+            with no weight. Per kilogram needs a product weight. Only orders that ship have a
+            shipping cost. {RECALC_NOTE}
+          </s-text>
+          <s-text type="strong">Import or export</s-text>
+          <s-text-area
+            label="CSV"
+            details="Columns: zone, countries, weight_min_g, weight_max_g, mode, amount, percent, effective_from. Import replaces the rules you have now."
+            value={csv}
+            rows={4}
+            onInput={(e) => {
+              setCsv(e.currentTarget.value);
+              setPreview(null);
+            }}
+          />
+          {preview && (
+            <s-banner tone={preview.invalid > 0 ? 'warning' : 'info'} heading="Import preview">
+              <s-paragraph>
+                {preview.matched} matched, {preview.skipped} skipped, {preview.invalid} invalid.
+                Import replaces the rules you have now.
+                {preview.messages.length > 0 ? ` ${preview.messages.join(' ')}` : ''}
+              </s-paragraph>
+            </s-banner>
+          )}
+          <s-stack direction="inline" gap="base">
+            <s-button disabled={busy || !csv.trim()} onClick={() => void previewCsv()}>
+              Preview
+            </s-button>
+            <s-button
+              variant="primary"
+              disabled={busy || !csv.trim() || !preview || preview.invalid > 0 || preview.matched === 0}
+              onClick={() => void importCsv()}
+            >
+              Import CSV
+            </s-button>
+            <s-button variant="tertiary" disabled={busy} onClick={() => void exportCsv()}>
+              Export CSV
+            </s-button>
+          </s-stack>
         </s-stack>
       </s-section>
     </>

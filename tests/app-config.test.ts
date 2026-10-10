@@ -9,7 +9,13 @@ const value = (key: string) =>
 describe('Shopify app configuration', () => {
   it('asks only for read access to orders, products and inventory', () => {
     const scopes = (value('scopes') ?? '').replace(/["\s]/g, '').split(',').filter(Boolean).sort();
-    expect(scopes).toEqual(['read_inventory', 'read_orders', 'read_products']);
+    expect(scopes).toEqual([
+      'read_inventory',
+      'read_orders',
+      'read_products',
+      'read_shopify_payments_accounts',
+      'read_shopify_payments_payouts',
+    ]);
     // no write scope, and no access to customers (we store no customer personal data)
     expect(scopes.filter((s) => s.startsWith('write_'))).toEqual([]);
     expect(scopes.some((s) => /customer/.test(s))).toBe(false);

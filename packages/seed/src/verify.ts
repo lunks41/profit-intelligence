@@ -118,7 +118,10 @@ async function main() {
 
   const unexplained = missing.filter((m) => new Date(m.createdAt).getTime() <= finished);
   const lateOnes = missing.length - unexplained.length;
-  const extraInDb = orders.filter((r) => !seen.has(r.id)).length;
+  const windowStart = new Date(since).getTime();
+  const notReturned = orders.filter((r) => !seen.has(r.id));
+  const agedOut = notReturned.filter((r) => new Date(r.processed_at).getTime() < windowStart);
+  const extraInDb = notReturned.filter((r) => new Date(r.processed_at).getTime() >= windowStart);
 
   console.log(`window start:                 ${since}`);
   console.log(`orders in Shopify (window):   ${shopifyCount}`);
@@ -126,10 +129,12 @@ async function main() {
   console.log(`field differences:            ${diffs.length}`);
   console.log(`missing, created after sync:  ${lateOnes} (expected; run another sync)`);
   console.log(`missing, UNEXPLAINED:         ${unexplained.length}`);
-  console.log(`in database, not in window:   ${extraInDb}`);
+  console.log(`aged out of the window:       ${agedOut.length} (expected; still stored)`);
+  console.log(`in window, missing in Shopify: ${extraInDb.length}`);
   for (const d of diffs.slice(0, 20)) console.log(`  DIFF ${d}`);
   for (const m of unexplained.slice(0, 20)) console.log(`  MISSING ${m.name}`);
-  const ok = diffs.length === 0 && unexplained.length === 0 && extraInDb === 0;
+  for (const r of extraInDb.slice(0, 20)) console.log(`  EXTRA ${r.id}`);
+  const ok = diffs.length === 0 && unexplained.length === 0 && extraInDb.length === 0;
   console.log(ok ? 'RESULT: database reconciles with Shopify' : 'RESULT: MISMATCH');
   process.exitCode = ok ? 0 : 1;
 }

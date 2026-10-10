@@ -6,13 +6,20 @@ import {
   CartesianGrid,
   ComposedChart,
   Legend,
+  LabelList,
   Line,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts';
-import { formatMoney, formatMoneyCompact, longDate, shortDate } from '../../lib/format';
+import {
+  formatMoney,
+  formatMoneyCompact,
+  formatPercent,
+  longDate,
+  shortDate,
+} from '../../lib/format';
 
 type Trend = OverviewResponse['trend'];
 
@@ -40,9 +47,14 @@ export function TrendChart({
     date: t.date,
     to: t.to,
     revenue: Number(t.revenue),
+    // costs split in two so the estimated payment fees can be told apart from the rest
+    reportedCosts: Number(t.costs) - Number(t.estimatedFees),
+    estimatedFees: Number(t.estimatedFees),
     costs: Number(t.costs),
     profit: Number(t.contributionProfit),
   }));
+  const monthly = interval === 'month';
+  const hasEstimates = rows.some((r) => r.estimatedFees > 0);
 
   if (rows.length === 0) return <s-text color="subdued">No days to show.</s-text>;
   const unit = interval === 'day' ? 'daily' : interval === 'week' ? 'weekly (7-day)' : 'monthly';
@@ -69,39 +81,80 @@ export function TrendChart({
               tick={{ fontSize: 10 }}
             />
             <Tooltip
-              labelFormatter={(d, payload) => {
-                const to = (payload?.[0]?.payload as { to?: string } | undefined)?.to ?? String(d);
-                return span(String(d), to);
-              }}
-              formatter={(v) => formatMoney(String(v), currency)}
+              content={<TrendTooltip currency={currency} />}
+              cursor={{ fill: 'rgba(0,0,0,0.04)' }}
             />
             <Legend />
             <Bar
-              dataKey="costs"
+              dataKey="reportedCosts"
+              stackId="costs"
               name="Costs"
               fill="#fbd5d0"
               isAnimationActive={false}
-              maxBarSize={28}
+              maxBarSize={monthly ? 40 : 28}
             />
-            <Line
-              type="monotone"
-              dataKey="revenue"
-              name="Revenue"
-              stroke="#005bd3"
-              strokeWidth={2}
-              dot={false}
+            <Bar
+              dataKey="estimatedFees"
+              stackId="costs"
+              name="Estimated payment fees (part of costs)"
+              fill="#f5c26b"
               isAnimationActive={false}
+              maxBarSize={monthly ? 40 : 28}
             />
-            <Line
-              type="monotone"
-              dataKey="profit"
-              name="Contribution profit"
-              stroke="#047b5d"
-              strokeWidth={2}
-              strokeDasharray="6 3"
-              dot={false}
-              isAnimationActive={false}
-            />
+            {monthly ? (
+              <>
+                <Bar
+                  dataKey="revenue"
+                  name="Revenue"
+                  fill="#005bd3"
+                  isAnimationActive={false}
+                  maxBarSize={40}
+                >
+                  <LabelList
+                    dataKey="revenue"
+                    position="top"
+                    fontSize={10}
+                    formatter={(v) => formatMoneyCompact(Number(v), currency)}
+                  />
+                </Bar>
+                <Bar
+                  dataKey="profit"
+                  name="Contribution profit"
+                  fill="#047b5d"
+                  isAnimationActive={false}
+                  maxBarSize={40}
+                >
+                  <LabelList
+                    dataKey="profit"
+                    position="top"
+                    fontSize={10}
+                    formatter={(v) => formatMoneyCompact(Number(v), currency)}
+                  />
+                </Bar>
+              </>
+            ) : (
+              <>
+                <Line
+                  type="monotone"
+                  dataKey="revenue"
+                  name="Revenue"
+                  stroke="#005bd3"
+                  strokeWidth={2}
+                  dot={false}
+                  isAnimationActive={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="profit"
+                  name="Contribution profit"
+                  stroke="#047b5d"
+                  strokeWidth={2}
+                  strokeDasharray="6 3"
+                  dot={false}
+                  isAnimationActive={false}
+                />
+              </>
+            )}
           </ComposedChart>
         </ResponsiveContainer>
       </div>
@@ -110,7 +163,57 @@ export function TrendChart({
         store time zone, in {currency}. Days with no orders show zero, and the latest day may still
         be incomplete. Costs are product cost, payment fees, shipping and advertising (when set up);
         contribution profit is revenue less costs.
+        {hasEstimates &&
+          ' The amber part of each cost bar is payment fees estimated from your fee rule; fees Shopify charged are not imported yet.'}
       </s-text>
+    </div>
+  );
+}
+
+type TipRow = {
+  date: string;
+  to: string;
+  revenue: number;
+  costs: number;
+  estimatedFees: number;
+  profit: number;
+};
+
+/** Tooltip: revenue, costs (with the estimated fees inside them), profit and margin of the point. */
+function TrendTooltip({
+  active,
+  payload,
+  currency,
+}: {
+  active?: boolean;
+  payload?: Array<{ payload: TipRow }>;
+  currency: string;
+}) {
+  const r = active ? payload?.[0]?.payload : undefined;
+  if (!r) return null;
+  const m = (n: number) => formatMoney(n.toFixed(2), currency);
+  const margin = r.revenue > 0 ? formatPercent(r.profit / r.revenue) : '-';
+  return (
+    <div
+      style={{
+        background: '#fff',
+        border: '1px solid #e3e3e3',
+        borderRadius: '0.5rem',
+        padding: '0.5rem 0.75rem',
+        fontSize: '0.8125rem',
+        boxShadow: '0 2px 8px rgba(0,0,0,.12)',
+      }}
+    >
+      <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>{span(r.date, r.to)}</div>
+      <div style={{ color: '#005bd3' }}>Revenue: {m(r.revenue)}</div>
+      <div>
+        Costs: {m(r.costs)}
+        {r.estimatedFees > 0 && (
+          <span style={{ color: '#8a6100' }}> (incl. {m(r.estimatedFees)} estimated fees)</span>
+        )}
+      </div>
+      <div style={{ color: '#047b5d' }}>Contribution profit: {m(r.profit)}</div>
+      <div style={{ color: '#616161' }}>Margin: {margin}</div>
     </div>
   );
 }
@@ -136,7 +239,9 @@ export function TrendTable({
         <s-table-header format="numeric">Orders</s-table-header>
         <s-table-header format="numeric">Revenue</s-table-header>
         <s-table-header format="numeric">Costs</s-table-header>
+        <s-table-header format="numeric">of which estimated fees</s-table-header>
         <s-table-header format="numeric">Contribution profit</s-table-header>
+        <s-table-header format="numeric">Margin</s-table-header>
       </s-table-header-row>
       <s-table-body>
         {trend.map((t) => (
@@ -145,7 +250,15 @@ export function TrendTable({
             <s-table-cell>{t.orders === 0 ? 'No orders' : t.orders}</s-table-cell>
             <s-table-cell>{formatMoney(t.revenue, currency)}</s-table-cell>
             <s-table-cell>{formatMoney(t.costs, currency)}</s-table-cell>
+            <s-table-cell>
+              {Number(t.estimatedFees) > 0 ? formatMoney(t.estimatedFees, currency) : '-'}
+            </s-table-cell>
             <s-table-cell>{formatMoney(t.contributionProfit, currency)}</s-table-cell>
+            <s-table-cell>
+              {Number(t.revenue) > 0
+                ? formatPercent(Number(t.contributionProfit) / Number(t.revenue))
+                : '-'}
+            </s-table-cell>
           </s-table-row>
         ))}
         <s-table-row>
@@ -162,7 +275,22 @@ export function TrendTable({
             <s-text type="strong">{formatMoney(totals.costs, currency)}</s-text>
           </s-table-cell>
           <s-table-cell>
+            <s-text type="strong">
+              {formatMoney(
+                trend.reduce((a, t) => a + Number(t.estimatedFees), 0).toFixed(2),
+                currency,
+              )}
+            </s-text>
+          </s-table-cell>
+          <s-table-cell>
             <s-text type="strong">{formatMoney(totals.contributionProfit, currency)}</s-text>
+          </s-table-cell>
+          <s-table-cell>
+            <s-text type="strong">
+              {Number(totals.revenue) > 0
+                ? formatPercent(Number(totals.contributionProfit) / Number(totals.revenue))
+                : '-'}
+            </s-text>
           </s-table-cell>
         </s-table-row>
       </s-table-body>

@@ -20,13 +20,16 @@ export function PeriodDropdown({
   label = 'Period',
   value,
   onChange,
+  chip,
 }: {
   label?: string;
   value: PeriodPreset;
   onChange: (value: PeriodPreset) => void;
+  chip?: boolean;
 }) {
   return (
     <Dropdown
+      chip={chip}
       label={label}
       value={value}
       options={PERIOD_OPTIONS}

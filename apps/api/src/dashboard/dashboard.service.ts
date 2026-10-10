@@ -2,14 +2,17 @@ import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import type { OverviewQuery, OverviewResponse, ProfitSummary } from '@pi/contracts';
 import {
   getAdSpend,
+  ESTIMATED_FEES,
   getDailyTotals,
   getOrdersByChannel,
   getRevenueByChannelDaily,
+  loadExchangeRates,
   getMissingCogsThreshold,
   getOrderAttention,
   getProfitAggregate,
   getShopOverview,
   loadExpenses,
+  periodGaps,
 } from '@pi/db';
 import type { DailyTotals, Db, ProfitAggregate } from '@pi/db';
 import {
@@ -30,8 +33,8 @@ import { buildAlerts } from './alerts.js';
 import { buildIssues, dataQualityOf } from './issues.js';
 import { groupChannels } from './channels.js';
 import { buildTrend, intervalFor } from './trend.js';
-import { availableCurrencies, convertDaily, rateProvider } from './currency.js';
-import { InvalidRangeError, eachDay, previousRange, resolveRange } from './range.js';
+import { buildFx, convertDaily } from './currency.js';
+import { InvalidRangeError, addDays, eachDay, previousRange, resolveRange } from './range.js';
 
 interface Scope {
   tenantId: string;
@@ -76,7 +79,11 @@ export class DashboardService {
     const comparable = await this.entitlements.canCompare(scope, prev.from, today);
     const prevQuery = comparable ? prev : { from: '1970-01-01', to: '1970-01-01' };
 
-    const available = availableCurrencies(shopCurrency);
+    // Exchange rates: the pegs, and the stored ECB rates for any other currency. They are read for
+    // both periods plus a week before, so a weekend or holiday can use the latest earlier rate.
+    const fxFrom = addDays(prevQuery.from < range.from ? prevQuery.from : range.from, -10);
+    const fx = buildFx(await loadExchangeRates(this.db, { from: fxFrom, to: range.to }));
+    const available = fx.currencies(shopCurrency);
     const wanted = query.currency ?? shopCurrency;
     if (!available.includes(wanted)) {
       throw new BadRequestException({
@@ -98,6 +105,7 @@ export class DashboardService {
       exp,
       channelDays,
       channelOrders,
+      gaps,
     ] = await Promise.all([
       getProfitAggregate(this.db, scope, range),
       getProfitAggregate(this.db, scope, prevQuery),
@@ -111,6 +119,7 @@ export class DashboardService {
       loadExpenses(this.db, scope),
       getRevenueByChannelDaily(this.db, scope, range),
       getOrdersByChannel(this.db, scope, range),
+      periodGaps(this.db, scope, range),
     ]);
 
     // Display currency: convert day by day, or fall back to the shop currency and say why.
@@ -122,9 +131,9 @@ export class DashboardService {
     let trendDays: DailyTotals[] = dailyNow;
     let awaitingAmount = attention.awaitingPayment.amount;
     if (wanted !== shopCurrency) {
-      const now_ = convertDaily(dailyNow, shopCurrency, wanted);
-      const prev_ = convertDaily(dailyPrev, shopCurrency, wanted);
-      const awaiting = rateProvider.getRate(shopCurrency, wanted, range.to);
+      const now_ = convertDaily(dailyNow, shopCurrency, wanted, fx.provider);
+      const prev_ = convertDaily(dailyPrev, shopCurrency, wanted, fx.provider);
+      const awaiting = fx.provider.getRate(shopCurrency, wanted, range.to);
       if (now_.ok && prev_.ok && awaiting) {
         code = wanted;
         converted = true;
@@ -139,20 +148,37 @@ export class DashboardService {
         note = `No exchange rate is available for ${shopCurrency} to ${wanted}, so ${shopCurrency} is shown.`;
       }
     }
+    const extras = available.filter((c) => c !== shopCurrency);
+    if (!note && extras.every((c) => c === 'USD' || c === 'AED')) {
+      note =
+        'Only USD and AED can be converted until daily exchange rates are stored. Other store and ad-account currencies use those rates after the evening update.';
+    }
 
     // Advertising and operating expenses are kept in the shop currency; show them in the display
     // currency at the rate of the day (ad spend) or of the period end (expenses).
     const display = (amount: string, date: string): string => {
       if (!converted) return amount;
-      const c = convertMoney(amount, shopCurrency, code, date, rateProvider);
+      const c = convertMoney(amount, shopCurrency, code, date, fx.provider);
       return c.status === 'missing' ? amount : toStored(c.amount);
     };
     // Advertising is converted day by day (the rate of the day it was spent) and then added up, for
     // the headline figure and the chart alike, so the two always agree.
+    let adFxGap = false;
     const adByDay = (ad: Awaited<ReturnType<typeof getAdSpend>>) => {
       const days = new Map<string, string>();
+      const currency = new Map(ad.byAccount.map((a) => [a.accountId, a.currency.trim()]));
       for (const d of ad.daily) {
-        days.set(d.date, toStored(dec(days.get(d.date) ?? '0').plus(dec(d.spend))));
+        const from = currency.get(d.accountId) ?? shopCurrency;
+        let spend = d.spend;
+        if (from !== shopCurrency) {
+          const c = convertMoney(spend, from, shopCurrency, d.date, fx.provider);
+          if (c.status === 'missing') {
+            adFxGap = true;
+            continue;
+          }
+          spend = toStored(c.amount);
+        }
+        days.set(d.date, toStored(dec(days.get(d.date) ?? '0').plus(dec(spend))));
       }
       return days;
     };
@@ -219,6 +245,7 @@ export class DashboardService {
         revenue: s.revenue,
         costs: toStored(dec(s.revenue).minus(profit)),
         contributionProfit: toStored(profit),
+        estimatedFees: toStored(dec(day?.totals[ESTIMATED_FEES] ?? '0').neg()),
         orders: day?.orders ?? 0,
       };
     });
@@ -245,6 +272,10 @@ export class DashboardService {
       marginNow !== null && marginBefore !== null
         ? (Number(marginNow) - Number(marginBefore)) * 100
         : null;
+    if (adFxGap) {
+      const extra = 'Some ad spend had no exchange rate and was left out of profit.';
+      note = note ? `${note} ${extra}` : extra;
+    }
 
     return {
       period: {
@@ -284,11 +315,13 @@ export class DashboardService {
       trend,
       channels: groupChannels(channelDays, display, summary.revenue, channelOrders),
       awaitingPayment: { count: attention.awaitingPayment.count, amount: awaitingAmount },
+      fees: feeSplit(summary.paymentFees, totalsNow[ESTIMATED_FEES]),
       dataQuality: dataQuality,
       issues: buildIssues({
         quality: dataQuality,
         missingCostThresholdPct: threshold,
         sync: syncStatus,
+        gaps,
       }),
       alerts: buildAlerts({
         summary,
@@ -308,6 +341,21 @@ export class DashboardService {
       },
     };
   }
+}
+
+/**
+ * Payment fees split into what is estimated (from the merchant's fee rule) and the rest, which is
+ * what Shopify reported. The two add up to the fees in the summary.
+ */
+function feeSplit(total: string, estimatedSigned: string | undefined) {
+  const est = dec(estimatedSigned ?? '0').neg();
+  const all = dec(total);
+  const estimated = est.greaterThan(all) ? all : est.isNegative() ? dec('0') : est;
+  return {
+    actual: toStored(all.minus(estimated)),
+    estimated: toStored(estimated),
+    estimatedShare: all.isZero() ? null : estimated.div(all).toDecimalPlaces(4).toFixed(4),
+  };
 }
 
 /** Plain-object copy of the engine summary (it is already JSON friendly). */

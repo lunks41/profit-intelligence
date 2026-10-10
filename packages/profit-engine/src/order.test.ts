@@ -219,6 +219,11 @@ describe('refund effects on cost (spec section 5)', () => {
     expect(amt(r.entries, 'product_refund')).toBe(0);
   });
 
+  it('flags an order whose refund lines were only partly imported', () => {
+    expect(calc(order({ refundLinesIncomplete: true })).flags).toContain('refund_lines_incomplete');
+    expect(calc(order({})).flags).not.toContain('refund_lines_incomplete');
+  });
+
   it('refund of a cancelled-but-paid order with no money moved is flagged', () => {
     const r = calc(order({ cancelledAt: new Date('2026-06-16T00:00:00Z') }));
     expect(r.flags).toContain('cancelled_without_refund');
@@ -522,6 +527,37 @@ describe('carrier shipping cost (spec section 8)', () => {
       of(calc(order({ lines: [line({ requiresShipping: false })] })).entries, 'shipping_cost')[0]!
         .status,
     ).toBe('not_applicable');
+  });
+
+  it('picks a country and weight rule from the variant weights on the order', () => {
+    const rules = [
+      flat,
+      {
+        ...flat,
+        amount: '5.00',
+        countries: ['US'],
+        weightMinGrams: 0,
+        weightMaxGrams: 1000,
+      },
+    ];
+    const o = order({
+      shipCountry: 'US',
+      lines: [line({ variantShopifyId: 100, quantity: 2 })],
+    });
+    expect(
+      of(
+        calc(o, emptyConfig({ shippingRules: rules, variantWeights: new Map([[100, 400]]) }))
+          .entries,
+        'shipping_cost',
+      )[0]!.amount,
+    ).toBe('-5.0000'); // 800g, inside the US band
+    expect(
+      of(
+        calc(o, emptyConfig({ shippingRules: rules, variantWeights: new Map([[100, 600]]) }))
+          .entries,
+        'shipping_cost',
+      )[0]!.amount,
+    ).toBe('-8.0000'); // 1200g, above the band, so the catch-all
   });
 
   it('uses the rule in force on the order date', () => {

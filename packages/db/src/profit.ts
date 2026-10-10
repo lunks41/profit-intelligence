@@ -33,6 +33,8 @@ export interface ProfitOrderData {
   cancelledAt: Date | null;
   taxesIncluded: boolean;
   currency: string;
+  shipCountry: string | null;
+  refundLinesIncomplete: boolean;
   subtotalAmount: string;
   discountsAmount: string;
   shippingAmount: string;
@@ -139,6 +141,8 @@ export async function loadOrdersForProfit(
       cancelledAt: o.cancelledAt,
       taxesIncluded: o.taxesIncluded,
       currency: o.currency,
+      shipCountry: o.shipCountry,
+      refundLinesIncomplete: o.refundLinesIncomplete,
       subtotalAmount: o.subtotalAmount,
       discountsAmount: o.discountsAmount,
       shippingAmount: o.shippingAmount,
@@ -204,11 +208,16 @@ export interface RuleData {
     currency: string;
     effectiveFrom: string;
   }[];
+  variantWeights: Map<number, number>;
   shippingRules: {
-    mode: 'flat' | 'percent_of_shipping_charged';
+    mode: 'flat' | 'percent_of_shipping_charged' | 'per_kilogram';
     amount: string | null;
     percent: string | null;
     effectiveFrom: string;
+    zone: string | null;
+    countries: string[];
+    weightMinGrams: number | null;
+    weightMaxGrams: number | null;
   }[];
 }
 
@@ -228,6 +237,7 @@ export async function loadRuleData(
     { effectiveFrom: string; amount: string; source: 'manual' | 'import' }[]
   >();
   const shopifyCosts = new Map<number, string>();
+  const variantWeights = new Map<number, number>();
   if (variantShopifyIds.length) {
     const costRows = await tx
       .select()
@@ -250,7 +260,11 @@ export async function loadRuleData(
       merchantCosts.set(c.variantShopifyId, list);
     }
     const variants = await tx
-      .select({ id: tProductVariant.shopifyId, cost: tProductVariant.unitCostAmount })
+      .select({
+        id: tProductVariant.shopifyId,
+        cost: tProductVariant.unitCostAmount,
+        weight: tProductVariant.weightGrams,
+      })
       .from(tProductVariant)
       .where(
         and(
@@ -258,7 +272,10 @@ export async function loadRuleData(
           inArray(tProductVariant.shopifyId, variantShopifyIds),
         ),
       );
-    for (const v of variants) if (v.cost !== null) shopifyCosts.set(v.id, v.cost);
+    for (const v of variants) {
+      if (v.cost !== null) shopifyCosts.set(v.id, v.cost);
+      if (v.weight !== null) variantWeights.set(v.id, v.weight);
+    }
   }
 
   const fees = await tx
@@ -275,6 +292,7 @@ export async function loadRuleData(
     shopCurrency: shop.currency,
     merchantCosts,
     shopifyCosts,
+    variantWeights,
     feeRules: fees.map((f) => ({
       gateway: f.gateway,
       percent: f.percent,
@@ -283,10 +301,14 @@ export async function loadRuleData(
       effectiveFrom: f.effectiveFrom,
     })),
     shippingRules: shipping.map((r) => ({
-      mode: r.mode as 'flat' | 'percent_of_shipping_charged',
+      mode: r.mode as 'flat' | 'percent_of_shipping_charged' | 'per_kilogram',
       amount: r.amount,
       percent: r.percent,
       effectiveFrom: r.effectiveFrom,
+      zone: r.zoneName,
+      countries: r.countries,
+      weightMinGrams: r.weightMinGrams,
+      weightMaxGrams: r.weightMaxGrams,
     })),
   };
 }
@@ -502,6 +524,63 @@ export async function setProductCost(
   });
 }
 
+/**
+ * Writes many variant costs in one transaction. A cost for the same variant and date replaces the
+ * earlier one, which stays in history. One audit row covers the whole change.
+ */
+export async function setProductCosts(
+  db: Db,
+  scope: ShopScope,
+  input: {
+    rows: { variantShopifyId: number; amount: string; effectiveFrom: string }[];
+    currency: string;
+    source: 'manual' | 'import';
+    actor: string;
+    reason: string | null;
+  },
+): Promise<{ saved: number }> {
+  return withTenant(db, scope.tenantId, async (tx) => {
+    for (const row of input.rows) {
+      const [previous] = await tx
+        .select({ id: fProductCost.id })
+        .from(fProductCost)
+        .where(
+          and(
+            eq(fProductCost.shopId, scope.shopId),
+            eq(fProductCost.variantShopifyId, row.variantShopifyId),
+            eq(fProductCost.effectiveFrom, row.effectiveFrom),
+            isNull(fProductCost.revokedAt),
+          ),
+        );
+      if (previous) {
+        await tx
+          .update(fProductCost)
+          .set({ revokedAt: sql`now()`, revokedBy: input.actor })
+          .where(eq(fProductCost.id, previous.id));
+      }
+      await tx.insert(fProductCost).values({
+        tenantId: scope.tenantId,
+        shopId: scope.shopId,
+        variantShopifyId: row.variantShopifyId,
+        amount: row.amount,
+        currency: input.currency,
+        effectiveFrom: row.effectiveFrom,
+        source: input.source,
+        reason: input.reason,
+        createdBy: input.actor,
+      });
+    }
+    await audit(tx, scope, {
+      actor: input.actor,
+      action: 'product_cost.import',
+      entity: 'f_product_cost',
+      entityId: null,
+      newValue: { count: input.rows.length, source: input.source },
+    });
+    return { saved: input.rows.length };
+  });
+}
+
 /** Undo: the row stays in history but no longer applies. */
 export async function revokeProductCost(
   db: Db,
@@ -651,11 +730,29 @@ export async function revokePaymentFeeRule(
 }
 
 export interface ShippingRuleInput {
-  mode: 'flat' | 'percent_of_shipping_charged';
+  mode: 'flat' | 'percent_of_shipping_charged' | 'per_kilogram';
   amount: string | null;
   percent: string | null;
   effectiveFrom: string;
   actor: string;
+  zone?: string | null;
+  countries?: string[];
+  weightMinGrams?: number | null;
+  weightMaxGrams?: number | null;
+}
+
+function shippingIdentity(input: ShippingRuleInput) {
+  const countries = [...(input.countries ?? [])].map((c) => c.toUpperCase()).sort();
+  return {
+    zone: input.zone?.trim() || null,
+    countries,
+    weightMinGrams: input.weightMinGrams ?? null,
+    weightMaxGrams: input.weightMaxGrams ?? null,
+  };
+}
+
+function countriesEqual(stored: string[], incoming: string[]) {
+  return stored.length === incoming.length && stored.every((c, i) => c === incoming[i]);
 }
 
 export async function setShippingCostRule(
@@ -664,7 +761,8 @@ export async function setShippingCostRule(
   input: ShippingRuleInput,
 ): Promise<{ id: string }> {
   return withTenant(db, scope.tenantId, async (tx) => {
-    const [previous] = await tx
+    const idn = shippingIdentity(input);
+    const active = await tx
       .select()
       .from(sShippingCostRule)
       .where(
@@ -674,6 +772,13 @@ export async function setShippingCostRule(
           isNull(sShippingCostRule.revokedAt),
         ),
       );
+    const previous = active.find(
+      (row) =>
+        (row.zoneName ?? null) === idn.zone &&
+        countriesEqual(row.countries, idn.countries) &&
+        row.weightMinGrams === idn.weightMinGrams &&
+        row.weightMaxGrams === idn.weightMaxGrams,
+    );
     if (previous) {
       await tx
         .update(sShippingCostRule)
@@ -688,6 +793,10 @@ export async function setShippingCostRule(
         mode: input.mode,
         amount: input.amount,
         percent: input.percent,
+        zoneName: idn.zone,
+        countries: idn.countries,
+        weightMinGrams: idn.weightMinGrams,
+        weightMaxGrams: idn.weightMaxGrams,
         effectiveFrom: input.effectiveFrom,
         createdBy: input.actor,
       })
@@ -705,9 +814,52 @@ export async function setShippingCostRule(
         amount: input.amount,
         percent: input.percent,
         effectiveFrom: input.effectiveFrom,
+        zone: idn.zone,
+        countries: idn.countries,
+        weightMinGrams: idn.weightMinGrams,
+        weightMaxGrams: idn.weightMaxGrams,
       },
     });
     return { id: row!.id };
+  });
+}
+
+/** Replaces every active shipping rule with the rows from a file. */
+export async function replaceShippingCostRules(
+  db: Db,
+  scope: ShopScope,
+  rules: Omit<ShippingRuleInput, 'actor'>[],
+  actor: string,
+): Promise<{ imported: number }> {
+  return withTenant(db, scope.tenantId, async (tx) => {
+    await tx
+      .update(sShippingCostRule)
+      .set({ revokedAt: sql`now()` })
+      .where(and(eq(sShippingCostRule.shopId, scope.shopId), isNull(sShippingCostRule.revokedAt)));
+    for (const input of rules) {
+      const idn = shippingIdentity({ ...input, actor });
+      await tx.insert(sShippingCostRule).values({
+        tenantId: scope.tenantId,
+        shopId: scope.shopId,
+        mode: input.mode,
+        amount: input.amount,
+        percent: input.percent,
+        zoneName: idn.zone,
+        countries: idn.countries,
+        weightMinGrams: idn.weightMinGrams,
+        weightMaxGrams: idn.weightMaxGrams,
+        effectiveFrom: input.effectiveFrom,
+        createdBy: actor,
+      });
+    }
+    await audit(tx, scope, {
+      actor,
+      action: 'shipping_cost_rule.import',
+      entity: 's_shipping_cost_rule',
+      entityId: null,
+      newValue: { count: rules.length },
+    });
+    return { imported: rules.length };
   });
 }
 

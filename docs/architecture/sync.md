@@ -42,7 +42,8 @@ ui      --> GET /api/v1/sync/status every 3 s while running (counts of what is s
 ## Decisions and limits
 
 - **Paginated GraphQL, not bulk operations, for now.** Seeded history is 150 orders; paging 25 orders per request streams in constant memory and is resumable. For stores with tens of thousands of orders, add a bulk-operation source behind the same `runSync` stages (nested refund line items need care in bulk JSONL). Tracked for before the first large merchant.
-- More than 25 refund line items on one order are not imported; the job finishes as `partial` with a warning. More than 25 line items or 100 variants are fetched with follow-up queries.
+- Refund line items beyond the first 25 are fetched with a follow-up query. If that page cannot be read, the job finishes as `partial`, the order is flagged, and the warning is shown on the overview, in an in-app alert, and on the order. More than 25 line items or 100 variants are fetched the same way.
+- Shopify Payments balance-transaction fees are applied when the shop grants `read_shopify_payments_accounts` and `read_shopify_payments_payouts`. If that query is refused, the gateway fee rule remains and those orders stay marked estimated.
 - Live updates, the nightly reconcile and uninstall/privacy handling are described in webhooks.md. A re-sync (button or API) re-imports the 90 day window idempotently.
 - Shopify rounds percentage discounts slightly differently from a per-line calculation (1 cent differences observed on seeded orders). Always use the amounts Shopify reports; never recompute discounts.
 - Orders older than 60 days need the `read_all_orders` scope for real merchants; the seeded orders have `createdAt = now`, so the dev store does not exercise that limit.

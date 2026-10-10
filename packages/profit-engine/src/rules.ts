@@ -1,6 +1,6 @@
 import { dec, roundToCurrency } from './money.js';
 import type { Dec } from './money.js';
-import type { CostPoint, EngineConfig, FeeRule, ShippingRule } from './types.js';
+import type { CostPoint, EngineConfig, FeeRule, Shipment, ShippingRule } from './types.js';
 
 // ---- product cost (COGS) --------------------------------------------------------------------
 
@@ -88,14 +88,72 @@ export function estimateFee(rule: FeeRule, amount: string, currency: string): De
 
 // ---- carrier shipping cost ------------------------------------------------------------------
 
+const ANY_WIDTH = 1_000_000_000;
+
+function countriesOf(rule: ShippingRule): string[] {
+  return (rule.countries ?? []).map((c) => c.toUpperCase());
+}
+
+function weightBounded(rule: ShippingRule): boolean {
+  return rule.weightMinGrams != null || rule.weightMaxGrams != null;
+}
+
+/** True when grams sits in [min, max). A missing bound is open on that side. */
+function weightMatches(rule: ShippingRule, grams: number): boolean {
+  if (grams < (rule.weightMinGrams ?? 0)) return false;
+  return rule.weightMaxGrams == null || grams < rule.weightMaxGrams;
+}
+
+function matches(rule: ShippingRule, businessDate: string, shipment: Shipment): boolean {
+  if (rule.effectiveFrom > businessDate) return false;
+  const countries = countriesOf(rule);
+  if (countries.length) {
+    const country = shipment.country?.trim().toUpperCase() ?? '';
+    if (!countries.includes(country)) return false;
+  }
+  const needsWeight = weightBounded(rule) || rule.mode === 'per_kilogram';
+  if (!needsWeight) return true;
+  if (shipment.weightGrams == null) return false;
+  return !weightBounded(rule) || weightMatches(rule, shipment.weightGrams);
+}
+
+/** Higher wins: country, then a weight band, then a narrower band, then a later start date. */
+function rank(rule: ShippingRule): [number, number, number, string] {
+  const width = weightBounded(rule)
+    ? (rule.weightMaxGrams ?? ANY_WIDTH) - (rule.weightMinGrams ?? 0)
+    : ANY_WIDTH;
+  return [
+    countriesOf(rule).length ? 1 : 0,
+    weightBounded(rule) || rule.mode === 'per_kilogram' ? 1 : 0,
+    -width,
+    rule.effectiveFrom,
+  ];
+}
+
+function outranks(candidate: ShippingRule, current: ShippingRule): boolean {
+  const a = rank(candidate);
+  const b = rank(current);
+  for (let i = 0; i < a.length; i++) {
+    if (a[i]! > b[i]!) return true;
+    if (a[i]! < b[i]!) return false;
+  }
+  return false;
+}
+
+/**
+ * The shipping rule for one order. A country rule beats a catch-all, a weight band beats a rule
+ * with no weight, and a narrower band beats a wider one. A later start date breaks a tie.
+ * Weight and per-kilogram rules are skipped when the shipment weight is unknown.
+ */
 export function pickShippingRule(
   rules: readonly ShippingRule[],
   businessDate: string,
+  shipment: Shipment = { country: null, weightGrams: null },
 ): ShippingRule | null {
   let best: ShippingRule | null = null;
-  for (const r of rules) {
-    if (r.effectiveFrom <= businessDate && (!best || r.effectiveFrom > best.effectiveFrom))
-      best = r;
+  for (const rule of rules) {
+    if (!matches(rule, businessDate, shipment)) continue;
+    if (!best || outranks(rule, best)) best = rule;
   }
   return best;
 }
@@ -105,7 +163,16 @@ export function estimateShippingCost(
   rule: ShippingRule,
   shippingCharged: string,
   currency: string,
+  weightGrams: number | null = null,
 ): Dec {
+  if (rule.mode === 'per_kilogram') {
+    return roundToCurrency(
+      dec(rule.amount ?? '0')
+        .mul(weightGrams ?? 0)
+        .div(1000),
+      currency,
+    );
+  }
   if (rule.mode === 'flat') return roundToCurrency(rule.amount ?? '0', currency);
   return roundToCurrency(
     dec(shippingCharged)

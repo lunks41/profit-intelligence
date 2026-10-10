@@ -26,6 +26,7 @@ export type FindingRule =
   | 'negative_margin_products'
   | 'low_margin_products'
   | 'low_margin'
+  | 'margin_drop'
   | 'refund_rate'
   | 'shipping_subsidy'
   | 'cost_change'
@@ -271,6 +272,31 @@ export function evaluateLeakage(input: LeakageInputs, limits: LeakageSettings): 
         items: [],
         disclosure: s.partial
           ? 'Some costs are missing, so the real margin is lower than shown.'
+          : null,
+      });
+    }
+  }
+
+  if (
+    s.orders >= MIN_ORDERS &&
+    input.previous &&
+    input.previous.orders >= MIN_ORDERS &&
+    s.contributionMargin !== null &&
+    input.previous.contributionMargin !== null
+  ) {
+    const drop = Number(input.previous.contributionMargin) - Number(s.contributionMargin);
+    if (drop >= 0.1) {
+      out.push({
+        id: 'margin_drop',
+        severity: drop >= 0.2 ? 'critical' : 'warning',
+        title: 'Contribution margin dropped sharply',
+        evidence: `It is ${pct(s.contributionMargin)} now and was ${pct(input.previous.contributionMargin)} in the previous period, ${(drop * 100).toFixed(1)} points lower.`,
+        why: 'A sudden drop usually means discounts, refunds, costs or ad spend changed.',
+        action: { label: 'Compare profit', href: '/profit' },
+        impact: null,
+        items: [],
+        disclosure: s.partial
+          ? 'Some costs are missing, so the size of the drop is not fully known.'
           : null,
       });
     }

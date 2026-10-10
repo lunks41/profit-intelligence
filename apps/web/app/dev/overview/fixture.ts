@@ -11,6 +11,7 @@ const trend = Array.from({ length: 30 }, (_, i) => {
     revenue: revenue.toFixed(4),
     costs: (revenue * 0.66).toFixed(4),
     contributionProfit: (revenue * 0.34).toFixed(4),
+    estimatedFees: (revenue * 0.012).toFixed(4),
     orders: 8 + (i % 6),
   };
 });
@@ -97,6 +98,7 @@ export const sampleOverview: OverviewResponse = {
     basis: 'contribution',
     basisNote: null,
   },
+  fees: { actual: '0.0000', estimated: '2310.0000', estimatedShare: '1.0000' },
   trendInterval: 'day',
   trend,
   channels: [
@@ -178,6 +180,7 @@ export const sampleOverview: OverviewResponse = {
 export const emptyOverview: OverviewResponse = {
   ...sampleOverview,
   summary: { ...summary, orders: 0, partial: false },
+  fees: { actual: '0.0000', estimated: '2310.0000', estimatedShare: '1.0000' },
   trendInterval: 'day',
   trend: [],
   alerts: [],

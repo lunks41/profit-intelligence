@@ -25,6 +25,7 @@ export function SyncNotice({ status }: { status: SyncStatusResponse | null }) {
     return (
       <s-banner tone="warning" heading="The last import finished with warnings">
         <s-paragraph>{status.error}</s-paragraph>
+        <s-link href="/orders?filter=incomplete_refunds">See the affected orders</s-link>
       </s-banner>
     );
   }

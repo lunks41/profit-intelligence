@@ -39,8 +39,15 @@ let shop: InstallResult;
 
 /** Fake Shopify serving the fixtures as cursor-paged GraphQL responses. */
 function fakeShopify(
-  opts: { failOnOrdersPage?: number; revoked?: boolean; ordersPageSize?: number } = {},
+  opts: {
+    failOnOrdersPage?: number;
+    revoked?: boolean;
+    ordersPageSize?: number;
+    orders?: Node[];
+    failRefundLines?: boolean;
+  } = {},
 ) {
+  const source = opts.orders ?? orderNodes;
   const calls: { kind: string; after: unknown; query?: unknown }[] = [];
   let failed = false;
   const size = opts.ordersPageSize ?? 4;
@@ -71,16 +78,29 @@ function fakeShopify(
           failed = true;
           throw new ShopifyApiError('Network error calling Shopify');
         }
-        return { orders: page(orderNodes, after, size) };
+        return { orders: page(source, after, size) };
       }
       if (q.includes('SyncMoreLineItems')) {
         calls.push({ kind: 'moreLineItems', after });
-        const parent = orderNodes.find((o) => o.id === v.id)!;
+        const parent = source.find((o) => o.id === v.id)!;
         return {
           order: {
             lineItems: {
               pageInfo: { hasNextPage: false, endCursor: null },
               nodes: parent.__extraLines ?? [],
+            },
+          },
+        };
+      }
+      if (q.includes('SyncMoreRefundLines')) {
+        calls.push({ kind: 'moreRefundLines', after });
+        if (opts.failRefundLines) throw new ShopifyApiError('Network error calling Shopify');
+        const refund = source.flatMap((o) => o.refunds ?? []).find((r: Node) => r.id === v.id)!;
+        return {
+          refund: {
+            refundLineItems: {
+              pageInfo: { hasNextPage: false, endCursor: null },
+              nodes: refund.__extraRefundLines ?? [],
             },
           },
         };
@@ -312,5 +332,52 @@ describe('profit recalculation trigger', () => {
       { retryCount: 0, retryLimit: 5 },
     );
     expect(queued).not.toHaveBeenCalled();
+  });
+});
+
+describe('refunds with more items than one page', () => {
+  /** Orders where the first refund of one order continues on a second page of refund items. */
+  function ordersWithLongRefund() {
+    const nodes: Node[] = JSON.parse(JSON.stringify(orderNodes));
+    const order = nodes.find((o) =>
+      (o.refunds ?? []).some((r: Node) => r.refundLineItems.nodes.length),
+    )!;
+    const refund = order.refunds.find((r: Node) => r.refundLineItems.nodes.length)!;
+    const first = refund.refundLineItems.nodes[0];
+    refund.refundLineItems.pageInfo = { hasNextPage: true, endCursor: 'more' };
+    refund.__extraRefundLines = [{ ...first, id: 'gid://shopify/RefundLineItem/999000000001' }];
+    return { nodes, order, refund, before: refund.refundLineItems.nodes.length };
+  }
+  const orderRow = async (gid: string) =>
+    (
+      await admin.query(
+        'select refund_lines_incomplete as i, id from t_order where shopify_id = $1',
+        [Number(gid.split('/').pop())],
+      )
+    ).rows[0] as { i: boolean; id: string };
+
+  it('fetches the remaining items, stores them, and does not report a warning', async () => {
+    const { nodes, order, before } = ordersWithLongRefund();
+    const fake = fakeShopify({ orders: nodes });
+    const job = await newJob();
+    await runSync(deps(fake.gql), payload(job.id), { retryCount: 0, retryLimit: 5 });
+    expect(fake.calls.filter((c) => c.kind === 'moreRefundLines')).toHaveLength(1);
+    expect((await orderRow(order.id)).i).toBe(false);
+    const stored = await admin.query(
+      'select count(*)::int n from t_refund_line_item l join t_refund r on r.id = l.refund_id join t_order o on o.id = r.order_id where o.shopify_id = $1',
+      [Number(order.id.split('/').pop())],
+    );
+    expect(stored.rows[0].n).toBeGreaterThanOrEqual(before + 1);
+    expect((await getSyncJob(db, shop, job.id))?.status).toBe('succeeded');
+  });
+
+  it('fails the import for a retry when the rest cannot be fetched, never storing a short refund silently', async () => {
+    const { nodes } = ordersWithLongRefund();
+    const fake = fakeShopify({ orders: nodes, failRefundLines: true });
+    const job = await newJob();
+    await expect(
+      runSync(deps(fake.gql), payload(job.id), { retryCount: 0, retryLimit: 5 }),
+    ).rejects.toThrow();
+    expect((await getSyncJob(db, shop, job.id))?.status).not.toBe('succeeded');
   });
 });

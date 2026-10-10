@@ -7,7 +7,7 @@ import { Notice } from './notices/Notice';
 type Step = SessionResponse['onboarding']['steps'][number];
 
 /**
- * The setup notice, shown at the top of every screen while a required step is open: one slim row
+ * The setup notice, shown at the top of Overview while a required step is open: one slim row
  * with the progress, the next step and its link, expandable into the full list. Once every
  * required step is done it disappears; optional steps (such as expenses) are reported with the
  * other data issues instead.

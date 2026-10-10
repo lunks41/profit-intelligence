@@ -6,13 +6,16 @@ export function SortOrderDropdown({
   label = 'Order',
   value,
   onChange,
+  chip,
 }: {
   label?: string;
   value: 'asc' | 'desc';
   onChange: (value: 'asc' | 'desc') => void;
+  chip?: boolean;
 }) {
   return (
     <Dropdown
+      chip={chip}
       label={label}
       value={value}
       options={[

@@ -91,6 +91,36 @@ describe('data issues', () => {
     expect(build({ advertising: 'missing' }).map((i) => i.id)).toEqual(['advertising_no_data']);
   });
 
+  it('estimated fees are named as estimates and lead to the orders that still use a rule', () => {
+    const issue = build({ fees: { confirmed: 8, estimated: 2, missing: 0 } })[0]!;
+    expect(issue.id).toBe('estimated_fees');
+    expect(issue.title).toBe('Payment fees are estimated on 2 of 10 orders');
+    expect(issue.action.href).toBe('/orders?filter=estimated_fees');
+  });
+
+  it('a partial import says which records were left out', () => {
+    const issue = build(
+      {},
+      { ...ok, state: 'partial', error: '2 order(s) had refund line items beyond the first 25' },
+    )[0]!;
+    expect(issue.id).toBe('sync_partial');
+    expect(issue.detail).toContain('beyond the first 25');
+    expect(issue.action.href).toBe('/orders?filter=incomplete_refunds');
+  });
+
+  it('orders missing a country or a weight link to the list that shows them', () => {
+    const issues = buildIssues({
+      quality: clean,
+      missingCostThresholdPct: '10',
+      sync: ok,
+      gaps: { missingCountry: 3, missingWeight: 1, incompleteRefunds: 0 },
+    });
+    expect(issues.map((i) => i.action.href)).toEqual([
+      '/orders?filter=missing_country',
+      '/orders?filter=missing_weight',
+    ]);
+  });
+
   it('a stale shop that has never imported is not reported as stale', () => {
     expect(build({}, { ...ok, state: 'never', stale: true, lastSuccessAt: null })).toEqual([]);
   });

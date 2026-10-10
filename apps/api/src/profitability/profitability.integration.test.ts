@@ -111,8 +111,8 @@ function mixedConfig(orders: EngineOrder[]): EngineConfig {
   };
 }
 
-async function calculateAll(who: InstallResult) {
-  await withTenant(db, who.tenantId, (tx) => upsertOrders(tx, who, orderNodes.map(mapOrder)));
+async function calculateAll(who: InstallResult, nodes: Record<string, unknown>[] = orderNodes) {
+  await withTenant(db, who.tenantId, (tx) => upsertOrders(tx, who, nodes.map(mapOrder)));
   const loaded = await withTenant(db, who.tenantId, (tx) =>
     loadOrdersForProfit(tx, who, { limit: 1000 }),
   );
@@ -366,6 +366,50 @@ describe('order profitability', () => {
     const name = recent.rows[0]!.name;
     const found = await list(`search=${encodeURIComponent(name)}`);
     expect(found.rows.some((r) => r.name === name)).toBe(true);
+  });
+
+  it('lists orders by where their fee came from, and flags partly imported refunds', async () => {
+    const list = async (qs: string) =>
+      orderListResponseSchema.parse((await api(`/orders?${PERIOD}&${qs}`)).body);
+    const nodes = JSON.parse(JSON.stringify(orderNodes)) as Record<string, unknown>[];
+    const refunded = nodes.filter((n) => ((n.refunds as unknown[]) ?? []).length > 0) as Array<{
+      name: string;
+      refunds: Array<{ refundLineItems: { pageInfo: { hasNextPage: boolean } } }>;
+    }>;
+    for (const n of refunded) n.refunds[0]!.refundLineItems.pageInfo.hasNextPage = true;
+    await calculateAll(a, nodes);
+
+    // counted orders with a refund are flagged; orders that are not counted have no profit to doubt
+    const everyone = await list('filter=all&pageSize=100');
+    const expected = everyone.rows
+      .filter((r) => r.recognized && refunded.some((n) => n.name === r.name))
+      .map((r) => r.name)
+      .sort();
+    expect(expected.length).toBeGreaterThan(0);
+    const incomplete = await list('filter=incomplete_refunds&pageSize=100');
+    expect(incomplete.rows.map((r) => r.name).sort()).toEqual(expected);
+    expect(incomplete.rows.every((r) => r.flags.includes('refund_lines_incomplete'))).toBe(true);
+    const detail = await api(`/orders/${incomplete.rows[0]!.orderShopifyId}`);
+    expect(orderDetailResponseSchema.parse(detail.body).order.flags).toContain(
+      'refund_lines_incomplete',
+    );
+
+    // the fixture has a fee rule for every payment, so counted orders show estimated fees
+    const estimated = await list('filter=estimated_fees&pageSize=100');
+    expect(estimated.rows.length).toBeGreaterThan(0);
+    expect(
+      estimated.rows.every((r) => r.recognized && r.statuses.paymentFees === 'estimated'),
+    ).toBe(true);
+    const missing = await list('filter=missing_fees&pageSize=100');
+    expect(missing.rows.every((r) => r.recognized && r.statuses.paymentFees === 'missing')).toBe(
+      true,
+    );
+    const all = await list('filter=all&pageSize=100');
+    const counted = all.rows.filter((r) => r.recognized);
+    // every counted order is in exactly one fee bucket
+    const bucket = (s: string) => counted.filter((r) => r.statuses.paymentFees === s).length;
+    expect(bucket('estimated')).toBe(estimated.rows.length);
+    expect(bucket('missing')).toBe(missing.rows.length);
   });
 
   it('an order detail explains every component and reconciles to the list', async () => {

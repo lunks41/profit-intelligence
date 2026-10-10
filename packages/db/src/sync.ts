@@ -39,6 +39,8 @@ export interface ProductInput {
     productType: string;
     vendor: string;
     isGiftCard: boolean;
+    /** Omitted by older callers; stored as no collections. */
+    collectionTitles?: string[];
     shopifyUpdatedAt: Date;
   };
   variants: {
@@ -49,6 +51,7 @@ export interface ProductInput {
     priceAmount: string;
     inventoryItemShopifyId: number | null;
     unitCostAmount: string | null;
+    weightGrams: number | null;
     shopifyUpdatedAt: Date;
   }[];
 }
@@ -77,6 +80,9 @@ export interface OrderInput {
     presentmentTotalAmount: string | null;
     tags: string[];
     sourceName: string | null;
+    shipCountry: string | null;
+    /** refund line items were only partly imported (optional: defaults to false) */
+    refundLinesIncomplete?: boolean;
   };
   lineItems: {
     shopifyId: number;
@@ -150,7 +156,14 @@ export async function upsertProducts(
   for (const part of chunks(items)) {
     await tx
       .insert(tProduct)
-      .values(part.map((i) => ({ tenantId, shopId, ...i.product })))
+      .values(
+        part.map((i) => ({
+          tenantId,
+          shopId,
+          ...i.product,
+          collectionTitles: i.product.collectionTitles ?? [],
+        })),
+      )
       .onConflictDoUpdate({
         target: [tProduct.shopId, tProduct.shopifyId],
         set: {
@@ -159,6 +172,7 @@ export async function upsertProducts(
           status: ex(tProduct.status),
           productType: ex(tProduct.productType),
           vendor: ex(tProduct.vendor),
+          collectionTitles: ex(tProduct.collectionTitles),
           isGiftCard: ex(tProduct.isGiftCard),
           shopifyUpdatedAt: ex(tProduct.shopifyUpdatedAt),
           syncedAt: sql`now()`,
@@ -204,6 +218,7 @@ export async function upsertProducts(
           priceAmount: ex(tProductVariant.priceAmount),
           inventoryItemShopifyId: ex(tProductVariant.inventoryItemShopifyId),
           unitCostAmount: ex(tProductVariant.unitCostAmount),
+          weightGrams: ex(tProductVariant.weightGrams),
           shopifyUpdatedAt: ex(tProductVariant.shopifyUpdatedAt),
           syncedAt: sql`now()`,
         },
@@ -264,6 +279,8 @@ export async function upsertOrders(
           presentmentTotalAmount: ex(tOrder.presentmentTotalAmount),
           tags: ex(tOrder.tags),
           sourceName: ex(tOrder.sourceName),
+          shipCountry: ex(tOrder.shipCountry),
+          refundLinesIncomplete: ex(tOrder.refundLinesIncomplete),
           syncedAt: sql`now()`,
         },
         setWhere: sql`excluded."shopify_updated_at" >= ${tOrder.shopifyUpdatedAt}`,
@@ -397,6 +414,48 @@ export async function upsertOrders(
   }
 
   return { written: applied.length, skipped: items.length - applied.length };
+}
+
+/**
+ * Writes Shopify Payments balance-transaction fees onto the order's capture (or sale). Other
+ * successful captures and sales on that order are set to zero so a gateway estimate and a reported
+ * fee are never both counted. The profit engine treats a stored fee as actual.
+ */
+export async function applyBalanceFees(
+  tx: Executor,
+  scope: ShopScope,
+  fees: ReadonlyArray<{ orderShopifyId: string; fee: string }>,
+): Promise<number> {
+  let updated = 0;
+  for (const fee of fees) {
+    if (!/^\d{1,18}$/.test(fee.orderShopifyId) || !/^-?\d+(\.\d+)?$/.test(fee.fee)) continue;
+    const res = await tx.execute(sql`
+      with chosen as (
+        select t.id
+          from t_order_transaction t
+          join t_order o on o.id = t.order_id
+         where t.shop_id = ${scope.shopId}
+           and o.shopify_id = ${fee.orderShopifyId}::bigint
+           and t.status = 'SUCCESS'
+           and t.kind in ('CAPTURE', 'SALE')
+         order by case when t.kind = 'CAPTURE' then 0 else 1 end, t.processed_at
+         limit 1
+      )
+      update t_order_transaction t
+         set fee_amount = case when t.id = (select id from chosen) then ${fee.fee}::numeric else 0 end,
+             synced_at = now()
+       where t.shop_id = ${scope.shopId}
+         and t.status = 'SUCCESS'
+         and t.kind in ('CAPTURE', 'SALE')
+         and t.order_id = (
+           select o.id from t_order o
+            where o.shop_id = ${scope.shopId} and o.shopify_id = ${fee.orderShopifyId}::bigint
+         )
+         and exists (select 1 from chosen)
+      returning t.id`);
+    updated += res.rows.length;
+  }
+  return updated;
 }
 
 // ---- sync jobs ------------------------------------------------------------------------------

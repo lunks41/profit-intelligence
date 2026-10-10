@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import type { OverviewResponse, PeriodPreset } from '@pi/contracts';
+import { describeFreshness } from '../../lib/freshness';
 import { periodLabel } from '../../lib/format';
 import { CurrencyDropdown, PeriodDropdown } from '../dropdown';
 import { CostBreakdownCard } from './CostBreakdownCard';
@@ -9,6 +10,7 @@ import { DataQualityCard } from './DataQualityCard';
 import { KpiCards } from './KpiCards';
 import { ProfitBreakdown } from './ProfitBreakdown';
 import { TrendSection } from './TrendCard';
+import { WhatChangedCard } from './WhatChangedCard';
 
 export interface Filters {
   preset: PeriodPreset;
@@ -22,13 +24,70 @@ export function FilterBar({
   currencies,
   onChange,
   children,
+  chip,
 }: {
   filters: Filters;
   currencies: string[];
   onChange: (next: Filters) => void;
   /** more controls that belong in the same row (search, show, sort) */
   children?: ReactNode;
+  /** compact left-aligned controls, instead of a full-width labeled row */
+  chip?: boolean;
 }) {
+  const period = (
+    <PeriodDropdown
+      chip={chip}
+      value={filters.preset}
+      onChange={(preset) => onChange({ ...filters, preset })}
+    />
+  );
+  const dates = filters.preset === 'custom' && (
+    <>
+      <div style={{ width: '11rem' }}>
+        <s-date-field
+          label="From"
+          value={filters.from}
+          onChange={(e) => onChange({ ...filters, from: e.currentTarget.value })}
+        />
+      </div>
+      <div style={{ width: '11rem' }}>
+        <s-date-field
+          label="To"
+          value={filters.to}
+          onChange={(e) => onChange({ ...filters, to: e.currentTarget.value })}
+        />
+      </div>
+    </>
+  );
+  const currency =
+    currencies.length > 1 ? (
+      <CurrencyDropdown
+        chip={chip}
+        value={filters.currency ?? currencies[0]!}
+        currencies={currencies}
+        onChange={(currency) => onChange({ ...filters, currency })}
+      />
+    ) : null;
+
+  if (chip) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'flex-start',
+          alignItems: 'flex-end',
+          flexWrap: 'wrap',
+          gap: '0.75rem',
+        }}
+      >
+        {period}
+        {dates}
+        {currency}
+        {children}
+      </div>
+    );
+  }
+
   return (
     <s-section>
       <s-grid
@@ -36,10 +95,7 @@ export function FilterBar({
         gap="base"
         alignItems="end"
       >
-        <PeriodDropdown
-          value={filters.preset}
-          onChange={(preset) => onChange({ ...filters, preset })}
-        />
+        {period}
         {filters.preset === 'custom' && (
           <>
             <s-date-field
@@ -54,13 +110,7 @@ export function FilterBar({
             />
           </>
         )}
-        {currencies.length > 1 && (
-          <CurrencyDropdown
-            value={filters.currency ?? currencies[0]!}
-            currencies={currencies}
-            onChange={(currency) => onChange({ ...filters, currency })}
-          />
-        )}
+        {currency}
         {children}
       </s-grid>
     </s-section>
@@ -83,12 +133,26 @@ export function OverviewView({
   const { summary } = data;
   const empty = summary.orders === 0;
   const periodText = periodLabel(data.period.from, data.period.to);
+  const freshness = describeFreshness(data.freshness, data.period, new Date());
 
   return (
     <>
       {data.currency.note && (
         <s-banner tone="info">
           <s-paragraph>{data.currency.note}</s-paragraph>
+        </s-banner>
+      )}
+      {freshness.detail && freshness.tone !== 'success' && (
+        <s-banner
+          tone={
+            freshness.tone === 'critical'
+              ? 'critical'
+              : freshness.tone === 'caution'
+                ? 'warning'
+                : 'info'
+          }
+        >
+          <s-paragraph>{`${freshness.badge}. ${freshness.detail}`}</s-paragraph>
         </s-banner>
       )}
       {empty ? (
@@ -107,6 +171,8 @@ export function OverviewView({
       ) : (
         <>
           <KpiCards data={data} />
+
+          <WhatChangedCard data={data} />
 
           <TrendSection page={data} />
 

@@ -66,9 +66,10 @@ describe('row level security covers every table', () => {
     expect(problems).toEqual([]);
   });
 
-  it('the only tables without a tenant id are the tenant table itself', async () => {
+  it('the only tables without a tenant id are the tenant table and the public exchange rates', async () => {
     const without = (await tables()).filter((t) => !t.has_tenant).map((t) => t.name);
-    expect(without).toEqual(['m_tenant']);
+    // o_exchange_rate holds public market data (no shop or customer information), see migration 0020
+    expect(without).toEqual(['m_tenant', 'o_exchange_rate']);
   });
 
   it('system-wide read or delete policies exist only where a background job needs them', async () => {
@@ -86,14 +87,21 @@ describe('row level security covers every table', () => {
       'o_report_delivery:p_system_list',
       'o_report_export:p_system_delete',
       'o_report_export:p_system_select',
+      'o_exchange_rate:p_public_read',
+      'o_exchange_rate:p_system_insert',
+      'o_exchange_rate:p_system_update',
     ]);
     const found = r.rows.map((p) => `${p.tablename}:${p.policyname}`);
     const unexpected = found.filter((f) => !allowed.has(f));
     expect(unexpected).toEqual([]);
     // and none of them allows writing business data
     for (const p of r.rows) {
-      if (p.policyname.startsWith('p_system') || p.policyname === 'p_domain_lookup')
-        expect(['SELECT', 'DELETE'], `${p.tablename}`).toContain(p.cmd);
+      if (p.policyname.startsWith('p_system') || p.policyname === 'p_domain_lookup') {
+        // the public exchange rates are the one table background work may also write
+        const allowedCommands =
+          p.tablename === 'o_exchange_rate' ? ['INSERT', 'UPDATE'] : ['SELECT', 'DELETE'];
+        expect(allowedCommands, `${p.tablename}`).toContain(p.cmd);
+      }
     }
   });
 

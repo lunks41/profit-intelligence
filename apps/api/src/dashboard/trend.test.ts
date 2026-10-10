@@ -13,6 +13,7 @@ const days = (
     revenue: '10.0000',
     costs: '6.0000',
     contributionProfit: '4.0000',
+    estimatedFees: '1.0000',
     orders: 1,
     ...f(i),
   }));
@@ -69,7 +70,15 @@ describe('building the trend', () => {
 
   it('days without orders stay real zeros inside their week', () => {
     const d = days('2026-01-01', 14, (i) =>
-      i < 3 ? { revenue: '0.0000', costs: '0.0000', contributionProfit: '0.0000', orders: 0 } : {},
+      i < 3
+        ? {
+            revenue: '0.0000',
+            costs: '0.0000',
+            contributionProfit: '0.0000',
+            estimatedFees: '0.0000',
+            orders: 0,
+          }
+        : {},
     );
     const { points } = buildTrend(d, 'week');
     expect(points[0]).toMatchObject({ revenue: '40.0000', orders: 4 }); // 4 selling days of 7

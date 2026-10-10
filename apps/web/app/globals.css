@@ -7,3 +7,55 @@ html {
   font-size: 80%;
   -webkit-text-size-adjust: 100%;
 }
+
+.pi-dd-option {
+  background: #fff;
+}
+.pi-dd-option:hover {
+  background: #f6f6f7;
+}
+.pi-dd-option[aria-current='true'] {
+  background: #fff;
+}
+
+/* Same height, radius and outline as the filter dropdown buttons. */
+.pi-filter-search {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  box-sizing: border-box;
+  width: 14rem;
+  height: 1.75rem;
+  margin: 0;
+  padding: 0 0.75rem;
+  border-radius: 0.5rem;
+  background: #fff;
+  box-shadow:
+    inset 0 -0.0625rem 0 #b5b5b5,
+    inset 0 0 0 0.0625rem rgba(0, 0, 0, 0.1),
+    inset 0 0.03125rem 0 0.09375rem #fff;
+  color: #303030;
+  cursor: text;
+}
+.pi-filter-search input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.75rem;
+  line-height: 1;
+  appearance: none;
+}
+.pi-filter-search input::placeholder {
+  color: #616161;
+}
+.pi-filter-search:focus-within {
+  outline: 0.125rem solid #005bd3;
+  outline-offset: 0.0625rem;
+}

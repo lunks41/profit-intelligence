@@ -551,6 +551,7 @@ export async function createAdAccount(
     name: string;
     currency: string;
     externalId?: string | null;
+    encryptedAccessToken?: string | null;
     actor: string;
   },
 ): Promise<{ id: string; created: boolean }> {
@@ -566,7 +567,20 @@ export async function createAdAccount(
           sql`lower(${fAdAccount.name}) = lower(${input.name.trim()})`,
         ),
       );
-    if (found) return { id: found.id, created: false };
+    if (found) {
+      if (input.encryptedAccessToken) {
+        await tx
+          .update(fAdAccount)
+          .set({
+            encryptedAccessToken: input.encryptedAccessToken,
+            externalId: input.externalId ?? null,
+            status: 'active',
+            lastError: null,
+          })
+          .where(and(eq(fAdAccount.id, found.id), eq(fAdAccount.shopId, scope.shopId)));
+      }
+      return { id: found.id, created: false };
+    }
     const [row] = await tx
       .insert(fAdAccount)
       .values({
@@ -576,6 +590,7 @@ export async function createAdAccount(
         name: input.name.trim(),
         currency: input.currency,
         externalId: input.externalId ?? null,
+        encryptedAccessToken: input.encryptedAccessToken ?? null,
       })
       .returning({ id: fAdAccount.id });
     await audit(tx, scope, {

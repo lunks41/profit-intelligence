@@ -7,13 +7,21 @@ export function SortByDropdown<S extends string>({
   value,
   options,
   onChange,
+  chip,
 }: {
   label?: string;
   value: S;
   options: Array<{ value: S; label: string }>;
   onChange: (value: S) => void;
+  chip?: boolean;
 }) {
   return (
-    <Dropdown label={label} value={value} options={options} onChange={(v) => onChange(v as S)} />
+    <Dropdown
+      chip={chip}
+      label={label}
+      value={value}
+      options={options}
+      onChange={(v) => onChange(v as S)}
+    />
   );
 }

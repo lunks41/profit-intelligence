@@ -58,6 +58,20 @@ describe('a healthy shop', () => {
     expect(evaluateLeakage(healthy(), LIMITS)).toEqual([]);
   });
 
+  it('warns when the contribution margin drops by 10 points or more', () => {
+    const findings = evaluateLeakage(
+      healthy({
+        summary: { ...healthy().summary, contributionMargin: '0.2500' },
+        previous: { orders: 50, contributionMargin: '0.4000' },
+      }),
+      LIMITS,
+    );
+    const drop = find(findings, 'margin_drop');
+    expect(drop.severity).toBe('warning');
+    expect(drop.evidence).toContain('15.0 points lower');
+    expect(drop.action?.href).toBe('/profit');
+  });
+
   it('an empty period raises nothing, whatever else is in the inputs', () => {
     const f = evaluateLeakage(
       healthy({
@@ -312,7 +326,10 @@ describe('overall margin', () => {
   });
 
   it('follows a limit the merchant changed', () => {
-    const base = healthy({ summary: { ...healthy().summary, contributionMargin: '0.3000' } });
+    const base = healthy({
+      summary: { ...healthy().summary, contributionMargin: '0.3000' },
+      previous: { orders: 50, contributionMargin: '0.3100' },
+    });
     expect(evaluateLeakage(base, LIMITS)).toEqual([]);
     expect(ids(evaluateLeakage(base, { ...LIMITS, marginPct: '35' }))).toEqual(['low_margin']);
   });
@@ -549,7 +566,13 @@ describe('every finding', () => {
           ({ critical: 0, warning: 1, info: 2 })[a] - { critical: 0, warning: 1, info: 2 }[b],
       ),
     );
-    expect(ids(f)).toEqual(['loss_orders', 'low_margin', 'missing_fees', 'possible_loss']);
+    expect(ids(f)).toEqual([
+      'loss_orders',
+      'margin_drop',
+      'low_margin',
+      'missing_fees',
+      'possible_loss',
+    ]);
   });
 
   it('is deterministic: the same inputs always give the same findings', () => {

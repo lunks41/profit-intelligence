@@ -102,6 +102,55 @@ export async function listCostRows(
   });
 }
 
+export interface CostCatalogRow {
+  variantShopifyId: string;
+  sku: string | null;
+  productTitle: string;
+  variantTitle: string | null;
+  productShopifyId: string;
+  vendor: string;
+  collections: string[];
+  /** Merchant cost in force today, when one exists. */
+  cost: string | null;
+  effectiveFrom: string | null;
+}
+
+/** Every non-gift variant, for cost export and for matching a CSV or a bulk edit. */
+export async function listCostCatalog(
+  db: Db,
+  scope: ShopScope,
+  today: string,
+): Promise<CostCatalogRow[]> {
+  return withTenant(db, scope.tenantId, async (tx) => {
+    const list = rows(
+      await tx.execute(sql`
+        select v.shopify_id::text as vid, v.sku, p.title as ptitle, v.title as vtitle,
+               p.shopify_id::text as pid, p.vendor, p.collection_titles as collections,
+               c.amount::text as cost, c.effective_from::text as effective_from
+          from t_product_variant v
+          join t_product p on p.id = v.product_id
+          left join lateral (
+            select amount, effective_from from f_product_cost
+             where shop_id = v.shop_id and variant_shopify_id = v.shopify_id and revoked_at is null
+               and effective_from <= ${today}::date
+             order by effective_from desc limit 1) c on true
+         where v.shop_id = ${scope.shopId} and not p.is_gift_card and p.deleted_at is null
+         order by p.title, v.title nulls first`),
+    );
+    return list.map((x) => ({
+      variantShopifyId: String(x.vid),
+      sku: str(x.sku),
+      productTitle: String(x.ptitle),
+      variantTitle: str(x.vtitle),
+      productShopifyId: String(x.pid),
+      vendor: String(x.vendor ?? ''),
+      collections: Array.isArray(x.collections) ? x.collections.map(String) : [],
+      cost: str(x.cost),
+      effectiveFrom: str(x.effective_from),
+    }));
+  });
+}
+
 /** True when the variant belongs to this shop (a cost must never be attached to another shop's variant). */
 export async function variantBelongsToShop(
   db: Db,
@@ -170,6 +219,10 @@ export interface RuleLists {
     amount: string | null;
     percent: string | null;
     effectiveFrom: string;
+    zone: string | null;
+    countries: string[];
+    weightMinGrams: number | null;
+    weightMaxGrams: number | null;
   }>;
   /** payment gateways seen on the shop's orders, to pick from when adding a rule */
   gateways: string[];
@@ -186,9 +239,11 @@ export async function listRules(db: Db, scope: ShopScope): Promise<RuleLists> {
     );
     const ships = rows(
       await tx.execute(sql`
-        select id::text, mode, amount::text, percent::float8::text as percent, effective_from::text as effective_from
+        select id::text, mode, amount::text, percent::float8::text as percent,
+               zone_name, countries, weight_min_grams, weight_max_grams,
+               effective_from::text as effective_from
           from s_shipping_cost_rule where shop_id = ${scope.shopId} and revoked_at is null
-         order by effective_from desc`),
+         order by zone_name nulls last, effective_from desc`),
     );
     const gws = rows(
       await tx.execute(sql`
@@ -210,6 +265,10 @@ export async function listRules(db: Db, scope: ShopScope): Promise<RuleLists> {
         amount: str(x.amount),
         percent: str(x.percent),
         effectiveFrom: String(x.effective_from),
+        zone: str(x.zone_name),
+        countries: Array.isArray(x.countries) ? x.countries.map(String) : [],
+        weightMinGrams: x.weight_min_grams == null ? null : Number(x.weight_min_grams),
+        weightMaxGrams: x.weight_max_grams == null ? null : Number(x.weight_max_grams),
       })),
       gateways: gws.map((x) => String(x.gateway)),
     };

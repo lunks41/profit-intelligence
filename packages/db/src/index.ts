@@ -12,6 +12,8 @@ export type { InstallInput, InstallResult, ShopOverview } from './installations.
 export {
   CLEANUP_QUEUE,
   ADS_QUEUE,
+  FX_QUEUE,
+  ALERT_EMAIL_QUEUE,
   MONITOR_QUEUE,
   LEAKAGE_QUEUE,
   DELIVER_QUEUE,
@@ -56,3 +58,5 @@ export * from './reports.js';
 export * from './leakage.js';
 export * from './billing.js';
 export * from './monitoring.js';
+export * from './fx.js';
+export * from './alert-emails.js';

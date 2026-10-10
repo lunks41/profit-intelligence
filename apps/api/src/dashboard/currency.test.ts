@@ -1,6 +1,6 @@
 import { pegProvider } from '@pi/profit-engine';
 import { describe, expect, it } from 'vitest';
-import { availableCurrencies, convertDaily } from './currency.js';
+import { availableCurrencies, buildFx, convertDaily } from './currency.js';
 
 const day = (date: string, totals: Record<string, string>) => ({ date, totals, orders: 1 });
 
@@ -59,5 +59,37 @@ describe('convertDaily', () => {
     const r = convertDaily([day('2026-08-01', { gross_sales: '10.0000' })], 'USD', 'AED', provider);
     if (!r.ok) throw new Error(r.reason);
     expect(r.totals.gross_sales).toBe('40.0000');
+  });
+});
+
+describe('with stored euro reference rates', () => {
+  const rows = [
+    { date: '2026-10-09', quote: 'USD', rate: '1.1000000000' },
+    { date: '2026-10-09', quote: 'GBP', rate: '0.8500000000' },
+  ];
+
+  it('offers every priced currency after the shop currency, with the pegs', () => {
+    const fx = buildFx(rows);
+    expect(fx.currencies('USD')).toEqual(['USD', 'AED', 'EUR', 'GBP']);
+    expect(fx.currencies('EUR')).toEqual(['EUR', 'AED', 'GBP', 'USD']);
+  });
+
+  it('offers only the pegs when no rates are stored', () => {
+    expect(buildFx([]).currencies('USD')).toEqual(['USD', 'AED']);
+    expect(buildFx([]).currencies('EUR')).toEqual(['EUR']);
+  });
+
+  it('does not offer others for a shop currency the rates cannot price', () => {
+    expect(availableCurrencies('XYZ', ['EUR', 'USD'])).toEqual(['XYZ']);
+  });
+
+  it('prices pairs through the euro and keeps the fixed peg for AED', () => {
+    const fx = buildFx(rows);
+    expect(fx.provider.getRate('USD', 'GBP', '2026-10-09')!.rate).toBe('0.7727272727');
+    expect(fx.provider.getRate('USD', 'AED', '2026-10-09')).toMatchObject({
+      rate: '3.6725',
+      status: 'actual',
+    });
+    expect(fx.provider.getRate('USD', 'JPY', '2026-10-09')).toBeNull();
   });
 });

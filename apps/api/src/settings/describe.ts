@@ -15,22 +15,45 @@ export function describeAudit(r: { action: string; oldValue: unknown; newValue: 
   switch (r.action) {
     case 'product_cost.set':
       return `Set a product cost of ${s(n?.amount)} from ${s(n?.effectiveFrom)}${o ? `, replacing ${s(o.amount)}` : ''}`;
+    case 'product_cost.import':
+      return n?.source === 'import'
+        ? `Imported ${s(n.count)} product costs from a file`
+        : `Set ${s(n?.count)} product costs at once`;
     case 'product_cost.revoke':
       return `Removed the product cost of ${s(o?.amount)} that applied from ${s(o?.effectiveFrom)}`;
     case 'payment_fee_rule.set':
       return `Set a payment fee of ${s(n?.percent)}% + ${s(n?.fixedAmount)} for ${n?.gateway ? s(n.gateway) : 'all gateways'} from ${s(n?.effectiveFrom)}`;
     case 'payment_fee_rule.revoke':
       return `Removed the payment fee rule of ${s(o?.percent)}% + ${s(o?.fixedAmount)}`;
-    case 'shipping_cost_rule.set':
-      return n?.mode === 'flat'
-        ? `Set shipping cost to ${s(n.amount)} per order from ${s(n.effectiveFrom)}`
-        : `Set shipping cost to ${s(n?.percent)}% of shipping charged from ${s(n?.effectiveFrom)}`;
+    case 'shipping_cost_rule.set': {
+      const how =
+        n?.mode === 'per_kilogram'
+          ? `${s(n.amount)} per kilogram`
+          : n?.mode === 'flat'
+            ? `${s(n.amount)} per order`
+            : `${s(n?.percent)}% of shipping charged`;
+      const countries = Array.isArray(n?.countries) ? n.countries.map(String) : [];
+      const where = countries.length ? ` for ${countries.join(', ')}` : '';
+      const band =
+        n?.weightMinGrams != null || n?.weightMaxGrams != null
+          ? ` from ${n?.weightMinGrams ?? 0}g up to ${n?.weightMaxGrams ?? 'any weight'}`
+          : '';
+      return `Set shipping cost to ${how}${where}${band} from ${s(n?.effectiveFrom)}`;
+    }
+    case 'shipping_cost_rule.import':
+      return `Replaced shipping cost rules from a file (${s(n?.count)} rules)`;
     case 'shipping_cost_rule.revoke':
       return 'Removed a shipping cost rule';
     case 'setting.missing_cogs_warning_pct':
       return `Changed the missing-cost warning limit to ${s(n?.value)}%${o ? ` (was ${s(o.value)}%)` : ''}`;
     case 'setting.leakage_limits':
       return `Changed alert limits: margin ${s(n?.margin)}%, refund rate ${s(n?.refundRate)}%, cost change ${s(n?.costChange)}%`;
+    case 'setting.alert_emails': {
+      const list = Array.isArray(n?.recipients) ? (n.recipients as string[]) : [];
+      return list.length > 0
+        ? `Turned on alert emails to ${list.join(', ')}`
+        : 'Turned off alert emails';
+    }
     case 'profit.recalculate_everything':
       return 'Recalculated all past orders, including costs used before';
     case 'expense.create':

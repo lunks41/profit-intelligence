@@ -1,5 +1,7 @@
 import { listAdAccountsForSync, markAdAccountError, upsertAdSpend } from '@pi/db';
 import type { AdAccountToSync, Db, SpendInput } from '@pi/db';
+import { fetchGoogleDaily } from './google.js';
+import { fetchMetaDaily } from './meta.js';
 
 /**
  * One advertising platform. Providers are added one at a time: implement `fetchDaily`, register it
@@ -12,8 +14,52 @@ export interface AdProvider {
   fetchDaily(account: AdAccountToSync, range: { from: string; to: string }): Promise<SpendInput[]>;
 }
 
-/** Providers with an importer. Empty until a platform's credentials and app review are in place. */
-export const PROVIDERS: AdProvider[] = [];
+/** Platforms with a scheduled importer. Manual entry is never in this list. */
+export const PROVIDERS: AdProvider[] = [
+  {
+    id: 'meta',
+    fetchDaily: (account, range) => {
+      if (!account.accessToken || !account.externalId) {
+        const err = new Error('Meta account has no token');
+        err.name = 'MissingToken';
+        throw err;
+      }
+      return fetchMetaDaily(account.externalId, account.accessToken, range);
+    },
+  },
+  {
+    id: 'google',
+    fetchDaily: (account, range) => {
+      if (!account.accessToken || !account.externalId) {
+        const err = new Error('Google account has no token');
+        err.name = 'MissingToken';
+        throw err;
+      }
+      return fetchGoogleDaily(
+        account.externalId,
+        account.accessToken,
+        process.env.GOOGLE_ADS_DEVELOPER_TOKEN ?? '',
+        range,
+      );
+    },
+  },
+];
+
+function safeAdError(providerId: string, e: unknown): string {
+  const name = e instanceof Error ? e.name : 'error';
+  const known: Record<string, string> = {
+    MissingToken: 'No access token is saved. Connect the account again.',
+    GoogleNotConfigured: 'Google Ads is not configured on the server yet.',
+    MetaRejected: 'Meta rejected the request. Check the ad account id and token.',
+    GoogleRejected: 'Google Ads rejected the request. Check the customer id and token.',
+    MetaAccountId: 'The Meta ad account id should be the numeric id.',
+    GoogleAccountId: 'The Google Ads customer id should be numeric.',
+  };
+  return (
+    known[name] ??
+    `The last import from ${providerId} failed (${name}). Spend already saved is unchanged.`
+  );
+}
 
 /** Platforms revise recent numbers, so each run re-reads this many days. Re-reading is safe: spend is upserted. */
 export const RESYNC_DAYS = 7;
@@ -23,6 +69,8 @@ interface Deps {
   providers?: AdProvider[];
   log: { info(msg: string): void; warn(msg: string): void };
   now?: () => Date;
+  /** Decrypts the token stored on the account. Required for Meta and Google. */
+  decrypt?: (value: string) => string;
 }
 
 const DAY = 86_400_000;
@@ -45,8 +93,35 @@ export async function syncAdAccounts(
   for (const account of accounts) {
     const provider = byId.get(account.provider);
     if (!provider) continue;
+    let ready = account;
+    if (account.encryptedAccessToken) {
+      if (!deps.decrypt) {
+        failed++;
+        const err = new Error('missing');
+        err.name = 'MissingToken';
+        await markAdAccountError(
+          deps.db,
+          account,
+          account.accountId,
+          safeAdError(provider.id, err),
+        );
+        continue;
+      }
+      try {
+        ready = { ...account, accessToken: deps.decrypt(account.encryptedAccessToken) };
+      } catch {
+        failed++;
+        await markAdAccountError(
+          deps.db,
+          account,
+          account.accountId,
+          'The saved access token could not be read. Connect the account again.',
+        );
+        continue;
+      }
+    }
     try {
-      const rows = await provider.fetchDaily(account, range);
+      const rows = await provider.fetchDaily(ready, range);
       // Never accept a row outside the requested window or a duplicate day/campaign from a provider.
       const seen = new Set<string>();
       const clean = rows.filter((r) => {
@@ -67,12 +142,7 @@ export async function syncAdAccounts(
     } catch (e) {
       failed++;
       // Keep the message generic: provider errors can echo tokens or account ids.
-      await markAdAccountError(
-        deps.db,
-        account,
-        account.accountId,
-        `The last import from ${provider.id} failed (${e instanceof Error ? e.name : 'error'}). Spend already saved is unchanged.`,
-      );
+      await markAdAccountError(deps.db, account, account.accountId, safeAdError(provider.id, e));
       deps.log.warn(
         `ads: account ${account.accountId} failed: ${e instanceof Error ? e.name : 'error'}`,
       );

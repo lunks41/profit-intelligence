@@ -4,6 +4,7 @@ import {
   MappingError,
   mapOrder,
   mapProduct,
+  weightToGrams,
   money,
   normalizeMoney,
   parseGid,
@@ -55,6 +56,15 @@ describe('mapOrder (real Shopify response fixtures)', () => {
       expect(b.lineItems.length).toBeGreaterThan(0);
       expect(b.truncated).toEqual({ lineItems: false, refundLineItems: false });
     }
+  });
+
+  it('marks an order whose refund line items continue on another page', () => {
+    const node = JSON.parse(JSON.stringify(orderNodes.find((n) => (n.refunds ?? []).length > 0)));
+    expect(mapOrder(node).order.refundLinesIncomplete).toBe(false);
+    node.refunds[0].refundLineItems.pageInfo.hasNextPage = true;
+    const b = mapOrder(node);
+    expect(b.order.refundLinesIncomplete).toBe(true);
+    expect(b.truncated.refundLineItems).toBe(true);
   });
 
   it('follows total = subtotal + shipping (+ tax unless taxes are included)', () => {
@@ -114,6 +124,16 @@ describe('mapOrder (real Shopify response fixtures)', () => {
   it('falls back to createdAt when processedAt is missing', () => {
     const node = { ...orderNodes[0]!, processedAt: null };
     expect(mapOrder(node).order.processedAt).toEqual(new Date(node.createdAt));
+  });
+});
+
+describe('weightToGrams', () => {
+  it('converts Shopify units to whole grams and refuses an unknown unit', () => {
+    expect(weightToGrams(1.5, 'KILOGRAMS')).toBe(1500);
+    expect(weightToGrams(250, 'GRAMS')).toBe(250);
+    expect(weightToGrams(1, 'POUNDS')).toBe(454);
+    expect(weightToGrams(1, 'STONES')).toBeNull();
+    expect(weightToGrams('nope', 'GRAMS')).toBeNull();
   });
 });
 

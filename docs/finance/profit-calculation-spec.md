@@ -104,7 +104,7 @@ The order's fee status is the weakest of its transactions. Refunds do not reduce
 
 ## 8. Shipping cost
 
-Only for orders with at least one shippable line. From the merchant's rule (`s_shipping_cost_rule`, effective dated): a flat amount per order, or a percentage of the shipping charged. Free-shipping orders still cost money to ship. Without a rule: **Missing**. An explicit rule of 0 means Actual-by-declaration. Orders with nothing to ship: not applicable.
+Only for orders with at least one shippable line. From the merchant's rule (`s_shipping_cost_rule`, effective dated): a flat amount per order, an amount per kilogram of shipped weight, or a percentage of the shipping charged. A rule may name countries and a weight band (lower bound inclusive, upper bound exclusive). A country rule beats a rule for every country, a weight band beats a rule with no weight, and a narrower band beats a wider one. Per-kilogram and weight-band rules are skipped when any shippable line has no weight, so a catch-all rule can still apply. Free-shipping orders still cost money to ship. Without a matching rule: **Missing**. An explicit rule of 0 means Actual-by-declaration. Orders with nothing to ship: not applicable.
 
 ## 9. Advertising and operating expenses (inputs only in this phase)
 

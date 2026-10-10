@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { OverviewResponse, ProfitSummary } from '@pi/contracts';
-import { costBreakdown } from './costs';
+import { costBreakdown, feeDetail } from './costs';
 import { sparkSeries } from './series';
 
 /** The worked example from docs/finance/figures.md: costs 380 + 30 + 25 + 35 = 470. */
@@ -148,5 +148,30 @@ describe('the small lines on the cards', () => {
 
   it('is empty for no points', () => {
     expect(sparkSeries([])).toEqual({ revenue: [], costs: [], profit: [], margin: [] });
+  });
+});
+
+describe('estimated payment fees', () => {
+  const fees = (actual: string, estimated: string) => ({
+    actual,
+    estimated,
+    estimatedShare: '1.0000',
+  });
+  it('says nothing when no fee is estimated', () => {
+    expect(feeDetail(fees('30.0000', '0.0000'), 'USD')).toBeNull();
+    expect(feeDetail(undefined, 'USD')).toBeNull();
+  });
+  it('says all fees are estimated when Shopify reported none', () => {
+    expect(feeDetail(fees('0.0000', '30.0000'), 'USD')).toContain('All estimated');
+  });
+  it('splits reported and estimated fees', () => {
+    expect(feeDetail(fees('20.0000', '10.0000'), 'USD')).toBe(
+      'Shopify reported $20.00; $10.00 is estimated from your fee rule.',
+    );
+  });
+  it('shows the split under the fees row of the costs breakdown', () => {
+    const b = costBreakdown(base, 'USD', fees('20.0000', '10.0000'));
+    expect(b.rows.find((r) => r.key === 'fees')!.detail).toContain('estimated');
+    expect(b.rows.find((r) => r.key === 'cogs')!.detail).toBeNull();
   });
 });

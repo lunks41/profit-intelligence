@@ -37,7 +37,7 @@ export function CostBreakdownCard({ page }: { page: OverviewResponse }) {
   const card = useCardOverview(page, period);
   const data = card.data;
   const cur = data?.currency.code ?? page.currency.code;
-  const b = data ? costBreakdown(data.summary, cur) : null;
+  const b = data ? costBreakdown(data.summary, cur, data.fees) : null;
   return (
     <Card>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 }}>
@@ -84,6 +84,7 @@ export function CostBreakdownCard({ page }: { page: OverviewResponse }) {
                         <s-text type="strong">{r.text}</s-text>
                       </s-stack>
                     </s-stack>
+                    {r.detail && <s-text color="subdued">{r.detail}</s-text>}
                     <div
                       aria-hidden="true"
                       style={{

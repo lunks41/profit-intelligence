@@ -484,3 +484,47 @@ describe('alert limits', () => {
     ).toBe(401);
   });
 });
+
+describe('alert emails setting', () => {
+  const put = (recipients: unknown, token = 'id-lk-a') =>
+    call('PUT', '/settings/alert-emails', token, { recipients });
+  const rules = async (token?: string) =>
+    rulesResponseSchema.parse((await json('GET', '/settings/rules', token)).body);
+
+  it('is off by default, can be set, and is listed with the other settings', async () => {
+    expect((await rules()).alertEmails).toEqual([]);
+    const res = await json('PUT', '/settings/alert-emails', 'id-lk-a', {
+      recipients: ['owner@example.com', 'ops@example.com'],
+    });
+    expect(res.res.statusCode).toBe(200);
+    expect((await rules()).alertEmails).toEqual(['owner@example.com', 'ops@example.com']);
+  });
+
+  it('removes duplicates and can be turned off with an empty list', async () => {
+    await put(['a@example.com', 'a@example.com', 'b@example.com']);
+    expect((await rules()).alertEmails).toEqual(['a@example.com', 'b@example.com']);
+    expect((await put([])).statusCode).toBe(200);
+    expect((await rules()).alertEmails).toEqual([]);
+  });
+
+  it.each([
+    ['more than 5 addresses', Array.from({ length: 6 }, (_, i) => `u${i}@example.com`)],
+    ['an address without a domain', ['nobody']],
+    ['a value that is not a list', 'a@example.com'],
+  ])('rejects %s and keeps the old list', async (_l, bad) => {
+    await put(['keep@example.com']);
+    expect((await put(bad)).statusCode).toBe(400);
+    expect((await rules()).alertEmails).toEqual(['keep@example.com']);
+  });
+
+  it('is per shop, is recorded in the audit trail, and needs a session', async () => {
+    await put(['mine@example.com']);
+    expect((await rules('id-lk-b')).alertEmails).toEqual([]);
+    const rows = auditResponseSchema.parse((await json('GET', '/settings/audit')).body).rows;
+    expect(JSON.stringify(rows)).toContain('mine@example.com');
+    expect(
+      (await app.inject({ method: 'PUT', url: '/api/v1/settings/alert-emails', payload: {} }))
+        .statusCode,
+    ).toBe(401);
+  });
+});

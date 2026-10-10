@@ -70,6 +70,10 @@ export interface EngineOrder {
   cancelledAt: Date | null;
   taxesIncluded: boolean;
   currency: string;
+  /** ISO country of the shipping destination, when Shopify provides it. Not a street address. */
+  shipCountry?: string | null;
+  /** Refund line items were only partly imported: product refunds may be understated. */
+  refundLinesIncomplete?: boolean;
   subtotalAmount: string;
   discountsAmount: string;
   shippingAmount: string;
@@ -107,10 +111,25 @@ export interface FeeRule {
 }
 
 export interface ShippingRule {
-  mode: 'flat' | 'percent_of_shipping_charged';
+  mode: 'flat' | 'percent_of_shipping_charged' | 'per_kilogram';
   amount: string | null;
   percent: string | null;
   effectiveFrom: string;
+  /** Merchant's name for this group of countries. Not used when choosing a rule. */
+  zone?: string | null;
+  /** ISO country codes. Empty or omitted means any country. */
+  countries?: readonly string[];
+  /** Inclusive lower bound, grams. Omitted means no lower bound. */
+  weightMinGrams?: number | null;
+  /** Exclusive upper bound, grams. Omitted means no upper bound. */
+  weightMaxGrams?: number | null;
+}
+
+/** What an order looks like for choosing a shipping rule. */
+export interface Shipment {
+  country: string | null;
+  /** Total grams of shippable lines, or null when any of those lines has no weight. */
+  weightGrams: number | null;
 }
 
 export interface EngineConfig {
@@ -127,6 +146,8 @@ export interface EngineConfig {
   frozenCosts?: ReadonlyMap<number, FrozenCost>;
   feeRules: readonly FeeRule[];
   shippingRules: readonly ShippingRule[];
+  /** Current variant weight in grams. Used only to pick a shipping rule. */
+  variantWeights?: ReadonlyMap<number, number>;
 }
 
 // ---- output ---------------------------------------------------------------------------------

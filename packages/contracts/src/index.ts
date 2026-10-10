@@ -274,9 +274,20 @@ export const overviewResponseSchema = z.object({
       /** revenue - contribution profit for the point */
       costs: money,
       contributionProfit: money,
+      /** the part of `costs` that is estimated payment fees (a fee rule, not a reported fee) */
+      estimatedFees: money,
       orders: z.number(),
     }),
   ),
+  /**
+   * Payment fees in this period: `actual` is what Shopify reported, `estimated` comes from the fee
+   * rule. They add up to summary.paymentFees.
+   */
+  fees: z.object({
+    actual: money,
+    estimated: money,
+    estimatedShare: z.string().nullable(),
+  }),
   /** revenue by sales channel; adds up to summary.revenue exactly */
   channels: z.array(
     z.object({
@@ -419,7 +430,20 @@ export const orderListQuerySchema = z.object({
   ...listPaging,
   sort: z.enum(['date', 'name', 'revenue', 'cogs', 'profit', 'margin']).default('date'),
   dir: z.enum(['asc', 'desc']).default('desc'),
-  filter: z.enum(['all', 'loss', 'missing_cost', 'refunded', 'excluded']).default('all'),
+  filter: z
+    .enum([
+      'all',
+      'loss',
+      'missing_cost',
+      'refunded',
+      'excluded',
+      'estimated_fees',
+      'missing_fees',
+      'incomplete_refunds',
+      'missing_country',
+      'missing_weight',
+    ])
+    .default('all'),
   search: z.string().trim().max(100).optional(),
 });
 export type OrderListQuery = z.infer<typeof orderListQuerySchema>;
@@ -556,6 +580,22 @@ export const costListResponseSchema = z.object({
 });
 export type CostListResponse = z.infer<typeof costListResponseSchema>;
 
+export const productCostImportBodySchema = z.object({
+  csv: z.string().trim().min(1).max(2_000_000),
+  /** when true, count matched, skipped and invalid rows and do not save */
+  preview: z.boolean().optional(),
+});
+export type ProductCostImportBody = z.infer<typeof productCostImportBodySchema>;
+
+export const bulkCostBodySchema = z.object({
+  amount: amountString,
+  effectiveFrom: isoDate,
+  /** vendor name, product id, collection title, or SKUs and variant ids separated by commas or new lines */
+  by: z.enum(['vendor', 'product', 'collection', 'variants']),
+  value: z.string().trim().min(1).max(8000),
+});
+export type BulkCostBody = z.infer<typeof bulkCostBodySchema>;
+
 export const setCostBodySchema = z.object({
   amount: amountString,
   effectiveFrom: isoDate,
@@ -592,18 +632,58 @@ export const feeRuleBodySchema = z.object({
 });
 export type FeeRuleBody = z.infer<typeof feeRuleBodySchema>;
 
-export const shippingRuleBodySchema = z.discriminatedUnion('mode', [
-  z.object({ mode: z.literal('flat'), amount: amountString, effectiveFrom: isoDate }),
-  z.object({
-    mode: z.literal('percent_of_shipping_charged'),
-    percent: z
-      .string()
-      .regex(/^\d{1,4}(\.\d{1,4})?$/, 'Enter a number such as 80')
-      .refine((v) => Number(v) <= 1000, 'Must be 1000 or less'),
-    effectiveFrom: isoDate,
-  }),
-]);
+const countryCode = z.string().regex(/^[A-Z]{2}$/, 'Use a two-letter country code such as US');
+const shippingMatchFields = {
+  zone: z.string().trim().min(1).max(80).nullable().optional(),
+  countries: z.array(countryCode).max(50).optional(),
+  weightMinGrams: z.number().int().nonnegative().nullable().optional(),
+  weightMaxGrams: z.number().int().positive().nullable().optional(),
+};
+const shippingPercent = z
+  .string()
+  .regex(/^\d{1,4}(\.\d{1,4})?$/, 'Enter a number such as 80')
+  .refine((v) => Number(v) <= 1000, 'Must be 1000 or less');
+
+export const shippingRuleBodySchema = z
+  .discriminatedUnion('mode', [
+    z.object({
+      mode: z.literal('flat'),
+      amount: amountString,
+      effectiveFrom: isoDate,
+      ...shippingMatchFields,
+    }),
+    z.object({
+      mode: z.literal('per_kilogram'),
+      amount: amountString,
+      effectiveFrom: isoDate,
+      ...shippingMatchFields,
+    }),
+    z.object({
+      mode: z.literal('percent_of_shipping_charged'),
+      percent: shippingPercent,
+      effectiveFrom: isoDate,
+      ...shippingMatchFields,
+    }),
+  ])
+  .superRefine((body, ctx) => {
+    const min = body.weightMinGrams ?? null;
+    const max = body.weightMaxGrams ?? null;
+    if (min != null && max != null && min >= max) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Minimum weight must be lower than the upper weight',
+        path: ['weightMinGrams'],
+      });
+    }
+  });
 export type ShippingRuleBody = z.infer<typeof shippingRuleBodySchema>;
+
+export const shippingRulesImportBodySchema = z.object({
+  csv: z.string().trim().min(1).max(200_000),
+  /** when true, count matched, skipped and invalid rows and do not replace the rules */
+  preview: z.boolean().optional(),
+});
+export type ShippingRulesImportBody = z.infer<typeof shippingRulesImportBodySchema>;
 
 export const thresholdBodySchema = z.object({
   missingCostWarningPct: z
@@ -632,10 +712,14 @@ export const rulesResponseSchema = z.object({
   shippingRules: z.array(
     z.object({
       id: z.string(),
-      mode: z.enum(['flat', 'percent_of_shipping_charged']),
+      mode: z.enum(['flat', 'percent_of_shipping_charged', 'per_kilogram']),
       amount: money.nullable(),
       percent: z.string().nullable(),
       effectiveFrom: z.string(),
+      zone: z.string().nullable(),
+      countries: z.array(z.string()),
+      weightMinGrams: z.number().nullable(),
+      weightMaxGrams: z.number().nullable(),
     }),
   ),
   gateways: z.array(z.string()),
@@ -647,6 +731,8 @@ export const rulesResponseSchema = z.object({
     refundRatePct: z.string(),
     costChangePct: z.string(),
   }),
+  /** where alert emails go; empty means alert emails are off */
+  alertEmails: z.array(z.string()),
 });
 export type RulesResponse = z.infer<typeof rulesResponseSchema>;
 
@@ -814,6 +900,10 @@ export type AdProvidersResponse = z.infer<typeof adProvidersResponseSchema>;
 export const createAdAccountBodySchema = z.object({
   provider: adProviderSchema.default('manual'),
   name: z.string().trim().min(1).max(80),
+  /** Meta ad account id or Google Ads customer id */
+  externalId: z.string().trim().min(1).max(40).optional(),
+  /** platform access token; stored encrypted and never returned */
+  accessToken: z.string().trim().min(8).max(2000).optional(),
 });
 
 export const adSpendRowSchema = z.object({
@@ -851,6 +941,8 @@ export const marketingResponseSchema = z.object({
     shopifyRevenue: money,
     /** revenue divided by ad spend, null when there is no spend */
     blendedReturn: ratio,
+    /** contribution profit before advertising, divided by ad spend */
+    poas: ratio,
     contributionProfit: money,
     profitAfterAds: money,
     hasData: z.boolean(),
@@ -1056,6 +1148,7 @@ export const findingRuleSchema = z.enum([
   'negative_margin_products',
   'low_margin_products',
   'low_margin',
+  'margin_drop',
   'refund_rate',
   'shipping_subsidy',
   'cost_change',
@@ -1101,6 +1194,15 @@ const limitPercent = z
   .string()
   .regex(/^\d{1,3}(\.\d{1,2})?$/, 'Enter a number such as 20')
   .refine((v) => Number(v) <= 100, 'Must be 100 or less');
+/** Up to 5 distinct addresses; an empty list turns alert emails off. */
+export const alertEmailsBodySchema = z.object({
+  recipients: z
+    .array(recipientSchema)
+    .max(5, 'At most 5 addresses')
+    .transform((list) => [...new Set(list)]),
+});
+export type AlertEmailsBody = z.infer<typeof alertEmailsBodySchema>;
+
 export const limitsBodySchema = z.object({
   marginPct: limitPercent,
   refundRatePct: limitPercent,

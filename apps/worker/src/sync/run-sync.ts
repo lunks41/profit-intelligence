@@ -1,5 +1,7 @@
 import {
   HISTORY_DAYS,
+  applyBalanceFees,
+  createNotification,
   finishSyncJob,
   getSyncJob,
   loadShopCredential,
@@ -14,7 +16,14 @@ import {
 import type { Db, OrderInput, ProductInput, ProfitJobPayload } from '@pi/db';
 import { PRODUCTS_QUERY, ShopifyAccessError, mapOrder, ordersQuery } from '@pi/shopify';
 import type { ShopifyGraphql, TokenCrypto } from '@pi/shopify';
-import { completeLineItems, completeVariants, isFeesError } from './fetchers.js';
+import {
+  completeLineItems,
+  completeRefundLines,
+  completeVariants,
+  fetchBalanceFees,
+  isFeesError,
+  isPaymentsError,
+} from './fetchers.js';
 import type { FeesState } from './fetchers.js';
 
 export interface SyncPayload {
@@ -62,10 +71,19 @@ export async function runSync(deps: SyncDeps, payload: SyncPayload, info: RunInf
     return;
   }
 
-  const fail = async (message: string) =>
-    withTenant(db, scope.tenantId, (tx) =>
+  const fail = async (message: string) => {
+    await withTenant(db, scope.tenantId, (tx) =>
       finishSyncJob(tx, scope, job.id, { status: 'failed', error: message }),
     );
+    await createNotification(db, scope, {
+      kind: 'sync_failed',
+      severity: 'critical',
+      title: 'The last import from Shopify failed',
+      body: message,
+      link: '/#sync',
+      dedupeKey: `sync_failed:${job.id}`,
+    }).catch(() => undefined);
+  };
 
   const cred = await loadShopCredential(db, scope);
   if (!cred) return fail('Shop credentials not found');
@@ -149,6 +167,7 @@ export async function runSync(deps: SyncDeps, payload: SyncPayload, info: RunInf
       for (const node of page.nodes) {
         const bundle = mapOrder(node);
         await completeLineItems(gql, node.id, bundle); // orders with more than one page of lines
+        await completeRefundLines(gql, bundle); // refunds with more than one page of items
         if (bundle.truncated.refundLineItems) warnings++;
         items.push(bundle);
       }
@@ -165,14 +184,37 @@ export async function runSync(deps: SyncDeps, payload: SyncPayload, info: RunInf
       after = nextCursor;
     }
 
+    try {
+      const reported = await fetchBalanceFees(gql, horizon);
+      if (reported.length) {
+        await withTenant(db, scope.tenantId, (tx) => applyBalanceFees(tx, scope, reported));
+      }
+    } catch (e) {
+      if (!isPaymentsError(e)) throw e;
+      log.warn(
+        `sync ${job.id}: Shopify Payments fees unavailable; gateway fee rules stay the labeled fallback`,
+      );
+    }
+
+    const partialError = warnings
+      ? `${warnings} order(s) had more than 25 refund line items, so those refund lines were not fully imported`
+      : null;
     await withTenant(db, scope.tenantId, (tx) =>
       finishSyncJob(tx, scope, job.id, {
         status: warnings ? 'partial' : 'succeeded',
-        error: warnings
-          ? `${warnings} order(s) had refund line items beyond the first 25 (not imported)`
-          : null,
+        error: partialError,
       }),
     );
+    if (partialError) {
+      await createNotification(db, scope, {
+        kind: 'sync_partial',
+        severity: 'warning',
+        title: 'Some refund lines were not fully imported',
+        body: partialError,
+        link: '/orders?filter=incomplete_refunds',
+        dedupeKey: `sync_partial:${job.id}`,
+      }).catch(() => undefined);
+    }
     if (deps.enqueueProfitRecalc) {
       try {
         await deps.enqueueProfitRecalc({ ...scope });

@@ -87,6 +87,29 @@ export function SyncSection({
             {status.error ?? 'Something went wrong.'} Your previously imported data is unchanged.
           </s-text>
         )}
+        {status.state === 'partial' && status.error && (
+          <s-banner tone="warning" heading="This import was only partial">
+            <s-paragraph>
+              {status.error} Orders with more than 25 refund line items are marked on the Orders
+              screen. The refund total is still counted.
+            </s-paragraph>
+            <s-link href="/orders?filter=incomplete_refunds">See those orders</s-link>
+          </s-banner>
+        )}
+        {status.state === 'partial' && (
+          <s-stack gap="small-300">
+            <s-text tone="caution">
+              {status.error ?? 'Some data was skipped.'} Figures for the affected orders may be
+              understated; they are marked "Refund data incomplete".
+            </s-text>
+            <s-stack direction="inline" gap="base" alignItems="center">
+              <s-link href="/orders?filter=incomplete_refunds">See the affected orders</s-link>
+              <s-button variant="tertiary" onClick={onResync} disabled={starting || active}>
+                Re-sync to retry
+              </s-button>
+            </s-stack>
+          </s-stack>
+        )}
         {open && (
           <s-stack gap="small-300">
             {active && (

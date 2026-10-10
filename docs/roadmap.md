@@ -12,11 +12,11 @@ Profit engine (cash view, half-up, decimal safe, frozen cost history) · Overvie
 
 | Capability                                        | TrueProfit | BeProfit | Lifetimely | MerchantFlow   | PodVector  | Triple Whale | Us today                     |
 | ------------------------------------------------- | ---------- | -------- | ---------- | -------------- | ---------- | ------------ | ---------------------------- |
-| Live ad spend: Meta, Google, TikTok               | yes        | yes      | yes        | yes            | Meta       | yes          | **manual entry only**        |
+| Live ad spend: Meta, Google, TikTok               | yes        | yes      | yes        | yes            | Meta       | yes          | **Meta and Google daily spend; TikTok manual** |
 | Snapchat, Pinterest, X, Amazon ads                | yes        | yes      | -          | Snapchat       | -          | some         | no                           |
-| Actual payment fees                               | yes        | yes      | -          | -              | -          | yes          | **estimated from your rule** |
-| Carrier shipping cost by zone or country          | yes        | yes      | -          | -              | by product | yes          | flat or percent rule         |
-| COGS import (CSV) and bulk edit                   | yes        | yes      | yes        | yes            | -          | yes          | per-product screen only      |
+| Actual payment fees                               | yes        | yes      | -          | -              | -          | yes          | **Shopify-reported fees, rule as labeled fallback** |
+| Carrier shipping cost by zone or country          | yes        | yes      | -          | -              | by product | yes          | **zone, country, and weight rules, plus CSV** |
+| COGS import (CSV) and bulk edit                   | yes        | yes      | yes        | yes            | -          | yes          | **CSV import and export, and bulk edit** |
 | Dropshipping or POD cost sync (CJ, Printify)      | CJ         | -        | -          | -              | Printify   | -            | no                           |
 | Profit by country, platform, store                | -          | yes      | -          | -              | -          | -            | channel only                 |
 | Cohorts, LTV, CAC payback                         | LTV        | yes      | **core**   | -              | -          | yes          | no                           |
@@ -30,16 +30,16 @@ Profit engine (cash view, half-up, decimal safe, frozen cost history) · Overvie
 
 Ordered by importance. The first six decide whether the profit figure is right and whether the app can be approved and sold.
 
-1. **Ads integration: Meta and Google Ads (spend and reported sales).** Daily spend sync by campaign, blended ROAS and MER, profit after ads. Every competitor has it; manual entry cannot be the product. _L. Owner: create the Meta and Google developer apps and start their review now, it takes weeks._
-2. **Actual payment fees from Shopify Payments** (balance transactions), with gateway rules kept for PayPal and others. Replaces the estimate that currently flags every order. _M. Needs the payments read scope and a Shopify Payments store to test._
-3. **Shipping cost rules by zone, country and weight, plus CSV import.** Most unprofitable-order warnings today come from "shipping cost missing". _M._
-4. **Product cost CSV import and export, and bulk edit** (by product, variant, collection, vendor). First thing a store with 500 products asks for. _M._
+1. **Ads integration: Meta and Google Ads (spend and reported sales).** Built as a daily spend sync (06:00 UTC). The merchant pastes an ad account id and access token; spend, blended ROAS and POAS show next to profit. Campaign-to-order matching is later. Google also needs `GOOGLE_ADS_DEVELOPER_TOKEN` on the worker. TikTok stays manual.
+2. **Actual payment fees from Shopify Payments.** Built. Fees Shopify reports on the order, and Shopify Payments balance-transaction fees when `read_shopify_payments_accounts` and `read_shopify_payments_payouts` are granted, are actual. Gateway rules stay a labeled estimate. Orders still on an estimate are listed under Orders, Fees estimated.
+3. **Shipping cost rules by zone, country and weight, plus CSV import.** Built. A country or weight band beats a catch-all, per kilogram needs a product weight, and CSV import replaces the active rules. Destination country is the two-letter code only. Recalculate existing orders after the next product and order sync so weights and countries are filled in.
+4. **Product cost CSV import and export, and bulk edit** (by product, variant, collection, vendor). Built. Import matches a variant id, then a SKU, and a blank cost leaves that product alone. Collection bulk edit uses collection titles from the next product sync.
 5. **Live billing and plans.** Choose managed pricing or the Billing API, approve prices, switch `BILLING_MODE` on, trial, upgrade and downgrade tested. _S to M. Owner: prices._
 6. **Deployment and App Store readiness (Phase 14).** HTTPS hosting, monitoring alerts, backups restored, privacy policy, support contact, listing text and screenshots, `read_all_orders` approval or a 60-day history, performance and accessibility pass, rotate the leaked Shopify secret. _M. Owner: policy, support address, secret rotation._
-7. **Exchange rates for any currency** (daily rates source), today only USD and AED. Needed for stores in EUR, GBP, INR and others. _S to M._
+7. **Exchange rates for any currency.** _Built: daily ECB rates stored in the database, with history; AED stays on its fixed peg; shown as "estimated" when a rate is more than 7 days old. Until those rates are stored, only USD and AED convert, and the overview says so. Ad spend in another currency uses the same rates._
 8. **Email delivery in production** (SMTP or a mail service) for scheduled reports and alerts. Code is done. _S. Owner: provide the account._
-9. **Alerts by email** (margin drop, loss orders, missing costs, failed sync). Today they are in-app only. _S to M._
-10. **Real-data testing and a UI polish pass** on the year of seeded data (running in the background session). _M._
+9. **Alerts by email.** _Built: Settings, Alerts, "Email alerts" (up to 5 addresses). Warnings and serious findings of the daily profit check and stale-data notices are emailed in one message per run, never twice. Needs the mail account (item 8) to actually deliver._
+10. **Real-data testing and a UI polish pass.** Reconcile against the dev store passed (`pnpm sync:verify`, `pnpm profit:verify`): 81 orders in the 90-day window match Shopify, and the profit ledger matches the approved examples. One older order stays stored after it ages out of the window. UI polish is still open. _M._
 
 ## V1.1: fast follow (weeks after launch)
 

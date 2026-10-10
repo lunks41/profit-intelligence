@@ -6,6 +6,8 @@ export interface TrendDay {
   /** revenue - contributionProfit */
   costs: string;
   contributionProfit: string;
+  /** the part of the costs that is estimated payment fees */
+  estimatedFees: string;
   orders: number;
 }
 
@@ -52,11 +54,13 @@ export function buildTrend(
     let revenue = new D(0);
     let costs = new D(0);
     let profit = new D(0);
+    let estimated = new D(0);
     let orders = 0;
     for (const d of block) {
       revenue = revenue.plus(dec(d.revenue));
       costs = costs.plus(dec(d.costs));
       profit = profit.plus(dec(d.contributionProfit));
+      estimated = estimated.plus(dec(d.estimatedFees));
       orders += d.orders;
     }
     points.push({
@@ -65,6 +69,7 @@ export function buildTrend(
       revenue: toStored(revenue),
       costs: toStored(costs),
       contributionProfit: toStored(profit),
+      estimatedFees: toStored(estimated),
       orders,
     });
   }

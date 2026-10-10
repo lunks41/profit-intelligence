@@ -92,16 +92,23 @@ export function SortControls<S extends string>({
   sort,
   dir,
   onChange,
+  chip,
 }: {
   options: Array<{ value: S; label: string }>;
   sort: S;
   dir: 'asc' | 'desc';
   onChange: (sort: S, dir: 'asc' | 'desc') => void;
+  chip?: boolean;
 }) {
   return (
     <>
-      <SortByDropdown value={sort} options={options} onChange={(v) => onChange(v, dir)} />
-      <SortOrderDropdown value={dir} onChange={(d) => onChange(sort, d)} />
+      <SortByDropdown
+        chip={chip}
+        value={sort}
+        options={options}
+        onChange={(v) => onChange(v, dir)}
+      />
+      <SortOrderDropdown chip={chip} value={dir} onChange={(d) => onChange(sort, d)} />
     </>
   );
 }

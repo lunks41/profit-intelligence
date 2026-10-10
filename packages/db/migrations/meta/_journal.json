@@ -127,6 +127,48 @@
       "when": 1791548370313,
       "tag": "0017_phase13_monitoring_read",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1791553000000,
+      "tag": "0018_shipping_cost_zones",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1791554000000,
+      "tag": "0019_product_collection_titles",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1791555000000,
+      "tag": "0020_ecb_exchange_rates",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1791556000000,
+      "tag": "0021_alert_email_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1791642400000,
+      "tag": "0022_order_refund_lines_incomplete",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1791642500000,
+      "tag": "0023_ad_account_access_token",
+      "breakpoints": true
     }
   ]
 }

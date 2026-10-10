@@ -1,6 +1,6 @@
 'use client';
 
-import { ShowDropdown } from '../dropdown';
+import { FilterSearch, ShowDropdown } from '../dropdown';
 
 import { useEffect, useState } from 'react';
 import type { OrderDetailResponse, OrderListResponse, PeriodPreset } from '@pi/contracts';
@@ -34,7 +34,18 @@ export function OrdersPage() {
   const [dir, setDir] = useState<'asc' | 'desc'>('desc');
   const [filter, setFilter] = useState('all');
   useEffect(() => {
-    const f = readParam('filter', ['all', 'loss', 'missing_cost', 'refunded', 'excluded'] as const);
+    const f = readParam('filter', [
+      'all',
+      'loss',
+      'missing_cost',
+      'refunded',
+      'excluded',
+      'estimated_fees',
+      'missing_fees',
+      'incomplete_refunds',
+      'missing_country',
+      'missing_weight',
+    ] as const);
     if (f) setFilter(f);
   }, []);
   const [search, setSearch] = useState('');
@@ -58,6 +69,7 @@ export function OrdersPage() {
   return (
     <>
       <FilterBar
+        chip
         filters={filters}
         currencies={[]}
         onChange={(f) => {
@@ -65,13 +77,14 @@ export function OrdersPage() {
           setPage(1);
         }}
       >
-        <s-search-field
+        <FilterSearch
           label="Order number"
           placeholder="#1001"
           value={search}
-          onInput={(e) => setSearch(e.currentTarget.value)}
+          onChange={setSearch}
         />
         <ShowDropdown
+          chip
           label="Show"
           value={filter}
           options={[
@@ -80,6 +93,11 @@ export function OrdersPage() {
             { value: 'missing_cost', label: 'Missing some costs' },
             { value: 'refunded', label: 'Refunded' },
             { value: 'excluded', label: 'Not counted' },
+            { value: 'estimated_fees', label: 'Fees estimated' },
+            { value: 'missing_fees', label: 'Fees missing' },
+            { value: 'incomplete_refunds', label: 'Refund data incomplete' },
+            { value: 'missing_country', label: 'No destination country' },
+            { value: 'missing_weight', label: 'Missing product weight' },
           ]}
           onChange={(v) => {
             setFilter(v);
@@ -87,6 +105,7 @@ export function OrdersPage() {
           }}
         />
         <SortControls
+          chip
           options={SORTS}
           sort={sort}
           dir={dir}
@@ -128,6 +147,7 @@ export function OrdersPage() {
                     <s-table-header>Status</s-table-header>
                     <s-table-header format="numeric">Revenue</s-table-header>
                     <s-table-header format="numeric">Product cost</s-table-header>
+                    <s-table-header>Payment fees</s-table-header>
                     <s-table-header format="numeric">Profit</s-table-header>
                     <s-table-header format="numeric">Margin</s-table-header>
                     <s-table-header>Details</s-table-header>
@@ -141,6 +161,8 @@ export function OrdersPage() {
                           {r.recognized ? (
                             r.partial ? (
                               <s-badge tone="caution">Partial</s-badge>
+                            ) : r.flags.includes('refund_lines_incomplete') ? (
+                              <s-badge tone="caution">Refunds incomplete</s-badge>
                             ) : (
                               <s-badge tone="success">Counted</s-badge>
                             )
@@ -159,6 +181,9 @@ export function OrdersPage() {
                           ) : (
                             formatMoney(r.cogs, data.currency)
                           )}
+                        </s-table-cell>
+                        <s-table-cell>
+                          {r.recognized ? <FeeBadge status={r.statuses?.paymentFees} /> : '—'}
                         </s-table-cell>
                         <s-table-cell>{formatMoney(r.profit, data.currency)}</s-table-cell>
                         <s-table-cell>{formatPercent(r.margin)}</s-table-cell>
@@ -184,6 +209,50 @@ export function OrdersPage() {
   );
 }
 
+/** Where an order's payment fee came from: reported by Shopify, estimated from a rule, or unknown. */
+const FEE_SOURCE: Record<
+  string,
+  { label: string; tone: 'success' | 'info' | 'caution' | 'neutral' }
+> = {
+  confirmed: { label: 'Reported by Shopify', tone: 'success' },
+  estimated: { label: 'Estimated from rule', tone: 'info' },
+  missing: { label: 'Missing', tone: 'caution' },
+  not_applicable: { label: 'None due', tone: 'neutral' },
+};
+
+function FeeBadge({ status }: { status: string | undefined }) {
+  const s = FEE_SOURCE[status ?? 'missing'] ?? FEE_SOURCE.missing!;
+  return <s-badge tone={s.tone}>{s.label}</s-badge>;
+}
+
+/** Fee, cost and shipping states that the merchant can fix in Settings, with the link to do it. */
+function fixLinks(d: OrderDetailResponse): Array<{ text: string; href: string; label: string }> {
+  const out: Array<{ text: string; href: string; label: string }> = [];
+  const by = (c: string) => d.entries.filter((e) => e.component === c);
+  if (by('cogs').some((e) => e.status === 'missing')) {
+    out.push({
+      text: 'Some items on this order have no product cost.',
+      href: '/settings?tab=costs&filter=missing',
+      label: 'Add product costs',
+    });
+  }
+  if (by('payment_fees').some((e) => e.status === 'missing')) {
+    out.push({
+      text: 'No payment fee data or fee rule applies to this order.',
+      href: '/settings?tab=fees',
+      label: 'Set a payment fee rule',
+    });
+  }
+  if (by('shipping_cost').some((e) => e.status === 'missing')) {
+    out.push({
+      text: 'No shipping cost rule applies to this order.',
+      href: '/settings?tab=shipping',
+      label: 'Set a shipping cost rule',
+    });
+  }
+  return out;
+}
+
 const EXCLUSION: Record<string, string> = {
   test_order: 'It is a test order.',
   awaiting_payment: 'It has not been paid yet.',
@@ -204,6 +273,16 @@ function OrderDetail({ id, onBack }: { id: string; onBack: () => void }) {
       {data && <OrderBody d={data} />}
     </>
   );
+}
+
+/** The weakest state of the order's fee entries (missing, then estimated, then reported). */
+function feeStatusOf(d: OrderDetailResponse): string {
+  const s = d.entries.filter((e) => e.component === 'payment_fees').map((e) => e.status);
+  if (s.length === 0) return 'not_applicable';
+  if (s.includes('missing')) return 'missing';
+  if (s.includes('estimated')) return 'estimated';
+  if (s.every((x) => x === 'not_applicable')) return 'not_applicable';
+  return 'confirmed';
 }
 
 function OrderBody({ d }: { d: OrderDetailResponse }) {
@@ -230,6 +309,7 @@ function OrderBody({ d }: { d: OrderDetailResponse }) {
               <LabelValueRow label="Revenue" value={formatMoney(d.summary.revenue, cur)} />
               <LabelValueRow label="Product cost" value={formatMoney(d.summary.cogs, cur)} />
               <LabelValueRow label="Payment fees" value={formatMoney(d.summary.paymentFees, cur)} />
+              <FeeBadge status={feeStatusOf(d)} />
               <LabelValueRow
                 label="Shipping cost"
                 value={formatMoney(d.summary.shippingCost, cur)}
@@ -237,6 +317,21 @@ function OrderBody({ d }: { d: OrderDetailResponse }) {
               <LabelValueRow label="Profit" value={formatMoney(d.summary.profit, cur)} strong />
               <s-text color="subdued">Margin {formatPercent(d.summary.margin)}</s-text>
               {d.order.partial && <s-badge tone="caution">Partial: some costs are missing</s-badge>}
+              {d.order.flags.includes('refund_lines_incomplete') && (
+                <s-banner tone="warning" heading="Refund details were only partly imported">
+                  <s-paragraph>
+                    This order has more refunded items than Shopify returned in one page, so product
+                    refunds here may be understated. Money refunded is still counted from the
+                    payment transactions.
+                  </s-paragraph>
+                </s-banner>
+              )}
+              {fixLinks(d).map((f) => (
+                <s-banner key={f.href} tone="info">
+                  <s-paragraph>{f.text}</s-paragraph>
+                  <s-link href={f.href}>{f.label}</s-link>
+                </s-banner>
+              ))}
             </>
           )}
         </s-stack>

@@ -32,7 +32,16 @@ export function buildAlerts(i: AlertInput): Alert[] {
       title: 'The last import from Shopify failed',
       evidence: i.sync.error ?? 'No details were recorded.',
       why: 'New orders and changes may be missing, so the figures below can be out of date.',
-      action: { label: 'Review import status', href: '/' },
+      action: { label: 'Review import status', href: '/#sync' },
+    });
+  } else if (i.sync.state === 'partial') {
+    alerts.push({
+      id: 'sync_partial',
+      severity: 'warning',
+      title: 'The last import finished only partly',
+      evidence: i.sync.error ?? 'Some refund lines were not imported.',
+      why: 'An order with more than 25 refund line items keeps the refund total, but the per-item refund is incomplete.',
+      action: { label: 'See the incomplete orders', href: '/orders?filter=incomplete_refunds' },
     });
   } else if (i.sync.stale) {
     alerts.push({
@@ -43,7 +52,7 @@ export function buildAlerts(i: AlertInput): Alert[] {
         ? `Last successful import: ${i.sync.lastSuccessAt.slice(0, 16).replace('T', ' ')} UTC.`
         : 'No successful import yet.',
       why: 'Recent orders, refunds or cost changes may not be reflected.',
-      action: { label: 'Re-sync now', href: '/' },
+      action: { label: 'Re-sync now', href: '/#sync' },
     });
   }
 
@@ -71,6 +80,16 @@ export function buildAlerts(i: AlertInput): Alert[] {
   }
 
   const fees = s.confidence.components.fees;
+  if (fees && Number(fees.shares.estimated) > 0 && Number(fees.shares.missing) === 0) {
+    alerts.push({
+      id: 'estimated_fees',
+      severity: 'info',
+      title: 'Some payment fees are still estimates',
+      evidence: `${pct(fees.shares.estimated)} of orders use your gateway fee rule rather than a fee Shopify reported.`,
+      why: 'An estimate is labeled as one. Shopify Payments fees replace it when the store reports them.',
+      action: { label: 'See orders using an estimate', href: '/orders?filter=estimated_fees' },
+    });
+  }
   if (fees && Number(fees.shares.missing) > 0) {
     alerts.push({
       id: 'missing_fees',

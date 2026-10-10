@@ -124,6 +124,11 @@ export const tProduct = pgTable(
     status: text('status').notNull(),
     productType: text('product_type').notNull().default(''),
     vendor: text('vendor').notNull().default(''),
+    /** Collection titles from Shopify, used to set a cost on a whole collection. */
+    collectionTitles: text('collection_titles')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
     isGiftCard: boolean('is_gift_card').notNull().default(false),
     shopifyUpdatedAt: tsz('shopify_updated_at').notNull(),
     syncedAt: syncedAt(),
@@ -157,6 +162,8 @@ export const tProductVariant = pgTable(
     inventoryItemShopifyId: bigint('inventory_item_shopify_id', { mode: 'number' }),
     /** Shopify's current unit cost, if the merchant set one. Effective-dated COGS lives in f_product_cost. */
     unitCostAmount: money('unit_cost_amount'),
+    /** Current variant weight in grams. Null means Shopify did not report one. */
+    weightGrams: integer('weight_grams'),
     shopifyUpdatedAt: tsz('shopify_updated_at').notNull(),
     syncedAt: syncedAt(),
   },
@@ -172,6 +179,7 @@ export const tProductVariant = pgTable(
       columns: [t.tenantId, t.productId],
       foreignColumns: [tProduct.tenantId, tProduct.id],
     }).onDelete('cascade'),
+    check('ck_t_product_variant_weight', sql`${t.weightGrams} is null or ${t.weightGrams} >= 0`),
     unique('uq_t_product_variant_shop_shopify_id').on(t.shopId, t.shopifyId),
     unique('uq_t_product_variant_tenant_id_id').on(t.tenantId, t.id),
     index('ix_t_product_variant_product').on(t.productId),
@@ -211,6 +219,10 @@ export const tOrder = pgTable(
       .notNull()
       .default(sql`'{}'::text[]`),
     sourceName: text('source_name'),
+    /** Destination country (ISO code) used only to choose a shipping cost rule. */
+    shipCountry: char('ship_country', { length: 2 }),
+    /** Refund line items were only partly imported, so product refunds may be understated. */
+    refundLinesIncomplete: boolean('refund_lines_incomplete').notNull().default(false),
     syncedAt: syncedAt(),
   },
   (t) => [
@@ -220,6 +232,10 @@ export const tOrder = pgTable(
       columns: [t.tenantId, t.shopId],
       foreignColumns: [mShop.tenantId, mShop.id],
     }),
+    check(
+      'ck_t_order_ship_country',
+      sql`${t.shipCountry} is null or ${t.shipCountry} ~ '^[A-Z]{2}$'`,
+    ),
     unique('uq_t_order_shop_shopify_id').on(t.shopId, t.shopifyId),
     unique('uq_t_order_tenant_id_id').on(t.tenantId, t.id),
     index('ix_t_order_shop_processed_at').on(t.tenantId, t.shopId, t.processedAt),
@@ -505,7 +521,7 @@ export const sPaymentFeeRule = pgTable(
   ],
 );
 
-/** Carrier cost estimate per order: a flat amount or a percentage of the shipping charged. */
+/** Carrier cost: flat, percent of shipping charged, or per kilogram, optionally by country and weight. */
 export const sShippingCostRule = pgTable(
   's_shipping_cost_rule',
   {
@@ -515,6 +531,17 @@ export const sShippingCostRule = pgTable(
     mode: text('mode').notNull(),
     amount: money('amount'),
     percent: numeric('percent', { precision: 9, scale: 6 }),
+    /** Merchant's label. Not used when choosing which rule applies. */
+    zoneName: text('zone_name'),
+    /** ISO country codes. Empty means any country. */
+    countries: text('countries')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    /** Inclusive lower bound in grams. Null means no lower bound. */
+    weightMinGrams: integer('weight_min_grams'),
+    /** Exclusive upper bound in grams. Null means no upper bound. */
+    weightMaxGrams: integer('weight_max_grams'),
     effectiveFrom: dateOnly('effective_from').notNull(),
     createdBy: text('created_by'),
     createdAt: createdAt(),
@@ -530,11 +557,25 @@ export const sShippingCostRule = pgTable(
     check(
       'ck_s_shipping_cost_rule_mode',
       sql`(${t.mode} = 'flat' and ${t.amount} is not null and ${t.amount} >= 0)
-        or (${t.mode} = 'percent_of_shipping_charged' and ${t.percent} is not null and ${t.percent} >= 0 and ${t.percent} <= 1000)`,
+        or (${t.mode} = 'percent_of_shipping_charged' and ${t.percent} is not null and ${t.percent} >= 0 and ${t.percent} <= 1000)
+        or (${t.mode} = 'per_kilogram' and ${t.amount} is not null and ${t.amount} >= 0)`,
+    ),
+    check(
+      'ck_s_shipping_cost_rule_weight',
+      sql`(${t.weightMinGrams} is null or ${t.weightMinGrams} >= 0)
+        and (${t.weightMaxGrams} is null or ${t.weightMaxGrams} > 0)
+        and (${t.weightMinGrams} is null or ${t.weightMaxGrams} is null or ${t.weightMinGrams} < ${t.weightMaxGrams})`,
     ),
     index('ix_s_shipping_cost_rule_shop').on(t.shopId),
     uniqueIndex('uq_s_shipping_cost_rule_active')
-      .on(t.shopId, t.effectiveFrom)
+      .on(
+        t.shopId,
+        sql`coalesce(${t.zoneName}, '')`,
+        t.countries,
+        sql`coalesce(${t.weightMinGrams}, -1)`,
+        sql`coalesce(${t.weightMaxGrams}, -1)`,
+        t.effectiveFrom,
+      )
       .where(sql`${t.revokedAt} is null`),
   ],
 );
@@ -561,6 +602,11 @@ export const sAppSetting = pgTable(
     costChangeWarningPct: numeric('cost_change_warning_pct', { precision: 6, scale: 2 })
       .notNull()
       .default('10'),
+    /** Where alert emails go (up to 5 addresses the merchant typed); empty means no emails. */
+    alertEmailRecipients: text('alert_email_recipients')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
     updatedBy: text('updated_by'),
     updatedAt: updatedAt(),
   },
@@ -575,6 +621,7 @@ export const sAppSetting = pgTable(
       'ck_s_app_setting_missing_cogs',
       sql`${t.missingCogsWarningPct} >= 0 and ${t.missingCogsWarningPct} <= 100`,
     ),
+    check('ck_s_app_setting_alert_emails', sql`cardinality(${t.alertEmailRecipients}) <= 5`),
     check(
       'ck_s_app_setting_leakage',
       sql`${t.marginWarningPct} between 0 and 100 and ${t.refundRateWarningPct} between 0 and 100 and ${t.costChangeWarningPct} between 0 and 1000`,
@@ -821,6 +868,8 @@ export const fAdAccount = pgTable(
     name: text('name').notNull(),
     currency: char('currency', { length: 3 }).notNull(),
     externalId: text('external_id'),
+    /** Platform access token, encrypted the same way as the Shopify token. Null for manual entry. */
+    encryptedAccessToken: text('encrypted_access_token'),
     status: text('status').notNull().default('active'),
     lastSyncAt: tsz('last_sync_at'),
     lastError: text('last_error'),
@@ -1026,6 +1075,8 @@ export const oNotification = pgTable(
     dedupeKey: text('dedupe_key'),
     createdAt: createdAt(),
     readAt: tsz('read_at'),
+    /** when this message was sent by email (null: not emailed, or emailing is off) */
+    emailedAt: tsz('emailed_at'),
   },
   (t) => [
     primaryKey({ name: 'pk_o_notification', columns: [t.id] }),
@@ -1042,6 +1093,9 @@ export const oNotification = pgTable(
       .on(t.shopId, t.dedupeKey)
       .where(sql`${t.dedupeKey} is not null`),
     index('ix_o_notification_shop').on(t.shopId, t.createdAt),
+    index('ix_o_notification_unemailed')
+      .on(t.shopId, t.createdAt)
+      .where(sql`${t.emailedAt} is null`),
   ],
 );
 
@@ -1108,5 +1162,25 @@ export const oFeedback = pgTable(
     check('ck_o_feedback_status', sql`${t.status} in ('new', 'seen', 'answered', 'closed')`),
     check('ck_o_feedback_message', sql`length(btrim(${t.message})) between 3 and 2000`),
     index('ix_o_feedback_shop').on(t.shopId, t.createdAt),
+  ],
+);
+
+/**
+ * Daily euro reference rates (units of the quote currency per 1 EUR), from the European Central Bank. Public
+ * market data shared by every shop, so it has no tenant id; see migration 0020 for its access rules.
+ */
+export const oExchangeRate = pgTable(
+  'o_exchange_rate',
+  {
+    quote: char('quote', { length: 3 }).notNull(),
+    rateDate: date('rate_date', { mode: 'string' }).notNull(),
+    rate: numeric('rate', { precision: 19, scale: 10 }).notNull(),
+    source: text('source').notNull(),
+    fetchedAt: tsz('fetched_at').notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ name: 'pk_o_exchange_rate', columns: [t.quote, t.rateDate] }),
+    check('ck_o_exchange_rate_quote', sql`${t.quote} ~ '^[A-Z]{3}$'`),
+    check('ck_o_exchange_rate_positive', sql`${t.rate} > 0`),
   ],
 );

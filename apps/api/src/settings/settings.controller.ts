@@ -15,10 +15,14 @@ import {
 import {
   costListQuerySchema,
   feeRuleBodySchema,
+  alertEmailsBodySchema,
   limitsBodySchema,
   recalcBodySchema,
+  bulkCostBodySchema,
+  productCostImportBodySchema,
   setCostBodySchema,
   shippingRuleBodySchema,
+  shippingRulesImportBodySchema,
   thresholdBodySchema,
 } from '@pi/contracts';
 import type {
@@ -77,6 +81,21 @@ export class SettingsController {
     return this.service.costs(t, r.data);
   }
 
+  @Get('costs/export')
+  exportCosts(@Tenant() t: TenantContext) {
+    return this.service.exportCosts(t);
+  }
+
+  @Post('costs/import')
+  importCosts(@Tenant() t: TenantContext, @Body() body: unknown) {
+    return this.service.importCosts(t, parse(productCostImportBodySchema, body));
+  }
+
+  @Post('costs/bulk')
+  bulkCosts(@Tenant() t: TenantContext, @Body() body: unknown) {
+    return this.service.bulkCosts(t, parse(bulkCostBodySchema, body));
+  }
+
   @Get('costs/:variantId/history')
   history(
     @Tenant() t: TenantContext,
@@ -114,6 +133,16 @@ export class SettingsController {
     return this.service.removeFeeRule(t, uuidParam(id));
   }
 
+  @Get('shipping-rules/export')
+  exportShipping(@Tenant() t: TenantContext) {
+    return this.service.exportShippingRules(t);
+  }
+
+  @Post('shipping-rules/import')
+  importShipping(@Tenant() t: TenantContext, @Body() body: unknown) {
+    return this.service.importShippingRules(t, parse(shippingRulesImportBodySchema, body));
+  }
+
   @Post('shipping-rules')
   addShipping(@Tenant() t: TenantContext, @Body() body: unknown) {
     return this.service.addShippingRule(t, parse(shippingRuleBodySchema, body));
@@ -127,6 +156,11 @@ export class SettingsController {
   @Put('limits')
   limits(@Tenant() t: TenantContext, @Body() body: unknown) {
     return this.service.setLimits(t, parse(limitsBodySchema, body));
+  }
+
+  @Put('alert-emails')
+  alertEmails(@Tenant() t: TenantContext, @Body() body: unknown) {
+    return this.service.setAlertEmails(t, parse(alertEmailsBodySchema, body).recipients);
   }
 
   @Put('threshold')

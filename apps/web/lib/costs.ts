@@ -1,4 +1,4 @@
-import type { ProfitSummary } from '@pi/contracts';
+import type { OverviewResponse, ProfitSummary } from '@pi/contracts';
 import { formatMoney } from './format';
 import type { Standing } from './breakdown';
 
@@ -11,6 +11,8 @@ export interface CostRow {
   share: number | null;
   text: string;
   standing: Standing;
+  /** a line under the row, such as how much of the fees is estimated */
+  detail: string | null;
 }
 
 export interface CostBreakdown {
@@ -21,19 +23,34 @@ export interface CostBreakdown {
   operatingExpenses: { amount: string | null; text: string; standing: Standing };
 }
 
+/** "Actual $X, estimated $Y" for the payment fees, or null when none of it is estimated. */
+export function feeDetail(
+  fees: OverviewResponse['fees'] | undefined,
+  currency: string,
+): string | null {
+  if (!fees || Number(fees.estimated) === 0) return null;
+  return Number(fees.actual) === 0
+    ? 'All estimated from your fee rule. Fees Shopify charged are not imported yet.'
+    : `Shopify reported ${formatMoney(fees.actual, currency)}; ${formatMoney(fees.estimated, currency)} is estimated from your fee rule.`;
+}
+
 /**
  * What the costs on the Costs card are made of: product cost, advertising, shipping cost and
  * payment fees, each as an amount and a share of the total shown. A cost with no known amount (a
  * missing cost, advertising not set up) is a word and is left out of the shares, so the shares of
  * the known costs add up to 100%. Operating expenses are listed separately underneath.
  */
-export function costBreakdown(s: ProfitSummary, currency: string): CostBreakdown {
+export function costBreakdown(
+  s: ProfitSummary,
+  currency: string,
+  fees?: OverviewResponse['fees'],
+): CostBreakdown {
   const st = s.statuses;
   const allMissing = (share: string | null) => share !== null && Number(share) >= 1;
   const standingOf = (status: ProfitSummary['statuses']['cogs']): Standing =>
     status === 'missing' ? 'incomplete' : status === 'estimated' ? 'estimated' : 'confirmed';
 
-  const lines: Array<Omit<CostRow, 'share' | 'text'> & { word?: string }> = [
+  const lines: Array<Omit<CostRow, 'share' | 'text' | 'detail'> & { word?: string }> = [
     {
       key: 'cogs',
       label: 'Product cost',
@@ -91,6 +108,7 @@ export function costBreakdown(s: ProfitSummary, currency: string): CostBreakdown
       share: l.amount !== null && known > 0 ? Number(l.amount) / known : null,
       text: l.amount === null ? l.word! : formatMoney(l.amount, currency),
       standing: l.standing,
+      detail: l.key === 'fees' ? feeDetail(fees, currency) : null,
     }))
     // largest first; unknown costs go last
     .sort(

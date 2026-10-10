@@ -11,7 +11,7 @@ type State =
   | { kind: 'error'; code: string; message: string }
   | { kind: 'ready'; session: SessionResponse };
 
-export function ConnectionStatus() {
+export function ConnectionStatus({ setup = false }: { setup?: boolean }) {
   const [state, setState] = useState<State>({ kind: 'loading' });
 
   useEffect(() => {
@@ -54,6 +54,7 @@ export function ConnectionStatus() {
   }
 
   // The store name, period and currency are in the dashboard header; there is no "connected"
-  // banner. Only the setup checklist (while there is something left to do) is shown here.
+  // banner. The setup checklist is only on Overview, while a required step is still open.
+  if (!setup) return null;
   return <GetStarted steps={state.session.onboarding.steps} />;
 }

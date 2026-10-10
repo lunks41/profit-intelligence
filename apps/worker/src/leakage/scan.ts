@@ -69,7 +69,7 @@ export async function scanLeakage(deps: Deps): Promise<{ shops: number; notified
           severity: f.severity,
           title: f.title,
           body: f.evidence,
-          link: '/profit',
+          link: f.action?.href ?? '/profit',
           dedupeKey: `leakage:${f.id}:${week}`,
         });
         if (created) notified++;

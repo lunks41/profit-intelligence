@@ -9,7 +9,7 @@ export default function Overview() {
     <s-page inlineSize="large" heading="Overview">
       <PageNotices />
       <PageBody>
-        <ConnectionStatus />
+        <ConnectionStatus setup />
         <UnreadBanner />
         <OverviewPage />
       </PageBody>

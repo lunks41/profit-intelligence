@@ -18,10 +18,44 @@ import type {
   ExclusionReason,
   LedgerEntry,
   OrderResult,
+  Shipment,
   Status,
 } from './types.js';
 
 const ZERO = new D(0);
+
+/** Grams of everything that ships. Null when any shippable line has no recorded weight. */
+function shipmentOf(order: EngineOrder, cfg: EngineConfig, lines: readonly EngineLine[]): Shipment {
+  let grams = 0;
+  let unknown = false;
+  for (const line of lines) {
+    if (!line.requiresShipping) continue;
+    const weight =
+      line.variantShopifyId == null ? undefined : cfg.variantWeights?.get(line.variantShopifyId);
+    if (weight == null) unknown = true;
+    else grams += weight * line.quantity;
+  }
+  return { country: order.shipCountry ?? null, weightGrams: unknown ? null : grams };
+}
+
+function shippingSource(rule: {
+  mode: string;
+  amount: string | null;
+  percent: string | null;
+  countries?: readonly string[];
+  weightMinGrams?: number | null;
+  weightMaxGrams?: number | null;
+}): string {
+  const where = rule.countries?.length ? rule.countries.join(', ') : '';
+  const band =
+    rule.weightMinGrams != null || rule.weightMaxGrams != null
+      ? `, ${rule.weightMinGrams ?? 0}g to ${rule.weightMaxGrams ?? 'no limit'}g`
+      : '';
+  const scope = where || band ? ` (${where || 'any country'}${band})` : '';
+  if (rule.mode === 'flat') return `shipping rule flat ${rule.amount}${scope}`;
+  if (rule.mode === 'per_kilogram') return `shipping rule ${rule.amount} per kg${scope}`;
+  return `shipping rule ${rule.percent}% of shipping charged${scope}`;
+}
 const COUNTED_STATUSES = new Set(['PAID', 'PARTIALLY_REFUNDED', 'REFUNDED']);
 const PAYMENT_KINDS = new Set(['SALE', 'CAPTURE']);
 const RESTOCK_TYPES = new Set(['RETURN', 'CANCEL', 'LEGACY_RESTOCK']);
@@ -253,17 +287,16 @@ export function calculateOrder(order: EngineOrder, cfg: EngineConfig): OrderResu
   if (!nonGift.some((l) => l.requiresShipping)) {
     push('shipping_cost', order.processedAt, ZERO, 'not_applicable', 'nothing to ship');
   } else {
-    const rule = pickShippingRule(cfg.shippingRules, orderDate);
+    const shipment = shipmentOf(order, cfg, nonGift);
+    const rule = pickShippingRule(cfg.shippingRules, orderDate, shipment);
     if (rule) {
-      const cost = estimateShippingCost(rule, order.shippingAmount, cur);
+      const cost = estimateShippingCost(rule, order.shippingAmount, cur, shipment.weightGrams);
       push(
         'shipping_cost',
         order.processedAt,
         cost.neg(),
         cost.isZero() ? 'actual' : 'estimated',
-        rule.mode === 'flat'
-          ? `shipping rule flat ${rule.amount}`
-          : `shipping rule ${rule.percent}% of shipping charged`,
+        shippingSource(rule),
       );
     } else {
       push('shipping_cost', order.processedAt, ZERO, 'missing', 'no shipping cost rule');
@@ -339,6 +372,7 @@ export function calculateOrder(order: EngineOrder, cfg: EngineConfig): OrderResu
   }
 
   if (order.cancelledAt && moneyRefunds === 0) flags.push('cancelled_without_refund');
+  if (order.refundLinesIncomplete) flags.push('refund_lines_incomplete');
 
   return { recognized: true, exclusionReason: null, flags, entries };
 }

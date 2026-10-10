@@ -33,6 +33,8 @@ export interface IssueInput {
   /** warn (not just inform) when more than this percent of sales has no product cost */
   missingCostThresholdPct: string;
   sync: { state: string; stale: boolean; error: string | null; lastSuccessAt: string | null };
+  /** orders in the period the merchant can still fix; omitted counts are treated as zero */
+  gaps?: { missingCountry: number; missingWeight: number; incompleteRefunds: number };
 }
 
 const RANK: Record<Issue['severity'], number> = { critical: 0, warning: 1, info: 2 };
@@ -55,6 +57,16 @@ export function buildIssues(i: IssueInput): Issue[] {
         (i.sync.error ?? 'No details were recorded.') +
         ' New orders and changes may be missing, so the figures can be out of date.',
       action: { label: 'Check sync status', href: '#sync' },
+    });
+  } else if (i.sync.state === 'partial') {
+    out.push({
+      id: 'sync_partial',
+      severity: 'warning',
+      title: 'The last import finished only partly',
+      detail:
+        (i.sync.error ?? 'Some records were not imported.') +
+        ' More than 25 refund line items on one order are not fully imported, so those refunds can be understated.',
+      action: { label: 'See the incomplete orders', href: '/orders?filter=incomplete_refunds' },
     });
   } else if (i.sync.stale && i.sync.state !== 'never') {
     out.push({
@@ -107,6 +119,48 @@ export function buildIssues(i: IssueInput): Issue[] {
       title: `Payment fees are missing on ${q.fees.missing} of ${orders(total(q.fees))}`,
       detail: 'Payment fees are a real cost on every order; leaving them out overstates profit.',
       action: { label: 'Set a payment fee rule', href: '/settings?tab=fees' },
+    });
+  }
+  if (q.fees && q.fees.estimated > 0) {
+    out.push({
+      id: 'estimated_fees',
+      severity: 'info',
+      title: `Payment fees are estimated on ${q.fees.estimated} of ${orders(total(q.fees))}`,
+      detail:
+        'These orders use your gateway fee rule. Shopify Payments fees replace the estimate when Shopify reports them.',
+      action: { label: 'See orders using an estimate', href: '/orders?filter=estimated_fees' },
+    });
+  }
+
+  const gaps = i.gaps ?? { missingCountry: 0, missingWeight: 0, incompleteRefunds: 0 };
+  if (gaps.incompleteRefunds > 0 && i.sync.state !== 'partial') {
+    out.push({
+      id: 'incomplete_refunds',
+      severity: 'warning',
+      title: `${gaps.incompleteRefunds} ${gaps.incompleteRefunds === 1 ? 'order has' : 'orders have'} refund lines that were only partly imported`,
+      detail:
+        'Shopify returned more than 25 refund line items. The refund total is still counted; the per-item refund is not complete.',
+      action: { label: 'See these orders', href: '/orders?filter=incomplete_refunds' },
+    });
+  }
+  if (gaps.missingCountry > 0) {
+    out.push({
+      id: 'missing_ship_country',
+      severity: 'info',
+      title: `${gaps.missingCountry} ${gaps.missingCountry === 1 ? 'order has' : 'orders have'} no destination country`,
+      detail:
+        'A country shipping rule cannot match them. A catch-all rule still can. Re-sync if Shopify should have sent the country.',
+      action: { label: 'See these orders', href: '/orders?filter=missing_country' },
+    });
+  }
+  if (gaps.missingWeight > 0) {
+    out.push({
+      id: 'missing_weight',
+      severity: 'info',
+      title: `${gaps.missingWeight} ${gaps.missingWeight === 1 ? 'order is' : 'orders are'} missing a product weight`,
+      detail:
+        'A per-kilogram or weight-band shipping rule cannot match a line whose weight Shopify did not send.',
+      action: { label: 'See these orders', href: '/orders?filter=missing_weight' },
     });
   }
 

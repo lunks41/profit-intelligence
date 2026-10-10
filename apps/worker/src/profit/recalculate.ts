@@ -67,6 +67,7 @@ export async function recalculateProfit(
         frozenCosts: frozen,
         feeRules: rules.feeRules,
         shippingRules: rules.shippingRules,
+        variantWeights: rules.variantWeights,
       };
 
       let recognized = 0;
