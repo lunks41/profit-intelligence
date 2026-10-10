@@ -808,6 +808,23 @@ export const auditResponseSchema = z.object({
 });
 export type AuditResponse = z.infer<typeof auditResponseSchema>;
 
+/** Read-only currency and time facts for Settings. Shopify owns the currency and time zone. */
+export const currencySettingsResponseSchema = z.object({
+  currency: z.string(),
+  timezone: z.string(),
+  /** minor-unit decimal places of `currency` (ISO 4217: 0, 2, or 3) */
+  decimals: z.number().int().min(0).max(3),
+  rounding: z.literal('half-up'),
+  rateSource: z.literal('ECB'),
+  /** newest stored ECB rate date, or null when none are stored */
+  latestRateDate: z.string().nullable(),
+  /** missing: no rates; estimated: latest rate is more than 7 days old; current: within 7 days */
+  rateStatus: z.enum(['missing', 'estimated', 'current']),
+  /** plain sentences of the conversion rule the profit engine already uses */
+  explanation: z.array(z.string()),
+});
+export type CurrencySettingsResponse = z.infer<typeof currencySettingsResponseSchema>;
+
 export type CostHistoryResponse = z.infer<typeof costHistoryResponseSchema>;
 
 // ---------------------------------------------------------------------------
