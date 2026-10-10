@@ -206,6 +206,12 @@ export interface OrderListQuery {
 
 export interface OrderListRow {
   orderShopifyId: string;
+  /** gross sales, discounts and product refunds of the order (positive), and gross less both */
+  grossSales: string;
+  discounts: string;
+  refunds: string;
+  netSales: string;
+  fulfillmentStatus: string | null;
   name: string;
   orderDate: string;
   financialStatus: string;
@@ -283,6 +289,13 @@ export async function listOrders(
                    on v.shop_id = o.shop_id and v.shopify_id = l.variant_shopify_id
                  where l.order_id = o.id and l.requires_shipping and v.weight_grams is null
                ) as missing_weight,
+               (select coalesce(sum(e.amount) filter (where e.component = 'gross_sales'), 0)
+                  from f_profit_entry e where e.order_id = o.id) as gross,
+               (select coalesce(-sum(e.amount) filter (where e.component = 'discounts'), 0)
+                  from f_profit_entry e where e.order_id = o.id) as disc,
+               (select coalesce(-sum(e.amount) filter (where e.component = 'product_refund'), 0)
+                  from f_profit_entry e where e.order_id = o.id) as refunded,
+               o.fulfillment_status,
                (select coalesce(sum(e.amount) filter (where e.component in ('gross_sales','discounts','product_refund','shipping_revenue','shipping_refund')), 0)
                   from f_profit_entry e where e.order_id = o.id) as revenue,
                (select coalesce(sum(e.amount) filter (where e.component in ('cogs','cogs_reversal')), 0)
@@ -321,6 +334,9 @@ export async function listOrders(
       await tx.execute(sql`${base}
         select id, name, order_date::text as order_date, financial_status, currency, recognized,
                exclusion_reason, partial, flags, revenue::numeric(19,4)::text as revenue,
+               gross::numeric(19,4)::text as gross, disc::numeric(19,4)::text as disc,
+               refunded::numeric(19,4)::text as refunded, (gross - disc - refunded)::numeric(19,4)::text as net,
+               fulfillment_status,
                cogs::numeric(19,4)::text as cogs, fees::numeric(19,4)::text as fees,
                ship::numeric(19,4)::text as ship, profit::numeric(19,4)::text as profit,
                margin::numeric(19,4)::text as margin,
@@ -332,6 +348,11 @@ export async function listOrders(
       total: Number(total[0]?.n ?? 0),
       rows: list.map((x) => ({
         orderShopifyId: String(x.id),
+        grossSales: String(x.gross),
+        discounts: String(x.disc),
+        refunds: String(x.refunded),
+        netSales: String(x.net),
+        fulfillmentStatus: x.fulfillment_status === null ? null : String(x.fulfillment_status),
         name: String(x.name),
         orderDate: String(x.order_date),
         financialStatus: String(x.financial_status),
@@ -452,4 +473,98 @@ export async function getProductTitles(
     );
     return new Map(list.map((x) => [String(x.id), String(x.title)]));
   });
+}
+
+export interface OrderExtras {
+  fulfillmentStatus: string | null;
+  shipCountry: string | null;
+  transactions: Array<{
+    kind: string;
+    status: string;
+    gateway: string | null;
+    amount: string;
+    currency: string;
+    /** the fee the payment provider reported, or null when none was (unknown, not zero) */
+    fee: string | null;
+    processedAt: string;
+  }>;
+}
+
+/** What the order screen shows beyond the ledger: fulfillment, destination country, payments and their fees. */
+export async function getOrderExtras(
+  db: Db,
+  scope: ShopScope,
+  orderShopifyId: string,
+): Promise<OrderExtras | null> {
+  return withTenant(db, scope.tenantId, async (tx) => {
+    const o = rows(
+      await tx.execute(sql`
+        select id, fulfillment_status, ship_country from t_order
+         where shop_id = ${scope.shopId} and shopify_id = ${orderShopifyId}::bigint`),
+    )[0];
+    if (!o) return null;
+    const t = rows(
+      await tx.execute(sql`
+        select kind, status, gateway, amount::text as amount, currency, fee_amount::text as fee,
+               processed_at::text as processed_at
+          from t_order_transaction where order_id = ${String(o.id)}::uuid
+         order by processed_at, shopify_id`),
+    );
+    return {
+      fulfillmentStatus: o.fulfillment_status === null ? null : String(o.fulfillment_status),
+      shipCountry: o.ship_country === null ? null : String(o.ship_country),
+      transactions: t.map((x) => ({
+        kind: String(x.kind),
+        status: String(x.status),
+        gateway: x.gateway === null ? null : String(x.gateway),
+        amount: String(x.amount),
+        currency: String(x.currency),
+        fee: x.fee === null ? null : String(x.fee),
+        processedAt: String(x.processed_at),
+      })),
+    };
+  });
+}
+
+export interface ProductCostHistoryRow {
+  variantTitle: string | null;
+  sku: string | null;
+  amount: string;
+  currency: string;
+  effectiveFrom: string;
+  source: string;
+  reason: string | null;
+  createdAt: string;
+  revoked: boolean;
+}
+
+/** Every cost the merchant entered for the variants of one product, newest first (removed ones included, marked). */
+export async function listProductCostHistory(
+  db: Db,
+  scope: ShopScope,
+  productShopifyId: string,
+): Promise<ProductCostHistoryRow[]> {
+  return withTenant(db, scope.tenantId, async (tx) =>
+    rows(
+      await tx.execute(sql`
+        select v.title as variant_title, v.sku, c.amount::text as amount, c.currency,
+               c.effective_from::text as effective_from, c.source, c.reason,
+               c.created_at::text as created_at, c.revoked_at is not null as revoked
+          from f_product_cost c
+          join t_product_variant v on v.shop_id = c.shop_id and v.shopify_id = c.variant_shopify_id
+         where c.shop_id = ${scope.shopId} and v.product_shopify_id = ${productShopifyId}::bigint
+         order by c.effective_from desc, c.created_at desc
+         limit 200`),
+    ).map((x) => ({
+      variantTitle: x.variant_title === null ? null : String(x.variant_title),
+      sku: x.sku === null ? null : String(x.sku),
+      amount: String(x.amount),
+      currency: String(x.currency),
+      effectiveFrom: String(x.effective_from),
+      source: String(x.source),
+      reason: x.reason === null ? null : String(x.reason),
+      createdAt: String(x.created_at),
+      revoked: Boolean(x.revoked),
+    })),
+  );
 }

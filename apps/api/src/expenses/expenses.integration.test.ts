@@ -665,7 +665,7 @@ describe('expense details: reference, description and other currencies', () => {
 
     const file = await json('GET', '/expenses/export');
     expect(file.res.statusCode).toBe(200);
-    const lines = (file.body.csv as string).replace(/^﻿/, '').split('\r\n');
+    const lines = (file.body.csv as string).slice(1).split('\r\n');
     expect(lines[0]).toContain('Reference');
     expect(lines[0]).toContain('Amount (USD)');
     expect(lines[1]).toContain('Photo shoot');

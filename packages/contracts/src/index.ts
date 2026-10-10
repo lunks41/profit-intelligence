@@ -341,6 +341,8 @@ export const productListQuerySchema = z.object({
   search: z.string().trim().max(100).optional(),
   /** only products whose cost is missing / estimated, or that lose money */
   filter: z.enum(['all', 'loss', 'missing_cost']).default('all'),
+  /** one row per product, or one per variant (the variants of a product add up to it) */
+  view: z.enum(['products', 'variants']).default('products'),
 });
 export type ProductListQuery = z.infer<typeof productListQuerySchema>;
 
@@ -349,6 +351,12 @@ export const costQualitySchema = z.enum(['actual', 'estimated', 'missing', 'none
 export const productRowSchema = z.object({
   /** product id, or "line:<title>" for custom items without a product */
   key: z.string(),
+  /** the product's key: the same as `key` on a product row, the owning product on a variant row */
+  productKey: z.string(),
+  /** variant rows only: the variant title */
+  variant: z.string().nullable(),
+  /** a variant's SKU, or up to three SKUs of a product row */
+  sku: z.string().nullable(),
   title: z.string(),
   units: z.number(),
   orders: z.number(),
@@ -399,6 +407,7 @@ export type ProductListResponse = z.infer<typeof productListResponseSchema>;
 
 export const productDetailQuerySchema = z.object({ ...periodQuery, ...listPaging });
 export const productLineSchema = z.object({
+  sku: z.string().nullable(),
   orderShopifyId: z.string(),
   orderName: z.string(),
   orderDate: z.string(),
@@ -415,6 +424,24 @@ export const productDetailResponseSchema = z.object({
   period: periodSchema,
   currency: z.string(),
   product: productRowSchema,
+  /** the same figures per variant; they add up to `product` */
+  variants: z.array(productRowSchema),
+  /** net sales and profit by order date over the period */
+  trend: z.array(z.object({ date: z.string(), netSales: money, profit: money, units: z.number() })),
+  /** every cost the merchant entered for this product's variants, newest first; removed ones are marked */
+  costHistory: z.array(
+    z.object({
+      variantTitle: z.string().nullable(),
+      sku: z.string().nullable(),
+      amount: money,
+      currency: z.string(),
+      effectiveFrom: z.string(),
+      source: z.string(),
+      reason: z.string().nullable(),
+      createdAt: z.string(),
+      revoked: z.boolean(),
+    }),
+  ),
   lines: z.array(productLineSchema),
   paging: pagingOut,
   rule: z.string(),
@@ -446,6 +473,12 @@ export type OrderListQuery = z.infer<typeof orderListQuerySchema>;
 
 export const orderRowSchema = z.object({
   orderShopifyId: z.string(),
+  /** gross sales, discounts and product refunds of the order, all positive, and gross less both */
+  grossSales: money,
+  discounts: money,
+  refunds: money,
+  netSales: money,
+  fulfillmentStatus: z.string().nullable(),
   name: z.string(),
   orderDate: z.string(),
   financialStatus: z.string(),
@@ -503,8 +536,28 @@ export const orderDetailResponseSchema = z.object({
     partial: z.boolean(),
     flags: z.array(z.string()),
     engineVersion: z.string(),
+    fulfillmentStatus: z.string().nullable(),
   }),
   currency: z.string(),
+  /** what was charged for shipping, what shipping cost, and how well that cost is known */
+  shipping: z.object({
+    country: z.string().nullable(),
+    charged: money,
+    cost: money,
+    costStatus: z.enum(['confirmed', 'estimated', 'missing', 'not_applicable']),
+  }),
+  /** the payments on the order and the fee the payment provider reported for each (null: none reported) */
+  transactions: z.array(
+    z.object({
+      kind: z.string(),
+      status: z.string(),
+      gateway: z.string().nullable(),
+      amount: money,
+      currency: z.string(),
+      fee: money.nullable(),
+      processedAt: z.string(),
+    }),
+  ),
   summary: z.object({
     revenue: money,
     cogs: money,

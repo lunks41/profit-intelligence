@@ -6,6 +6,11 @@ import type { CostStatus, Dec } from '@pi/profit-engine';
 export interface ProductRowData {
   /** product id, or "line:<title>" for custom items without a product */
   key: string;
+  /** the product's key; the same as `key` on a product row, the owning product on a variant row */
+  productKey: string;
+  /** variant rows only: the variant title and SKU. On a product row, `sku` lists up to three SKUs. */
+  variant: string | null;
+  sku: string | null;
   title: string;
   units: number;
   orders: number;
@@ -21,6 +26,7 @@ export interface ProductRowData {
 }
 
 export interface ProductLineRecord {
+  sku: string | null;
   orderShopifyId: string;
   orderName: string;
   orderDate: string;
@@ -44,6 +50,9 @@ export interface Unallocated {
 
 interface Acc {
   key: string;
+  productKey: string;
+  variant: string | null;
+  skus: Set<string>;
   title: string;
   units: number;
   orders: Set<string>;
@@ -63,6 +72,7 @@ const productKey = (productId: string | null, title: string) =>
 
 interface Computed {
   acc: Map<string, Acc>;
+  accV: Map<string, Acc>;
   lines: Map<string, ProductLineRecord[]>;
   unallocated: Unallocated;
   productIds: Set<string>;
@@ -92,6 +102,7 @@ async function compute(
 ): Promise<Computed> {
   const bundles = await loadPeriodBundles(db, scope, range);
   const acc = new Map<string, Acc>();
+  const accV = new Map<string, Acc>();
   const lines = new Map<string, ProductLineRecord[]>();
   const unallocated: Unallocated = {
     shippingRevenue: new D(0),
@@ -118,39 +129,50 @@ async function compute(
       const src = b.lines[i] as OrderBundle['lines'][number];
       const key = productKey(l.productId, src.title);
       if (l.productId) productIds.add(l.productId);
-      let p = acc.get(key);
-      if (!p) {
-        p = {
-          key,
-          title: src.title,
-          units: 0,
-          orders: new Set(),
-          gross: new D(0),
-          discounts: new D(0),
-          refunds: new D(0),
-          cogs: new D(0),
-          quality: 'none',
-          missingLines: 0,
-          lastDate: '',
-        };
-        acc.set(key, p);
-      }
-      if (b.orderDate >= p.lastDate) {
-        p.lastDate = b.orderDate;
-        p.title = src.title;
-      }
+      const newAcc = (k: string, variant: string | null): Acc => ({
+        key: k,
+        productKey: key,
+        variant,
+        skus: new Set(),
+        title: src.title,
+        units: 0,
+        orders: new Set(),
+        gross: new D(0),
+        discounts: new D(0),
+        refunds: new D(0),
+        cogs: new D(0),
+        quality: 'none',
+        missingLines: 0,
+        lastDate: '',
+      });
       const soldInPeriod = b.entries.some(
         (e) => e.component === 'gross_sales' || e.component === 'cogs',
       );
-      if (soldInPeriod) p.units += l.quantity;
-      p.orders.add(b.orderShopifyId);
-      p.gross = p.gross.plus(dec(l.grossSales));
-      p.discounts = p.discounts.plus(dec(l.discounts));
-      p.refunds = p.refunds.plus(dec(l.productRefunds));
-      p.cogs = p.cogs.plus(dec(l.cogs));
-      p.quality = worse(p.quality, l.costStatus);
-      if (l.costStatus === 'missing') p.missingLines++;
+      // the same figures are added to the product and to its variant, so variants add up to the product
+      const add = (p: Acc) => {
+        if (b.orderDate >= p.lastDate) {
+          p.lastDate = b.orderDate;
+          p.title = src.title;
+        }
+        if (src.sku) p.skus.add(src.sku);
+        if (soldInPeriod) p.units += l.quantity;
+        p.orders.add(b.orderShopifyId);
+        p.gross = p.gross.plus(dec(l.grossSales));
+        p.discounts = p.discounts.plus(dec(l.discounts));
+        p.refunds = p.refunds.plus(dec(l.productRefunds));
+        p.cogs = p.cogs.plus(dec(l.cogs));
+        p.quality = worse(p.quality, l.costStatus);
+        if (l.costStatus === 'missing') p.missingLines++;
+      };
+      let p = acc.get(key);
+      if (!p) acc.set(key, (p = newAcc(key, null)));
+      add(p);
+      const vkey = `${key}|${src.sku ?? ''}|${src.variantTitle ?? ''}`;
+      let v = accV.get(vkey);
+      if (!v) accV.set(vkey, (v = newAcc(vkey, src.variantTitle ?? 'Default')));
+      add(v);
       const rec: ProductLineRecord = {
+        sku: src.sku,
         orderShopifyId: b.orderShopifyId,
         orderName: b.name,
         orderDate: b.orderDate,
@@ -167,7 +189,7 @@ async function compute(
     });
   }
 
-  return { acc, lines, unallocated, productIds, orders: bundles.length };
+  return { acc, accV, lines, unallocated, productIds, orders: bundles.length };
 }
 
 /**
@@ -181,6 +203,8 @@ export async function productRows(
   range: { from: string; to: string },
 ): Promise<{
   rows: ProductRowData[];
+  /** the same figures per variant; the variants of a product add up to its row */
+  variantRows: ProductRowData[];
   lines: Map<string, ProductLineRecord[]>;
   unallocated: Unallocated;
 }> {
@@ -195,14 +219,23 @@ export async function productRows(
       while (kept.size > KEEP_AT_MOST) kept.delete(kept.keys().next().value as string);
     }
   }
-  const { acc, lines, unallocated, productIds } = value;
+  const { acc, accV, lines, unallocated, productIds } = value;
   const titles = await getProductTitles(db, scope, [...productIds]);
-  const rows: ProductRowData[] = [...acc.values()].map((p) => {
+  const finish = (p: Acc): ProductRowData => {
     const net = p.gross.plus(p.discounts).plus(p.refunds);
     const profit = net.plus(p.cogs);
+    const skus = [...p.skus].sort();
     return {
       key: p.key,
-      title: titles.get(p.key) ?? p.title,
+      productKey: p.productKey,
+      variant: p.variant,
+      sku:
+        skus.length === 0
+          ? null
+          : p.variant !== null || skus.length <= 3
+            ? skus.slice(0, 3).join(', ')
+            : `${skus.slice(0, 3).join(', ')} +${skus.length - 3}`,
+      title: titles.get(p.productKey) ?? p.title,
       units: p.units,
       orders: p.orders.size,
       grossSales: toStored(p.gross),
@@ -215,6 +248,11 @@ export async function productRows(
       costQuality: p.quality,
       missingCostLines: p.missingLines,
     };
-  });
-  return { rows, lines, unallocated };
+  };
+  return {
+    rows: [...acc.values()].map(finish),
+    variantRows: [...accV.values()].map(finish),
+    lines,
+    unallocated,
+  };
 }

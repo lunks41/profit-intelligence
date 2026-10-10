@@ -11,10 +11,12 @@ import type {
 } from '@pi/contracts';
 import {
   getAdSpend,
+  getOrderExtras,
   getOrderHeader,
   getProfitAggregate,
   getShopOverview,
   listOrders,
+  listProductCostHistory,
   loadOrderBundle,
 } from '@pi/db';
 import type { Db } from '@pi/db';
@@ -27,6 +29,7 @@ import {
   totalAdSpend,
   toStored,
 } from '@pi/profit-engine';
+import type { Dec } from '@pi/profit-engine';
 import { productRows } from '@pi/reports';
 import { EntitlementsService } from '../billing/entitlements.service.js';
 import { DB } from '../tokens.js';
@@ -90,10 +93,17 @@ export class ProfitabilityService {
 
   async products(scope: Scope, q: ProductListQuery): Promise<ProductListResponse> {
     const { shop, range, period } = await this.context(scope, q);
-    const { rows, unallocated } = await this.productsOf(scope, range);
+    const { rows: productList, variantRows, unallocated } = await this.productsOf(scope, range);
+    const rows = q.view === 'variants' ? variantRows : productList;
 
     const needle = q.search?.toLowerCase();
-    let list = rows.filter((r) => !needle || r.title.toLowerCase().includes(needle));
+    let list = rows.filter(
+      (r) =>
+        !needle ||
+        r.title.toLowerCase().includes(needle) ||
+        (r.sku ?? '').toLowerCase().includes(needle) ||
+        (r.variant ?? '').toLowerCase().includes(needle),
+    );
     if (q.filter === 'loss') list = list.filter((r) => dec(r.profit).lt(0));
     if (q.filter === 'missing_cost') list = list.filter((r) => r.missingCostLines > 0);
 
@@ -120,7 +130,7 @@ export class ProfitabilityService {
       return (x < y ? -1 : x > y ? 1 : 0) * sign || a.title.localeCompare(b.title);
     });
 
-    const productProfit = rows.reduce((a, r) => a.plus(dec(r.profit)), new D(0));
+    const productProfit = productList.reduce((a, r) => a.plus(dec(r.profit)), new D(0));
     const unallocatedTotal = Object.values(unallocated).reduce((a, v) => a.plus(v), new D(0));
     const [agg, ads] = await Promise.all([
       getProfitAggregate(this.db, scope, range),
@@ -177,7 +187,7 @@ export class ProfitabilityService {
     q: { preset: string; from?: string; to?: string; page: number; pageSize: number },
   ): Promise<ProductDetailResponse> {
     const { shop, range, period } = await this.context(scope, q);
-    const { rows, lines } = await this.productsOf(scope, range);
+    const { rows, variantRows, lines } = await this.productsOf(scope, range);
     const product = rows.find((r) => r.key === key);
     if (!product)
       throw new NotFoundException({
@@ -188,10 +198,33 @@ export class ProfitabilityService {
       (a, b) => b.orderDate.localeCompare(a.orderDate) || b.orderName.localeCompare(a.orderName),
     );
     const start = (q.page - 1) * q.pageSize;
+    // net sales and profit by order date, so the shape of the period is visible
+    const byDay = new Map<string, { net: Dec; profit: Dec; units: number }>();
+    for (const l of lines.get(key) ?? []) {
+      const d = byDay.get(l.orderDate) ?? { net: new D(0), profit: new D(0), units: 0 };
+      d.net = d.net.plus(dec(l.grossSales)).plus(dec(l.discounts)).plus(dec(l.refunds));
+      d.profit = d.profit.plus(dec(l.profit));
+      d.units += l.quantity;
+      byDay.set(l.orderDate, d);
+    }
+    const trend = [...byDay.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, d]) => ({
+        date,
+        netSales: toStored(d.net),
+        profit: toStored(d.profit),
+        units: d.units,
+      }));
+    const costHistory = /^\d+$/.test(product.productKey)
+      ? await listProductCostHistory(this.db, scope, product.productKey)
+      : [];
     return {
       period,
       currency: shop.currency,
       product,
+      variants: variantRows.filter((r) => r.productKey === key),
+      trend,
+      costHistory,
       lines: all.slice(start, start + q.pageSize).map((l) => ({ ...l, refunds: l.refunds })),
       paging: {
         page: q.page,
@@ -218,6 +251,11 @@ export class ProfitabilityService {
       currency: shop.currency,
       rows: rows.map((r) => ({
         orderShopifyId: r.orderShopifyId,
+        grossSales: r.grossSales,
+        discounts: r.discounts,
+        refunds: r.refunds,
+        netSales: r.netSales,
+        fulfillmentStatus: r.fulfillmentStatus,
         name: r.name,
         orderDate: r.orderDate,
         financialStatus: r.financialStatus,
@@ -243,6 +281,7 @@ export class ProfitabilityService {
     const found = await getOrderHeader(this.db, scope, orderShopifyId);
     if (!found) throw new NotFoundException({ code: 'not_found', message: 'Order not found' });
     const { header, entries } = found;
+    const extras = await getOrderExtras(this.db, scope, orderShopifyId);
     const bundle = header.recognized ? await loadOrderBundle(this.db, scope, orderShopifyId) : null;
 
     const titleOf = new Map(bundle?.lines.map((l) => [l.lineItemId, l.title]) ?? []);
@@ -280,8 +319,16 @@ export class ProfitabilityService {
         partial: header.partial,
         flags: header.flags,
         engineVersion: header.engineVersion,
+        fulfillmentStatus: extras?.fulfillmentStatus ?? null,
       },
       currency: shop.currency,
+      shipping: {
+        country: extras?.shipCountry ?? null,
+        charged: toStored(sum(['shipping_revenue'])),
+        cost: toStored(sum(['shipping_cost']).neg()),
+        costStatus: weakest(entries.filter((e) => e.component === 'shipping_cost')),
+      },
+      transactions: extras?.transactions ?? [],
       summary: {
         revenue: toStored(revenue),
         cogs: toStored(sum(['cogs', 'cogs_reversal'])),
@@ -309,6 +356,7 @@ export class ProfitabilityService {
         allocation && bundle
           ? allocation.lines.map((l, i) => ({
               title: bundle.lines[i]?.title ?? '',
+              sku: bundle.lines[i]?.sku ?? null,
               variant: bundle.lines[i]?.variantTitle ?? null,
               quantity: l.quantity,
               grossSales: l.grossSales,
@@ -329,4 +377,15 @@ export class ProfitabilityService {
       rule: ALLOCATION_RULE,
     };
   }
+}
+
+/** The weakest data status among entries: missing, then estimated, then confirmed, or not applicable. */
+function weakest(
+  entries: Array<{ status: string }>,
+): 'confirmed' | 'estimated' | 'missing' | 'not_applicable' {
+  const s = entries.map((e) => e.status);
+  if (s.includes('missing')) return 'missing';
+  if (s.includes('estimated')) return 'estimated';
+  if (s.includes('actual')) return 'confirmed';
+  return 'not_applicable';
 }

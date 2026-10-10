@@ -10,6 +10,7 @@ import { FilterBar, type Filters } from '../overview/OverviewView';
 import { ErrorBanner, Loading, QualityBadge, RuleNote, SortControls, useApi } from './shared';
 import { LabelValueRow } from '../common';
 import { readParam } from '../../lib/url-params';
+import { fulfillmentStatus, paymentStatus } from '../../lib/order-status';
 
 type Sort = 'date' | 'name' | 'revenue' | 'cogs' | 'profit' | 'margin';
 const SORTS: Array<{ value: Sort; label: string }> = [
@@ -144,7 +145,13 @@ export function OrdersPage() {
                   <s-table-header-row>
                     <s-table-header listSlot="primary">Order</s-table-header>
                     <s-table-header>Date</s-table-header>
-                    <s-table-header>Status</s-table-header>
+                    <s-table-header>Profit status</s-table-header>
+                    <s-table-header>Payment</s-table-header>
+                    <s-table-header>Fulfillment</s-table-header>
+                    <s-table-header format="numeric">Gross sales</s-table-header>
+                    <s-table-header format="numeric">Discounts</s-table-header>
+                    <s-table-header format="numeric">Refunds</s-table-header>
+                    <s-table-header format="numeric">Net sales</s-table-header>
                     <s-table-header format="numeric">Revenue</s-table-header>
                     <s-table-header format="numeric">Product cost</s-table-header>
                     <s-table-header>Payment fees</s-table-header>
@@ -169,6 +176,28 @@ export function OrdersPage() {
                           ) : (
                             <s-badge tone="neutral">Not counted</s-badge>
                           )}
+                        </s-table-cell>
+                        <s-table-cell>
+                          <s-badge tone={paymentStatus(r.financialStatus).tone}>
+                            {paymentStatus(r.financialStatus).label}
+                          </s-badge>
+                        </s-table-cell>
+                        <s-table-cell>
+                          <s-badge tone={fulfillmentStatus(r.fulfillmentStatus).tone}>
+                            {fulfillmentStatus(r.fulfillmentStatus).label}
+                          </s-badge>
+                        </s-table-cell>
+                        <s-table-cell>
+                          {r.recognized ? formatMoney(r.grossSales, data.currency) : '—'}
+                        </s-table-cell>
+                        <s-table-cell>
+                          {r.recognized ? formatMoney(r.discounts, data.currency) : '—'}
+                        </s-table-cell>
+                        <s-table-cell>
+                          {r.recognized ? formatMoney(r.refunds, data.currency) : '—'}
+                        </s-table-cell>
+                        <s-table-cell>
+                          {r.recognized ? formatMoney(r.netSales, data.currency) : '—'}
                         </s-table-cell>
                         <s-table-cell>
                           {r.recognized ? formatMoney(r.revenue, data.currency) : '—'}
@@ -337,6 +366,78 @@ function OrderBody({ d }: { d: OrderDetailResponse }) {
         </s-stack>
       </s-section>
 
+      {d.order.recognized && (
+        <s-section heading="Shipping">
+          <s-stack gap="small-300">
+            <LabelValueRow
+              label="Destination country"
+              value={d.shipping.country ?? 'Not recorded'}
+            />
+            <LabelValueRow
+              label="Shipping charged to the customer"
+              value={formatMoney(d.shipping.charged, cur)}
+            />
+            <LabelValueRow
+              label="Shipping cost to you"
+              value={
+                d.shipping.costStatus === 'missing' ? 'Missing' : formatMoney(d.shipping.cost, cur)
+              }
+            />
+            <s-text color="subdued">
+              {d.shipping.costStatus === 'missing'
+                ? 'No shipping cost rule applies to this order, so what you paid to ship it is unknown. Shipping charged is not your cost.'
+                : d.shipping.costStatus === 'estimated'
+                  ? 'Estimated from your shipping rule. Shopify does not report what you pay carriers.'
+                  : d.shipping.costStatus === 'confirmed'
+                    ? 'Confirmed.'
+                    : 'Nothing to ship on this order.'}
+            </s-text>
+          </s-stack>
+        </s-section>
+      )}
+
+      {d.transactions.length > 0 && (
+        <s-section heading="Payments and fees">
+          <s-stack gap="base">
+            <s-table>
+              <s-table-header-row>
+                <s-table-header listSlot="primary">Payment</s-table-header>
+                <s-table-header>Gateway</s-table-header>
+                <s-table-header>Status</s-table-header>
+                <s-table-header format="numeric">Amount</s-table-header>
+                <s-table-header format="numeric">Fee reported</s-table-header>
+              </s-table-header-row>
+              <s-table-body>
+                {d.transactions.map((t, i) => (
+                  <s-table-row key={`${t.kind}-${i}`}>
+                    <s-table-cell>
+                      {t.kind.charAt(0) + t.kind.slice(1).toLowerCase()} ·{' '}
+                      {longDate(t.processedAt.slice(0, 10))}
+                    </s-table-cell>
+                    <s-table-cell>{t.gateway ?? '—'}</s-table-cell>
+                    <s-table-cell>
+                      {t.status.charAt(0) + t.status.slice(1).toLowerCase()}
+                    </s-table-cell>
+                    <s-table-cell>{formatMoney(t.amount, t.currency)}</s-table-cell>
+                    <s-table-cell>
+                      {t.fee === null ? (
+                        <s-text color="subdued">Not reported</s-text>
+                      ) : (
+                        formatMoney(t.fee, t.currency)
+                      )}
+                    </s-table-cell>
+                  </s-table-row>
+                ))}
+              </s-table-body>
+            </s-table>
+            <s-text color="subdued">
+              A fee Shopify reported is used as it is. Where none is reported the fee comes from
+              your payment fee rule and is marked as an estimate above.
+            </s-text>
+          </s-stack>
+        </s-section>
+      )}
+
       {d.entries.length > 0 && (
         <s-section heading="Every figure, and how it was worked out">
           <s-table>
@@ -373,7 +474,10 @@ function OrderBody({ d }: { d: OrderDetailResponse }) {
             <s-table>
               <s-table-header-row>
                 <s-table-header listSlot="primary">Product</s-table-header>
+                <s-table-header>SKU</s-table-header>
                 <s-table-header format="numeric">Qty</s-table-header>
+                <s-table-header format="numeric">Unit price</s-table-header>
+                <s-table-header format="numeric">Unit cost</s-table-header>
                 <s-table-header format="numeric">Sales</s-table-header>
                 <s-table-header format="numeric">Discounts</s-table-header>
                 <s-table-header format="numeric">Refunds</s-table-header>
@@ -388,7 +492,20 @@ function OrderBody({ d }: { d: OrderDetailResponse }) {
                       {p.title}
                       {p.variant ? ` (${p.variant})` : ''}
                     </s-table-cell>
+                    <s-table-cell>{p.sku ?? '—'}</s-table-cell>
                     <s-table-cell>{p.quantity}</s-table-cell>
+                    <s-table-cell>
+                      {p.quantity > 0
+                        ? formatMoney((Number(p.grossSales) / p.quantity).toFixed(2), cur)
+                        : '—'}
+                    </s-table-cell>
+                    <s-table-cell>
+                      {p.costStatus === 'missing'
+                        ? 'Missing'
+                        : p.quantity > 0
+                          ? formatMoney((Math.abs(Number(p.cogs)) / p.quantity).toFixed(2), cur)
+                          : '—'}
+                    </s-table-cell>
                     <s-table-cell>{formatMoney(p.grossSales, cur)}</s-table-cell>
                     <s-table-cell>{formatMoney(p.discounts, cur)}</s-table-cell>
                     <s-table-cell>{formatMoney(p.refunds, cur)}</s-table-cell>

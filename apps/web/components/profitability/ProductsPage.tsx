@@ -33,6 +33,7 @@ export function ProductsPage() {
   const [sort, setSort] = useState<Sort>('profit');
   const [dir, setDir] = useState<'asc' | 'desc'>('desc');
   const [filter, setFilter] = useState('all');
+  const [view, setView] = useState<'products' | 'variants'>('products');
   useEffect(() => {
     const f = readParam('filter', ['all', 'missing_cost', 'loss'] as const);
     if (f) setFilter(f);
@@ -51,7 +52,7 @@ export function ProductsPage() {
     return () => clearTimeout(t);
   }, [search]);
 
-  const path = `/profitability/products?${buildListQuery(filters, { sort, dir, filter, search: applied, page })}`;
+  const path = `/profitability/products?${buildListQuery(filters, { sort, dir, filter, search: applied, page, view })}`;
   const { data, error, loading, reload } = useApi<ProductListResponse>(selected ? null : path);
 
   if (selected) {
@@ -72,10 +73,23 @@ export function ProductsPage() {
         }}
       >
         <FilterSearch
-          label="Search by name"
-          placeholder="Product name"
+          label="Search"
+          placeholder="Product name or SKU"
           value={search}
           onChange={setSearch}
+        />
+        <ShowDropdown
+          chip
+          label="View"
+          value={view}
+          options={[
+            { value: 'products', label: 'By product' },
+            { value: 'variants', label: 'By variant and SKU' },
+          ]}
+          onChange={(v) => {
+            setView(v as 'products' | 'variants');
+            setPage(1);
+          }}
         />
         <ShowDropdown
           chip
@@ -167,6 +181,8 @@ function ProductsTable({
             >
               <s-table-header-row>
                 <s-table-header listSlot="primary">Product</s-table-header>
+                <s-table-header>Variant</s-table-header>
+                <s-table-header>SKU</s-table-header>
                 <s-table-header format="numeric">Units</s-table-header>
                 <s-table-header format="numeric">Net sales</s-table-header>
                 <s-table-header format="numeric">Product cost</s-table-header>
@@ -179,6 +195,8 @@ function ProductsTable({
                 {data.rows.map((r) => (
                   <s-table-row key={r.key}>
                     <s-table-cell>{r.title}</s-table-cell>
+                    <s-table-cell>{r.variant ?? 'All variants'}</s-table-cell>
+                    <s-table-cell>{r.sku ?? '—'}</s-table-cell>
                     <s-table-cell>{r.units}</s-table-cell>
                     <s-table-cell>{formatMoney(r.netSales, cur)}</s-table-cell>
                     <s-table-cell>{formatMoney(r.cogs, cur)}</s-table-cell>
@@ -191,7 +209,7 @@ function ProductsTable({
                       <s-button
                         variant="tertiary"
                         accessibilityLabel={`Show orders for ${r.title}`}
-                        onClick={() => onOpen(r.key)}
+                        onClick={() => onOpen(r.productKey)}
                       >
                         Orders
                       </s-button>
@@ -276,6 +294,107 @@ function ProductDetail({
               <QualityBadge quality={data.product.costQuality} />
             </s-stack>
           </s-section>
+          {data.variants.length > 1 && (
+            <s-section padding="none" heading="By variant">
+              <s-table>
+                <s-table-header-row>
+                  <s-table-header listSlot="primary">Variant</s-table-header>
+                  <s-table-header>SKU</s-table-header>
+                  <s-table-header format="numeric">Units</s-table-header>
+                  <s-table-header format="numeric">Net sales</s-table-header>
+                  <s-table-header format="numeric">Cost</s-table-header>
+                  <s-table-header format="numeric">Profit</s-table-header>
+                  <s-table-header>Cost data</s-table-header>
+                </s-table-header-row>
+                <s-table-body>
+                  {data.variants.map((v) => (
+                    <s-table-row key={v.key}>
+                      <s-table-cell>{v.variant ?? 'Default'}</s-table-cell>
+                      <s-table-cell>{v.sku ?? '—'}</s-table-cell>
+                      <s-table-cell>{v.units}</s-table-cell>
+                      <s-table-cell>{formatMoney(v.netSales, data.currency)}</s-table-cell>
+                      <s-table-cell>{formatMoney(v.cogs, data.currency)}</s-table-cell>
+                      <s-table-cell>{formatMoney(v.profit, data.currency)}</s-table-cell>
+                      <s-table-cell>
+                        <QualityBadge quality={v.costQuality} />
+                      </s-table-cell>
+                    </s-table-row>
+                  ))}
+                </s-table-body>
+              </s-table>
+            </s-section>
+          )}
+          {data.trend.length > 1 && (
+            <s-section heading="Net sales and profit by day">
+              <s-table>
+                <s-table-header-row>
+                  <s-table-header listSlot="primary">Day</s-table-header>
+                  <s-table-header format="numeric">Units</s-table-header>
+                  <s-table-header format="numeric">Net sales</s-table-header>
+                  <s-table-header format="numeric">Profit</s-table-header>
+                </s-table-header-row>
+                <s-table-body>
+                  {data.trend.map((t) => (
+                    <s-table-row key={t.date}>
+                      <s-table-cell>{longDate(t.date)}</s-table-cell>
+                      <s-table-cell>{t.units}</s-table-cell>
+                      <s-table-cell>{formatMoney(t.netSales, data.currency)}</s-table-cell>
+                      <s-table-cell>{formatMoney(t.profit, data.currency)}</s-table-cell>
+                    </s-table-row>
+                  ))}
+                </s-table-body>
+              </s-table>
+              <s-text color="subdued">
+                By order date. Refunds are counted on the day they were processed.
+              </s-text>
+            </s-section>
+          )}
+          <s-section heading="Cost history">
+            {data.product.missingCostLines > 0 && (
+              <s-banner tone="warning" heading="Some sales have no cost">
+                <s-paragraph>
+                  {data.product.missingCostLines} sold lines of this product have no cost, so its
+                  profit is overstated.{' '}
+                  <s-link href="/settings?tab=costs&filter=missing">Add the cost</s-link>.
+                </s-paragraph>
+              </s-banner>
+            )}
+            {data.costHistory.length === 0 ? (
+              <s-text color="subdued">
+                You have not entered a cost for this product. Orders use Shopify&apos;s current cost
+                where it has one (marked as an estimate), otherwise the cost is missing.
+              </s-text>
+            ) : (
+              <s-table>
+                <s-table-header-row>
+                  <s-table-header listSlot="primary">Applies from</s-table-header>
+                  <s-table-header>Variant</s-table-header>
+                  <s-table-header>SKU</s-table-header>
+                  <s-table-header format="numeric">Cost</s-table-header>
+                  <s-table-header>Source</s-table-header>
+                  <s-table-header>Note</s-table-header>
+                </s-table-header-row>
+                <s-table-body>
+                  {data.costHistory.map((c, i) => (
+                    <s-table-row key={`${c.effectiveFrom}-${i}`}>
+                      <s-table-cell>
+                        {longDate(c.effectiveFrom)}
+                        {c.revoked ? ' (removed)' : ''}
+                      </s-table-cell>
+                      <s-table-cell>{c.variantTitle ?? '—'}</s-table-cell>
+                      <s-table-cell>{c.sku ?? '—'}</s-table-cell>
+                      <s-table-cell>{formatMoney(c.amount, c.currency)}</s-table-cell>
+                      <s-table-cell>{c.source === 'import' ? 'Imported' : 'Entered'}</s-table-cell>
+                      <s-table-cell>{c.reason ?? '—'}</s-table-cell>
+                    </s-table-row>
+                  ))}
+                </s-table-body>
+              </s-table>
+            )}
+            <s-text color="subdued">
+              A new cost applies to orders from its date. Earlier orders keep the cost they used.
+            </s-text>
+          </s-section>
           <s-section heading="Orders that make up these figures">
             <s-stack gap="base">
               <s-table
@@ -288,6 +407,8 @@ function ProductDetail({
                 <s-table-header-row>
                   <s-table-header listSlot="primary">Order</s-table-header>
                   <s-table-header>Date</s-table-header>
+                  <s-table-header>Variant</s-table-header>
+                  <s-table-header>SKU</s-table-header>
                   <s-table-header format="numeric">Qty</s-table-header>
                   <s-table-header format="numeric">Sales</s-table-header>
                   <s-table-header format="numeric">Discounts</s-table-header>
@@ -301,6 +422,8 @@ function ProductDetail({
                     <s-table-row key={`${l.orderShopifyId}-${i}`}>
                       <s-table-cell>{l.orderName}</s-table-cell>
                       <s-table-cell>{longDate(l.orderDate)}</s-table-cell>
+                      <s-table-cell>{l.variant ?? '—'}</s-table-cell>
+                      <s-table-cell>{l.sku ?? '—'}</s-table-cell>
                       <s-table-cell>{l.quantity}</s-table-cell>
                       <s-table-cell>{formatMoney(l.grossSales, data.currency)}</s-table-cell>
                       <s-table-cell>{formatMoney(l.discounts, data.currency)}</s-table-cell>

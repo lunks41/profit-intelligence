@@ -532,6 +532,57 @@ describe('order profitability', () => {
   });
 });
 
+describe('orders and products completeness', () => {
+  it('order list columns reconcile: gross less discounts less refunds is net sales', async () => {
+    await calculateAll(a);
+    const { rows } = await allPages(`/orders?${PERIOD}&filter=all`, parseOrders);
+    const rec = rows.filter((r) => r.recognized);
+    expect(rec.length).toBeGreaterThan(0);
+    for (const r of rec) {
+      expect(cents(r.netSales)).toBe(cents(r.grossSales) - cents(r.discounts) - cents(r.refunds));
+      expect(cents(r.grossSales)).toBeGreaterThanOrEqual(0);
+      expect(cents(r.discounts)).toBeGreaterThanOrEqual(0);
+    }
+    const dash = overviewResponseSchema.parse((await overview(ALL)).body);
+    const gross = rec.reduce((s, r) => s + cents(r.grossSales), 0);
+    expect(gross).toBe(cents(dash.summary.grossSales));
+  });
+
+  it('an order detail shows shipping, payments and SKUs', async () => {
+    await calculateAll(a);
+    const { rows } = await allPages(`/orders?${PERIOD}&filter=all`, parseOrders);
+    const row = rows.find((r) => r.recognized)!;
+    const d = orderDetailResponseSchema.parse((await api(`/orders/${row.orderShopifyId}`)).body);
+    expect(['confirmed', 'estimated', 'missing', 'not_applicable']).toContain(
+      d.shipping.costStatus,
+    );
+    expect(Array.isArray(d.transactions)).toBe(true);
+    expect(
+      d.order.fulfillmentStatus === null || typeof d.order.fulfillmentStatus === 'string',
+    ).toBe(true);
+    for (const p of d.products) expect(p.sku === null || typeof p.sku === 'string').toBe(true);
+  });
+
+  it('variant rows add up to their product row, and the detail lists them with a trend', async () => {
+    await calculateAll(a);
+    const byProduct = await allPages(`/products?${PERIOD}`, parseProducts);
+    const byVariant = await allPages(`/products?${PERIOD}&view=variants`, parseProducts);
+    expect(byVariant.rows.length).toBeGreaterThanOrEqual(byProduct.rows.length);
+    for (const p of byProduct.rows) {
+      const vs = byVariant.rows.filter((v) => v.productKey === p.key);
+      expect(vs.reduce((s, v) => s + cents(v.profit), 0)).toBe(cents(p.profit));
+      expect(vs.reduce((s, v) => s + cents(v.netSales), 0)).toBe(cents(p.netSales));
+    }
+    const row = byProduct.rows.find((r) => /^\d+$/.test(r.key)) ?? byProduct.rows[0]!;
+    const d = productDetailResponseSchema.parse(
+      (await api(`/products/detail?key=${encodeURIComponent(row.key)}&${PERIOD}`)).body,
+    );
+    expect(d.variants.reduce((s, v) => s + cents(v.profit), 0)).toBe(cents(row.profit));
+    expect(d.trend.reduce((s, t) => s + cents(t.profit), 0)).toBe(cents(row.profit));
+    expect(Array.isArray(d.costHistory)).toBe(true);
+  });
+});
+
 describe('tenant isolation', () => {
   it('another shop sees nothing and cannot open this shop order or product', async () => {
     await calculateAll(a);
