@@ -123,6 +123,11 @@ export class SettingsController {
     return this.service.rules(t);
   }
 
+  @Get('currency')
+  currency(@Tenant() t: TenantContext) {
+    return this.service.currency(t);
+  }
+
   @Post('fee-rules')
   addFee(@Tenant() t: TenantContext, @Body() body: unknown) {
     return this.service.addFeeRule(t, parse(feeRuleBodySchema, body));
