@@ -971,7 +971,7 @@ export const oReportExport = pgTable(
     unique('uq_o_report_export_tenant_id_id').on(t.tenantId, t.id),
     check(
       'ck_o_report_export_kind',
-      sql`${t.kind} in ('profit_loss', 'products', 'orders', 'marketing', 'expenses')`,
+      sql`${t.kind} in ('profit_loss', 'products', 'orders', 'marketing', 'expenses', 'refunds', 'missing_costs')`,
     ),
     check('ck_o_report_export_format', sql`${t.format} in ('csv', 'pdf')`),
     check(
@@ -1016,7 +1016,7 @@ export const sReportSchedule = pgTable(
     unique('uq_s_report_schedule_tenant_id_id').on(t.tenantId, t.id),
     check(
       'ck_s_report_schedule_kind',
-      sql`${t.kind} in ('profit_loss', 'products', 'orders', 'marketing', 'expenses')`,
+      sql`${t.kind} in ('profit_loss', 'products', 'orders', 'marketing', 'expenses', 'refunds', 'missing_costs')`,
     ),
     check('ck_s_report_schedule_format', sql`${t.format} in ('csv', 'pdf')`),
     check(

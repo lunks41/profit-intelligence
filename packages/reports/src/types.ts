@@ -1,4 +1,12 @@
-export const REPORT_KINDS = ['profit_loss', 'products', 'orders', 'marketing', 'expenses'] as const;
+export const REPORT_KINDS = [
+  'profit_loss',
+  'products',
+  'orders',
+  'marketing',
+  'expenses',
+  'refunds',
+  'missing_costs',
+] as const;
 export type ReportKind = (typeof REPORT_KINDS)[number];
 
 export const REPORT_TITLES: Record<ReportKind, string> = {
@@ -7,6 +15,8 @@ export const REPORT_TITLES: Record<ReportKind, string> = {
   orders: 'Order profitability',
   marketing: 'Marketing',
   expenses: 'Expenses',
+  refunds: 'Refunds',
+  missing_costs: 'Missing product costs',
 };
 
 export type ColumnType = 'text' | 'money' | 'percent' | 'integer';
@@ -48,6 +58,11 @@ export interface ReportSpec {
   kind: ReportKind;
   from: string;
   to: string;
+  /** refunds and missing costs, for the on-screen preview: order, product, SKU or variant */
+  search?: string;
+  /** missing costs: only products with no cost, or only those on Shopify's estimate */
+  filter?: 'all' | 'missing' | 'estimated';
+  sort?: 'default' | 'name' | 'amount';
 }
 
 export interface ReportContext {

@@ -1,8 +1,8 @@
 'use client';
 
-import { FileTypeDropdown, ReportDropdown } from '../dropdown';
+import { FileTypeDropdown, FilterSearch, ReportDropdown, ShowDropdown } from '../dropdown';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { PeriodPreset, ReportTableResponse } from '@pi/contracts';
 import { apiPost } from '../../lib/api';
 import { buildListQuery } from '../../lib/query';
@@ -69,8 +69,29 @@ function Preview({ onQueued }: { onQueued: () => void }) {
   const [kind, setKind] = useState<(typeof REPORTS)[number]['id']>('profit_loss');
   const download = useAction();
   const [format, setFormat] = useState<'csv' | 'pdf'>('csv');
+  // refunds and missing costs can be searched, filtered and sorted on screen; a download has every row
+  const [search, setSearch] = useState('');
+  const [applied, setApplied] = useState('');
+  const [status, setStatus] = useState('all');
+  const [sort, setSort] = useState('default');
+  const lists = kind === 'refunds' || kind === 'missing_costs';
+  useEffect(() => {
+    const t = setTimeout(() => setApplied(search.trim()), 350);
+    return () => clearTimeout(t);
+  }, [search]);
+  useEffect(() => {
+    setSearch('');
+    setApplied('');
+    setStatus('all');
+    setSort('default');
+  }, [kind]);
 
-  const query = buildListQuery(filters, { kind });
+  const query = buildListQuery(filters, {
+    kind,
+    search: lists ? applied : undefined,
+    filter: kind === 'missing_costs' ? status : undefined,
+    sort: lists ? sort : undefined,
+  });
   const orders = kind === 'orders';
   const { data, error, loading, reload } = useApi<ReportTableResponse>(
     orders ? null : `/reports/preview?${query}`,
@@ -90,12 +111,54 @@ function Preview({ onQueued }: { onQueued: () => void }) {
     <>
       <FilterBar chip filters={filters} currencies={[]} onChange={setFilters}>
         <ReportDropdown chip value={kind} onChange={(v) => setKind(v as typeof kind)} />
+        {lists && (
+          <FilterSearch
+            label={kind === 'refunds' ? 'Order or product' : 'Product or SKU'}
+            placeholder={kind === 'refunds' ? '#1001 or shirt' : 'shirt or SKU-1'}
+            value={search}
+            onChange={setSearch}
+          />
+        )}
+        {kind === 'missing_costs' && (
+          <ShowDropdown
+            chip
+            label="Show"
+            value={status}
+            options={[
+              { value: 'all', label: 'Missing and estimated' },
+              { value: 'missing', label: 'No cost known' },
+              { value: 'estimated', label: 'Shopify estimate only' },
+            ]}
+            onChange={setStatus}
+          />
+        )}
+        {lists && (
+          <ShowDropdown
+            chip
+            label="Sort by"
+            value={sort}
+            options={[
+              {
+                value: 'default',
+                label: kind === 'refunds' ? 'Newest first' : 'Largest sales first',
+              },
+              { value: 'name', label: 'Product name' },
+              ...(kind === 'refunds' ? [{ value: 'amount', label: 'Largest refund' }] : []),
+            ]}
+            onChange={setSort}
+          />
+        )}
         <FileTypeDropdown chip value={format} onChange={setFormat} />
         <s-button variant="primary" disabled={download.busy} onClick={() => void queueExport()}>
           Prepare download
         </s-button>
       </FilterBar>
       <FormError message={download.error} />
+      {lists && (
+        <s-text color="subdued">
+          Search, filter and sort change what you see here. A download always has every row.
+        </s-text>
+      )}
       {orders && (
         <s-banner tone="info" heading="The order report is large">
           <s-paragraph>

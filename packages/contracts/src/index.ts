@@ -1056,6 +1056,8 @@ export const reportKindSchema = z.enum([
   'orders',
   'marketing',
   'expenses',
+  'refunds',
+  'missing_costs',
 ]);
 export type ReportKindName = z.infer<typeof reportKindSchema>;
 export const reportFormatSchema = z.enum(['csv', 'pdf']);
@@ -1063,6 +1065,12 @@ export const reportFormatSchema = z.enum(['csv', 'pdf']);
 export const reportPreviewQuerySchema = z.object({
   kind: reportKindSchema,
   ...periodQuery,
+  /** refunds and missing costs only: matches order, product, SKU or variant */
+  search: z.string().trim().max(100).optional(),
+  /** missing costs only: show products with no cost, or only those on Shopify's estimate */
+  filter: z.enum(['all', 'missing', 'estimated']).default('all'),
+  /** refunds and missing costs only; the default is newest refund first, largest sales first */
+  sort: z.enum(['default', 'name', 'amount']).default('default'),
 });
 
 export const reportTableSchema = z.object({

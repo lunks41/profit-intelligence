@@ -1,4 +1,11 @@
-import { getAdSpend, getProfitAggregate, listOrders, loadExpenses } from '@pi/db';
+import {
+  getAdSpend,
+  getProfitAggregate,
+  listMissingCostRows,
+  listOrders,
+  listRefundReportRows,
+  loadExpenses,
+} from '@pi/db';
 import type { Db, OrderCostStatus } from '@pi/db';
 import {
   D,
@@ -7,6 +14,7 @@ import {
   expensesForPeriod,
   monthStart,
   operatingExpensesFor,
+  splitByWeights,
   summarizePeriod,
   toStored,
   totalAdSpend,
@@ -546,6 +554,259 @@ async function expenses(
   };
 }
 
+/**
+ * Every refund in the period: date, order, product, quantity, product money and shipping money
+ * refunded. Built from the same ledger entries and dates the Overview adds up, so the totals equal
+ * the Overview's refunds to the cent. Search, sort and the row limit are for the on-screen preview;
+ * a download has every row.
+ */
+async function refunds(
+  db: Db,
+  scope: Scope,
+  spec: ReportSpec,
+  ctx: ReportContext,
+): Promise<ReportTable> {
+  const [{ refunds: list, truncated }, agg] = await Promise.all([
+    listRefundReportRows(db, scope, spec),
+    getProfitAggregate(db, scope, spec),
+  ]);
+  type Out = {
+    date: string;
+    order: string;
+    refund: string;
+    product: string;
+    sku: string;
+    quantity: string;
+    productRefund: string;
+    shippingRefund: string;
+    note: string;
+  };
+  const out: Out[] = [];
+  for (const rf of list) {
+    const base = {
+      date: rf.date,
+      order: rf.orderName,
+      refund: rf.refundShopifyId,
+      note: rf.note ?? '',
+    };
+    if (dec(rf.productRefund).gt(0)) {
+      const lines = rf.lines.filter((l) => dec(l.subtotal).gt(0));
+      if (lines.length === 0) {
+        out.push({
+          ...base,
+          product: '(no product detail)',
+          sku: '',
+          quantity: '',
+          productRefund: rf.productRefund,
+          shippingRefund: '0.0000',
+        });
+      } else {
+        // the refund's product money is shared over the refunded lines by their refunded amounts
+        const parts = splitByWeights(
+          dec(rf.productRefund),
+          lines.map((l) => dec(l.subtotal)),
+          ctx.currency,
+        );
+        lines.forEach((l, i) =>
+          out.push({
+            ...base,
+            product: l.product ?? '(item)',
+            sku: l.sku ?? '',
+            quantity: String(l.quantity),
+            productRefund: toStored(parts[i]!),
+            shippingRefund: '0.0000',
+          }),
+        );
+      }
+    }
+    if (dec(rf.shippingRefund).gt(0)) {
+      out.push({
+        ...base,
+        product: '(shipping)',
+        sku: '',
+        quantity: '',
+        productRefund: '0.0000',
+        shippingRefund: rf.shippingRefund,
+      });
+    }
+  }
+  const term = spec.search?.toLowerCase();
+  const sorted = term
+    ? out.filter((r) => [r.order, r.product, r.sku].some((v) => v.toLowerCase().includes(term)))
+    : out;
+  if (spec.sort === 'name') {
+    sorted.sort((a, b) => a.product.localeCompare(b.product) || b.date.localeCompare(a.date));
+  } else if (spec.sort === 'amount') {
+    const total = (r: Out) => dec(r.productRefund).plus(dec(r.shippingRefund));
+    sorted.sort((a, b) => Number(total(b).minus(total(a))) || b.date.localeCompare(a.date));
+  }
+  let product = new D(0);
+  let shipping = new D(0);
+  const refundIds = new Set<string>();
+  for (const r of sorted) {
+    product = product.plus(dec(r.productRefund));
+    shipping = shipping.plus(dec(r.shippingRefund));
+    refundIds.add(r.refund);
+  }
+  const overviewProducts = toStored(dec(agg.totals.product_refund ?? '0').neg());
+  const overviewShipping = toStored(dec(agg.totals.shipping_refund ?? '0').neg());
+  const filtered = Boolean(spec.search);
+  return {
+    ...head(spec, ctx),
+    columns: [
+      col('date', 'Refund date', 'text'),
+      col('order', 'Order', 'text'),
+      col('product', 'Product', 'text'),
+      col('sku', 'SKU', 'text'),
+      col('qty', 'Quantity', 'integer'),
+      col('product_refund', 'Product refunded'),
+      col('shipping_refund', 'Shipping refunded'),
+      col('note', 'Note', 'text'),
+    ],
+    rows: sorted.map((r) => [
+      r.date,
+      r.order,
+      r.product,
+      r.sku,
+      r.quantity,
+      r.productRefund,
+      r.shippingRefund,
+      r.note,
+    ]),
+    totalRows: [
+      [
+        `Total (${refundIds.size} refunds)`,
+        '',
+        '',
+        '',
+        '',
+        toStored(product),
+        toStored(shipping),
+        '',
+      ],
+    ],
+    notes: [
+      'A refund is counted on the day it was processed, not on the order date. Tax refunded is not included.',
+      'A refund of several products is shared over them in proportion to what Shopify refunded for each, the same rule as the Products screen.',
+      'Goods that went back into stock bring their product cost back on the same day; that is in the profit figures, not in this list.',
+      ...(filtered
+        ? [`Filtered by "${spec.search}": the totals cover the matching rows only.`]
+        : product.minus(dec(overviewProducts)).abs().lt('0.005') &&
+            shipping.minus(dec(overviewShipping)).abs().lt('0.005')
+          ? [
+              `Reconciled: product refunds ${overviewProducts} and shipping refunds ${overviewShipping} equal the Overview figures.`,
+            ]
+          : [
+              `Does not match the Overview (product ${overviewProducts}, shipping ${overviewShipping}). Please report this.`,
+            ]),
+      ...(truncated
+        ? [
+            `Only the first ${MAX_ORDER_ROWS} refunds are included. Choose a shorter period for the rest.`,
+          ]
+        : []),
+    ],
+  };
+}
+
+/**
+ * The products whose cost is missing, or only Shopify's estimate, with the units sold and the sales
+ * value affected. The sales value is the weight the Overview's cost coverage uses, so the totals
+ * equal its missing and estimated shares exactly. Search, filter and sort are for the preview; a
+ * download has every row.
+ */
+async function missingCosts(
+  db: Db,
+  scope: Scope,
+  spec: ReportSpec,
+  ctx: ReportContext,
+): Promise<ReportTable> {
+  const status = spec.filter === 'missing' || spec.filter === 'estimated' ? spec.filter : undefined;
+  const [{ rows: list, truncated }, agg] = await Promise.all([
+    listMissingCostRows(db, scope, spec, { search: spec.search, status }),
+    getProfitAggregate(db, scope, spec),
+  ]);
+  const sorted = [...list];
+  if (spec.sort === 'name') {
+    sorted.sort(
+      (a, b) => a.productTitle.localeCompare(b.productTitle) || a.status.localeCompare(b.status),
+    );
+  }
+  const cov = agg.coverage.cost;
+  const allSales = cov ? dec(cov.actual).plus(dec(cov.missing)).plus(dec(cov.estimated)) : new D(0);
+  const share = (sales: string) =>
+    allSales.isZero() ? '' : dec(sales).div(allSales).toDecimalPlaces(4).toFixed(4);
+  const label = (st: 'missing' | 'estimated') =>
+    st === 'missing' ? 'Missing' : 'Estimated (Shopify cost)';
+  const sum = (st: 'missing' | 'estimated', f: (r: (typeof list)[number]) => Dec) =>
+    sorted.filter((r) => r.status === st).reduce((a, r) => a.plus(f(r)), new D(0));
+  const count = (st: 'missing' | 'estimated') => sorted.filter((r) => r.status === st).length;
+  const totalRow = (st: 'missing' | 'estimated'): string[] => [
+    `${label(st)} (${count(st)} products)`,
+    '',
+    '',
+    st === 'missing' ? 'No cost known' : 'Not confirmed by you',
+    '',
+    String(sum(st, (r) => new D(r.units)).toNumber()),
+    toStored(sum(st, (r) => dec(r.salesAffected))),
+    share(toStored(sum(st, (r) => dec(r.salesAffected)))),
+  ];
+  const filtered = Boolean(spec.search);
+  const missingSales = toStored(sum('missing', (r) => dec(r.salesAffected)));
+  const estimatedSales = toStored(sum('estimated', (r) => dec(r.salesAffected)));
+  const matches =
+    dec(missingSales)
+      .minus(dec(cov?.missing ?? '0'))
+      .abs()
+      .lt('0.005') &&
+    dec(estimatedSales)
+      .minus(dec(cov?.estimated ?? '0'))
+      .abs()
+      .lt('0.005');
+  return {
+    ...head(spec, ctx),
+    columns: [
+      col('product', 'Product', 'text'),
+      col('variant', 'Variant', 'text'),
+      col('sku', 'SKU', 'text'),
+      col('cost', 'Cost data', 'text'),
+      col('orders', 'Orders', 'integer'),
+      col('units', 'Units sold', 'integer'),
+      col('sales', 'Sales affected'),
+      col('share', 'Share of sales', 'percent'),
+    ],
+    rows: sorted.map((r) => [
+      r.productTitle,
+      r.variantTitle ?? '',
+      r.sku ?? '',
+      label(r.status),
+      String(r.orders),
+      String(r.units),
+      r.salesAffected,
+      share(r.salesAffected),
+    ]),
+    totalRows: [
+      ...(status !== 'estimated' ? [totalRow('missing')] : []),
+      ...(status !== 'missing' ? [totalRow('estimated')] : []),
+    ],
+    notes: [
+      'Missing means no cost is known for the item, so the profit shown leaves its cost out and is higher than it really is. Estimated means Shopify’s current unit cost was used, which you have not confirmed.',
+      'To fix it, enter the cost in Settings, Costs (one by one, from a CSV file, or for a whole collection or vendor), then use "Apply to existing orders".',
+      ...(filtered || status
+        ? ['Filtered: the totals cover the matching rows only.']
+        : matches
+          ? [
+              `Reconciled: ${share(missingSales) || '0'} of sales value is missing a cost and ${share(estimatedSales) || '0'} is estimated, equal to the Overview's data completeness.`,
+            ]
+          : ['Does not match the Overview’s data completeness. Please report this.']),
+      ...(truncated
+        ? [
+            `Only the first ${MAX_ORDER_ROWS} rows are included. Choose a shorter period for the rest.`,
+          ]
+        : []),
+    ],
+  };
+}
+
 export async function buildReport(
   db: Db,
   scope: Scope,
@@ -564,6 +825,10 @@ export async function buildReport(
         return marketing(db, scope, spec, ctx);
       case 'expenses':
         return expenses(db, scope, spec, ctx);
+      case 'refunds':
+        return refunds(db, scope, spec, ctx);
+      case 'missing_costs':
+        return missingCosts(db, scope, spec, ctx);
     }
   })();
   return {

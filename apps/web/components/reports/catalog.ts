@@ -4,4 +4,6 @@ export const REPORTS = [
   { id: 'orders', label: 'Order profitability' },
   { id: 'marketing', label: 'Marketing' },
   { id: 'expenses', label: 'Expenses' },
+  { id: 'refunds', label: 'Refunds' },
+  { id: 'missing_costs', label: 'Missing product costs' },
 ] as const;

@@ -637,6 +637,39 @@ describe('exports and scheduled reports carry the same figures as the screen', (
     expect(cells.slice(1)).toEqual([...table.rows, ...table.totalRows]);
   });
 
+  it.each(['refunds', 'missing_costs'] as const)(
+    'the %s CSV equals the report table cell for cell, with the audit block and data notes',
+    async (kind) => {
+      await seed(a);
+      const spec = { kind, from: '2026-01-01', to: '2026-10-09' };
+      const table = await buildReport(db, a, spec, ctx);
+      expect(table.rows.length).toBeGreaterThan(0);
+      const exp = await exportFor(a, { kind });
+      await processExport({ db, boss, log: silent, mail: fakeMail().sender }, payload(a, exp.id));
+      const file = (await fileOf(exp.id)).content as Buffer;
+      const cells = csvCells(file);
+      expect(cells[0]).toEqual(table.columns.map((c) => c.label));
+      expect(cells.slice(1)).toEqual([...table.rows, ...table.totalRows]);
+      const info = csvInfo(file);
+      expect(info.find(([k]) => k === 'Report')![1]).toBe(table.title);
+      expect(info.find(([k]) => k === 'Period')![1]).toBe('2026-01-01 to 2026-10-09');
+      expect(info.some(([k]) => k === 'Generated (UTC)')).toBe(true);
+      expect(info.filter(([k]) => k === 'Data note').length).toBeGreaterThan(0);
+    },
+  );
+
+  it.each(['refunds', 'missing_costs'] as const)(
+    'the %s report also prepares as a PDF',
+    async (kind) => {
+      await seed(a);
+      const exp = await exportFor(a, { kind, format: 'pdf' });
+      await processExport({ db, boss, log: silent, mail: fakeMail().sender }, payload(a, exp.id));
+      const row = await fileOf(exp.id);
+      expect(row.status).toBe('ready');
+      expect((row.content as Buffer).subarray(0, 5).toString('latin1')).toBe('%PDF-');
+    },
+  );
+
   it('the CSV totals equal the shared figures, and unknown figures are words, not zero', async () => {
     await seed(a);
     const range = { from: '2026-01-01', to: '2026-10-09' };

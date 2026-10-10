@@ -232,16 +232,16 @@
     "hash": "96fb3393c1760952c45dc5b3a5520405"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\reports\\reports.integration.test.ts": {
-    "mtime": 1791664548.9713633,
-    "hash": "e7acf333b5d171e96e15b9da3be31ec6"
+    "mtime": 1791665773.0197592,
+    "hash": "78fc0aa5791b597a39f3e841c509e101"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\reports\\reports.module.ts": {
     "mtime": 1791544493.7856476,
     "hash": "e5caf5042f0b81b8be7efd54e192fc44"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\reports\\reports.service.ts": {
-    "mtime": 1791563657.2678685,
-    "hash": "99dbb85936ec1490271dcb9780ef9295"
+    "mtime": 1791665433.9059803,
+    "hash": "7df9c4746376035e0b9a17736a045f0f"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\security\\security.integration.test.ts": {
     "mtime": 1791547739.7020438,
@@ -616,8 +616,8 @@
     "hash": "7821f742a9140e58d642e563d8761dab"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\reports\\catalog.ts": {
-    "mtime": 1791544948.1767988,
-    "hash": "432e61e3875453716ae467313e79bd22"
+    "mtime": 1791665337.6641066,
+    "hash": "56cc3b405c388af3b4ed6f7cef7d03b9"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\reports\\Downloads.tsx": {
     "mtime": 1791544952.740352,
@@ -628,8 +628,8 @@
     "hash": "164a4aac7567ce71ee16a8a6faf21465"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\reports\\ReportsPage.tsx": {
-    "mtime": 1791609066.8901463,
-    "hash": "5050f9da78a17a71ca5c637ccc5b4c98"
+    "mtime": 1791665498.8976936,
+    "hash": "827409de19f0ab00a966d7d8354af290"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\reports\\ReportTable.tsx": {
     "mtime": 1791614719.6173255,
@@ -888,8 +888,8 @@
     "hash": "626eb2336f5ebe04f09b9172edfbb1c2"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\worker\\src\\reports\\reports.integration.test.ts": {
-    "mtime": 1791664497.6663654,
-    "hash": "5c0acd6fcda3d0998bb161da2afa3fb0"
+    "mtime": 1791665747.8266191,
+    "hash": "0e49f34e677531dab3521a40c6b357f2"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\worker\\src\\reports\\schedule.ts": {
     "mtime": 1791544421.1485155,
@@ -944,8 +944,8 @@
     "hash": "0ac6fc02b30b4eb773d3a2351a39a055"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\contracts\\src\\index.ts": {
-    "mtime": 1791664041.0838263,
-    "hash": "1ac3ba2eca440ba6f60eae14fa4a0438"
+    "mtime": 1791665337.6611054,
+    "hash": "a87c8fee51b68fc1bab301c38bf8a862"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\contracts\\src\\plans.test.ts": {
     "mtime": 1791546108.311282,
@@ -1055,6 +1055,10 @@
     "mtime": 1791611432.3917181,
     "hash": "fb45ad7c3da3f3d6b00416f5e9928f6e"
   },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\migrations\\0024_report_kinds_refund_missing.sql": {
+    "mtime": 1791665337.6495986,
+    "hash": "c8a289a29e71e3aabf1eb111b447a793"
+  },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\src\\admin.ts": {
     "mtime": 1791533639.4516017,
     "hash": "7acf7e8e4d03a228c9fdb21942214499"
@@ -1096,8 +1100,8 @@
     "hash": "cbd05f6f4401ab0e0060a04e96d48095"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\src\\index.ts": {
-    "mtime": 1791607964.2045085,
-    "hash": "564d0b7da62fe7250ee207c4ae2d848a"
+    "mtime": 1791665337.6515996,
+    "hash": "3f4359c49ff2b8d01e312c59e2925dfa"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\src\\installations.ts": {
     "mtime": 1791529975.7442,
@@ -1127,13 +1131,17 @@
     "mtime": 1791614761.6852567,
     "hash": "50d0a5118ba7e8444c1059c140a00e91"
   },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\src\\report-data.ts": {
+    "mtime": 1791665698.029178,
+    "hash": "a993dc0e7da54a5464222f79a98d32ad"
+  },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\src\\reports.ts": {
     "mtime": 1791544707.3901618,
     "hash": "257c740cbc6e2c9f67257b9227b02917"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\src\\schema.ts": {
-    "mtime": 1791611432.394718,
-    "hash": "c02a6865a753ef51665399b14cd62098"
+    "mtime": 1791665337.6515996,
+    "hash": "f8f3d6200acab88d9e50deecd1a1914e"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\src\\seed.ts": {
     "mtime": 1791527538.901016,
@@ -1340,8 +1348,8 @@
     "hash": "eb364616b7b6fb075a8c3528c22cee6e"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\reports\\src\\builders.ts": {
-    "mtime": 1791663503.3972578,
-    "hash": "53e85f3386eff50f9e83af6fe685b7c4"
+    "mtime": 1791665702.4617302,
+    "hash": "09bd596f6330e76e027a5e67531d8e06"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\reports\\src\\csv.ts": {
     "mtime": 1791614552.6854792,
@@ -1388,8 +1396,8 @@
     "hash": "307be2ff2febda4b38710801433488b8"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\reports\\src\\types.ts": {
-    "mtime": 1791614550.3192291,
-    "hash": "265289a633ecc77f06993fc0e2a5da17"
+    "mtime": 1791665337.6631064,
+    "hash": "17c66b02add5844bfc456985e62c151e"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\seed\\src\\cli.ts": {
     "mtime": 1791570294.2278116,
@@ -1552,8 +1560,8 @@
     "hash": "b77e287a1f70ba45f37818e567a623d7"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\roadmap.md": {
-    "mtime": 1791665022.813018,
-    "hash": "58ff65a5d5bdc7a41296e15196c62f06"
+    "mtime": 1791665813.4346685,
+    "hash": "2c32af83ee036337069b18915b664ebd"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\architecture\\billing.md": {
     "mtime": 1791549276.7097468,
@@ -1584,8 +1592,8 @@
     "hash": "b4f0d1cd8df2d338aabbad2d6f7d4a00"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\architecture\\reports.md": {
-    "mtime": 1791664619.9568262,
-    "hash": "05a6a90942584e23eaf2447f75fc9c46"
+    "mtime": 1791665818.8423653,
+    "hash": "73ba7fb4461b409f71716e498aec1571"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\architecture\\settings.md": {
     "mtime": 1791615848.4898415,

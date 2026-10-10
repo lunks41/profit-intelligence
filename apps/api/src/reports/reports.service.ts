@@ -105,7 +105,15 @@ export class ReportsService {
 
   async preview(
     scope: TenantContext,
-    q: { kind: ReportKind; preset: Preset; from?: string; to?: string },
+    q: {
+      kind: ReportKind;
+      preset: Preset;
+      from?: string;
+      to?: string;
+      search?: string;
+      filter?: 'all' | 'missing' | 'estimated';
+      sort?: 'default' | 'name' | 'amount';
+    },
   ): Promise<ReportTableResponse> {
     if (q.kind === 'orders') {
       throw new BadRequestException({
@@ -117,7 +125,14 @@ export class ReportsService {
     const report = await buildReport(
       this.db,
       scope,
-      { kind: q.kind, from: range.from, to: range.to },
+      {
+        kind: q.kind,
+        from: range.from,
+        to: range.to,
+        search: q.search,
+        filter: q.filter,
+        sort: q.sort,
+      },
       { shopName: shop.shopifyDomain, currency: shop.currency, timezone: shop.ianaTimezone },
     );
     return {

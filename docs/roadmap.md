@@ -50,7 +50,8 @@ Not built (needs the owner or later): billing prices, hosting and monitoring, th
 ### Combined V1: milestone progress
 
 - **M1 done (financial definitions):** contribution profit = revenue - product cost - payment fees - shipping cost; advertising is an operating cost and is no longer inside it. Estimated operating profit = contribution profit - advertising - other operating expenses (field `estimatedOperatingProfit`, margin `operatingMargin`, basis `operatingProfitBasis`; expenses summary `operatingProfit` and `operatingProfitStatus`). Overview Total costs = product + shipping + fees, with advertising and other operating expenses listed apart. The old `contributionBeforeAds`, `estimatedNetProfit`, `netProfitBasis` and the comparison `basis` fields are gone; no screen says "net profit". Definitions: `docs/finance/figures.md`.
-- Next: M2 (Refund and Missing cost reports), M6 (order-list performance), M7 (browser acceptance).
+- **M2 done (Refund report and Missing cost report):** both are reports 6 and 7 of the seven: preview with search, filter and sort, CSV and PDF with the audit block, scheduled emails, totals equal to the Overview to the cent. Migration `0024_report_kinds_refund_missing` widens the kind lists on exports and schedules. Migration numbers: Cursor's expenses migration is now `0025`, and my performance migration will be `0026`.
+- Next: M6 (order-list performance), M7 (browser acceptance).
 
 ## V1.1: fast follow (weeks after launch)
 

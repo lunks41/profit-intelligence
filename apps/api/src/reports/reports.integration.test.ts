@@ -379,6 +379,170 @@ describe('report preview', () => {
   });
 });
 
+describe('refund report', () => {
+  const refunds = async (qs = P, token?: string) =>
+    reportTableSchema.parse((await preview('refunds', qs, token)).body);
+  type Table = ReturnType<typeof reportTableSchema.parse>;
+  const col = (t: Table, key: string) => t.columns.findIndex((c) => c.key === key);
+
+  it('lists every refund and its totals equal the Overview refunds to the cent', async () => {
+    await calculateAll(a);
+    const t = await refunds();
+    expect(t.title).toBe('Refunds');
+    expect(t.rows.length).toBeGreaterThan(0);
+    const o = await overviewSummary();
+    const prod = col(t, 'product_refund');
+    const ship = col(t, 'shipping_refund');
+    const sumOf = (i: number) => t.rows.reduce((s, r) => s + cents(r[i]!), 0);
+    expect(sumOf(prod)).toBe(cents(o.productRefunds));
+    expect(t.totalRows[0]![prod]).toBe(o.productRefunds);
+    expect(cents(t.totalRows[0]![ship]!)).toBe(sumOf(ship));
+    expect(t.notes.join(' ')).toMatch(/Reconciled: product refunds/);
+    // every amount is positive money, and every row names its order and date
+    for (const r of t.rows) {
+      expect(cents(r[prod]!)).toBeGreaterThanOrEqual(0);
+      expect(r[0]).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(r[1]).toMatch(/^#/);
+    }
+    // newest first
+    const dates = t.rows.map((r) => r[0]!);
+    expect(dates).toEqual([...dates].sort().reverse());
+  });
+
+  it('a product row carries its quantity; a shipping-only refund says shipping', async () => {
+    await calculateAll(a);
+    const t = await refunds();
+    const withProduct = t.rows.filter((r) => r[2] !== '(shipping)');
+    expect(withProduct.length).toBeGreaterThan(0);
+    expect(withProduct.every((r) => Number(r[col(t, 'qty')]) > 0)).toBe(true);
+    const shippingOnly = t.rows.filter((r) => r[2] === '(shipping)');
+    for (const r of shippingOnly) expect(cents(r[col(t, 'product_refund')]!)).toBe(0);
+  });
+
+  it('counts a refund on the day it was processed, so a shorter period only has its own refunds', async () => {
+    await calculateAll(a);
+    const whole = await refunds();
+    const dates = [...new Set(whole.rows.map((r) => r[0]!))].sort();
+    const day = dates[0]!;
+    const one = await refunds(`preset=custom&from=${day}&to=${day}`);
+    expect(one.rows.length).toBeGreaterThan(0);
+    expect(one.rows.every((r) => r[0] === day)).toBe(true);
+    expect(one.rows.length).toBeLessThanOrEqual(whole.rows.length);
+  });
+
+  it('searches by order or product, sorts, and says the totals then cover the matching rows only', async () => {
+    await calculateAll(a);
+    const whole = await refunds();
+    const order = whole.rows[0]![1]!;
+    const found = await refunds(`${P}&search=${encodeURIComponent(order)}`);
+    expect(found.rows.length).toBeGreaterThan(0);
+    expect(found.rows.every((r) => r[1] === order)).toBe(true);
+    expect(found.notes.join(' ')).toMatch(/Filtered by/);
+    const none = await refunds(`${P}&search=zzzz-no-such-thing`);
+    expect(none.rows).toEqual([]);
+    const byAmount = await refunds(`${P}&sort=amount`);
+    const amounts = byAmount.rows.map(
+      (r) =>
+        cents(r[col(byAmount, 'product_refund')]!) + cents(r[col(byAmount, 'shipping_refund')]!),
+    );
+    expect(amounts).toEqual([...amounts].sort((x, y) => y - x));
+  });
+
+  it('is per shop', async () => {
+    await calculateAll(a);
+    const theirs = await refunds(P, 'id-rep-b');
+    expect(theirs.rows).toEqual([]);
+    expect(theirs.totalRows[0]![col(theirs, 'product_refund')]).toBe('0.0000');
+  });
+});
+
+describe('missing product cost report', () => {
+  const missing = async (qs = P, token?: string) =>
+    reportTableSchema.parse((await preview('missing_costs', qs, token)).body);
+  type Table = ReturnType<typeof reportTableSchema.parse>;
+  const idx = (t: Table, key: string) => t.columns.findIndex((c) => c.key === key);
+
+  it('the sales affected equal the Overview data completeness for product cost, to the cent', async () => {
+    await calculateAll(a);
+    const t = await missing();
+    expect(t.title).toBe('Missing product costs');
+    expect(t.rows.length).toBeGreaterThan(0);
+    const sales = idx(t, 'sales');
+    const sumFor = (label: string) =>
+      t.rows
+        .filter((r) => r[idx(t, 'cost')]!.startsWith(label))
+        .reduce((s, r) => s + cents(r[sales]!), 0);
+    expect(sumFor('Missing') + sumFor('Estimated')).toBeGreaterThan(0);
+    // the reconciliation note is only written when the rows equal the Overview's coverage
+    expect(t.notes.join(' ')).toMatch(/Reconciled: /);
+    // the share column is the Overview's own data completeness for product cost
+    const o = overviewResponseSchema.parse((await json('GET', `/dashboard/overview?${P}`)).body);
+    const shareFor = (label: string) =>
+      t.totalRows.find((r) => r[0]!.startsWith(label))?.[idx(t, 'share')] ?? '';
+    expect(shareFor('Missing')).toBe(o.dataQuality.cost!.missing);
+    expect(shareFor('Estimated')).toBe(o.dataQuality.cost!.estimated);
+    // each total row is the sum of its rows
+    const totalFor = (label: string) =>
+      cents(t.totalRows.find((r) => r[0]!.startsWith(label))?.[sales] ?? '0');
+    expect(totalFor('Missing')).toBe(sumFor('Missing'));
+    expect(totalFor('Estimated')).toBe(sumFor('Estimated'));
+    for (const r of t.rows) {
+      expect(r[0]).not.toBe('');
+      expect(['Missing', 'Estimated (Shopify cost)']).toContain(r[idx(t, 'cost')]);
+      expect(Number(r[idx(t, 'units')])).toBeGreaterThan(0);
+      expect(cents(r[sales]!)).toBeGreaterThan(0);
+    }
+    // largest sales first
+    const amounts = t.rows.map((r) => cents(r[sales]!));
+    expect(amounts).toEqual([...amounts].sort((x, y) => y - x));
+  });
+
+  it('filters to missing or estimated, and searches by product', async () => {
+    await calculateAll(a);
+    const all = await missing();
+    const onlyMissing = await missing(`${P}&filter=missing`);
+    const onlyEstimated = await missing(`${P}&filter=estimated`);
+    const c = idx(all, 'cost');
+    expect(onlyMissing.rows.every((r) => r[c] === 'Missing')).toBe(true);
+    expect(onlyEstimated.rows.every((r) => r[c] === 'Estimated (Shopify cost)')).toBe(true);
+    expect(onlyMissing.rows.length + onlyEstimated.rows.length).toBe(all.rows.length);
+    expect(onlyMissing.notes.join(' ')).toMatch(/Filtered/);
+    const word = all.rows[0]![0]!.split(' ')[0]!;
+    const found = await missing(`${P}&search=${encodeURIComponent(word)}`);
+    expect(found.rows.length).toBeGreaterThan(0);
+    expect(found.rows.length).toBeLessThanOrEqual(all.rows.length);
+    expect((await missing(`${P}&search=zzzz-no-such-thing`)).rows).toEqual([]);
+  });
+
+  it('is per shop, and a bad filter or kind is refused', async () => {
+    await calculateAll(a);
+    expect((await missing(P, 'id-rep-b')).rows).toEqual([]);
+    const bad = await call('GET', `/reports/preview?kind=missing_costs&${P}&filter=nonsense`);
+    expect(bad.statusCode).toBe(400);
+    expect((await call('GET', `/reports/preview?kind=nothing&${P}`)).statusCode).toBe(400);
+  });
+});
+
+describe('the new report kinds can be exported and scheduled', () => {
+  it.each(['refunds', 'missing_costs'])('accepts %s for an export and a schedule', async (kind) => {
+    const exp = await json('POST', '/reports/exports', 'id-rep-a', {
+      kind,
+      format: 'csv',
+      preset: '30d',
+    });
+    expect(exp.res.statusCode).toBeLessThan(300);
+    const sch = await json('POST', '/reports/schedules', 'id-rep-a', {
+      kind,
+      format: 'csv',
+      frequency: 'weekly',
+      weekday: 1,
+      hour: 8,
+      recipients: ['owner@store.com'],
+    });
+    expect(sch.res.statusCode).toBe(201);
+  });
+});
+
 describe('exports', () => {
   it('creates an export, queues the background job and lists it', async () => {
     const { res, body } = await json('POST', '/reports/exports', 'id-rep-a', {
