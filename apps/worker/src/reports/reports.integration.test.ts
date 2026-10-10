@@ -166,6 +166,13 @@ afterAll(async () => {
   await pool.end();
 });
 
+/** The lines of the table in a CSV: everything before the blank line that starts the info block. */
+const tableLines = (content: Buffer): string[] => {
+  const lines = content.toString('utf8').split('\r\n');
+  const end = lines.indexOf('');
+  return end < 0 ? lines : lines.slice(0, end);
+};
+
 describe('building an export', () => {
   it.each(['profit_loss', 'products', 'orders', 'marketing', 'expenses'])(
     'builds the %s report as CSV and as PDF',
@@ -194,7 +201,7 @@ describe('building an export', () => {
     await seed(a);
     const exp = await exportFor(a, { kind: 'orders' });
     await processExport({ db, boss, log: silent, mail: fakeMail().sender }, payload(a, exp.id));
-    const lines = (await fileOf(exp.id)).content.toString('utf8').trim().split('\r\n');
+    const lines = tableLines((await fileOf(exp.id)).content);
     const { rows } = await admin.query(
       "select count(*)::int n, coalesce(sum(contribution_amount),0)::numeric(19,4)::text p from f_order_profit where shop_id = $1 and recognized and order_date between '2026-01-01' and '2026-10-09'",
       [a.shopId],
@@ -202,15 +209,14 @@ describe('building an export', () => {
     expect(lines.length - 2).toBe(rows[0].n); // header and total row
     const total = lines.at(-1)!.split(',');
     expect(total[0]).toBe(`Total (${rows[0].n} orders)`);
-    expect(Number(total[7]).toFixed(2)).toBe(Number(rows[0].p).toFixed(2));
+    expect(Number(total[9]).toFixed(2)).toBe(Number(rows[0].p).toFixed(2));
   });
 
   it('the product CSV total row equals the Overview figure', async () => {
     await seed(a);
     const exp = await exportFor(a, { kind: 'products' });
     await processExport({ db, boss, log: silent, mail: fakeMail().sender }, payload(a, exp.id));
-    const text = (await fileOf(exp.id)).content.toString('utf8');
-    const last = text.trim().split('\r\n').at(-1)!;
+    const last = tableLines((await fileOf(exp.id)).content).at(-1)!;
     expect(last).toMatch(/^Contribution profit \(matches the Overview\)/);
     const { rows } = await admin.query(
       "select coalesce(sum(amount),0)::numeric(19,4)::text p from f_profit_entry where shop_id = $1 and not memo and component not in ('tax_collected','tax_refunded')",
@@ -604,7 +610,20 @@ describe('exports and scheduled reports carry the same figures as the screen', (
       row.push(cell);
       rows.push(row);
     }
-    return rows;
+    // the table ends at the first blank line; what follows is the report information block
+    const end = rows.findIndex((r) => r.length === 1 && r[0] === '');
+    return end < 0 ? rows : rows.slice(0, end);
+  };
+  const csvInfo = (content: Buffer): string[][] => {
+    const all = content
+      .toString('utf8')
+      .replace(/^\uFEFF/, '')
+      .split('\r\n');
+    const blank = all.indexOf('');
+    return all
+      .slice(blank + 1)
+      .filter(Boolean)
+      .map((l) => [l.slice(0, l.indexOf(',')), l.slice(l.indexOf(',') + 1).replace(/^"|"$/g, '')]);
   };
 
   it('the profit and loss CSV equals the report table cell for cell', async () => {
@@ -665,7 +684,7 @@ describe('exports and scheduled reports carry the same figures as the screen', (
       const rows = csvCells((await fileOf(exp.id)).content);
       const last = rows.at(-1)!;
       // products: the last row is the contribution line; orders: the profit column of the total row
-      const figure = kind === 'products' ? last[8]! : last[7]!;
+      const figure = kind === 'products' ? last[8]! : last[9]!;
       expect(Number(figure).toFixed(2)).toBe(Number(overview).toFixed(2));
     }
   });
@@ -676,8 +695,37 @@ describe('exports and scheduled reports carry the same figures as the screen', (
     await processExport({ db, boss, log: silent, mail: fakeMail().sender }, payload(a, exp.id));
     const rows = csvCells((await fileOf(exp.id)).content);
     const body = rows.slice(1, -1);
-    expect(body.some((r) => r[6] === 'Missing')).toBe(true); // no shipping rule in this fixture
-    expect(body.some((r) => /^Incomplete/.test(r[9]!))).toBe(true);
+    expect(body.some((r) => r[7] === 'Missing')).toBe(true); // no shipping rule in this fixture
+    expect(body.some((r) => /^Incomplete/.test(r[11]!))).toBe(true);
+  });
+
+  it('the order CSV says where each fee and shipping cost came from, and carries an audit block', async () => {
+    await seed(a);
+    const exp = await exportFor(a, { kind: 'orders' });
+    await processExport({ db, boss, log: silent, mail: fakeMail().sender }, payload(a, exp.id));
+    const file = (await fileOf(exp.id)).content;
+    const rows = csvCells(file);
+    expect(rows[0]).toContain('Fee source');
+    expect(rows[0]).toContain('Shipping source');
+    const body = rows.slice(1, -1);
+    const allowed = ['Reported', 'Estimated from rule', 'Missing', 'None due'];
+    for (const r of body) {
+      expect(allowed).toContain(r[6]);
+      expect(allowed).toContain(r[8]);
+      // a fee that is Missing is a word, never 0.00
+      if (r[6] === 'Missing') expect(r[5]).toBe('Missing');
+    }
+    expect(body.some((r) => r[6] === 'Estimated from rule')).toBe(true);
+
+    const info = Object.fromEntries(csvInfo(file).map(([k, v]) => [k, v]));
+    expect(info.Report).toBe('Order profitability');
+    expect(info.Period).toBe('2026-01-01 to 2026-10-09');
+    expect(info.Currency).toBe('USD');
+    expect(info['Generated (UTC)']).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(info['Shop time zone']).toBe('UTC');
+    const notes = csvInfo(file).filter(([k]) => k === 'Data note');
+    expect(notes.length).toBeGreaterThan(0);
+    expect(notes.map((n) => n[1]).join(' ')).toMatch(/estimated from your rule/);
   });
 
   it('a scheduled monthly report has the same figures as building that month on the screen', async () => {

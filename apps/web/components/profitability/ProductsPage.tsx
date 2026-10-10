@@ -133,6 +133,21 @@ function ProductsTable({
   return (
     <>
       <QualifiersBanner qualifiers={rec.qualifiers} />
+      {data.rows.some((r) => r.costQuality === 'missing') && (
+        <s-banner tone="warning" heading="Some products have no cost">
+          <s-stack gap="small-300">
+            <s-paragraph>
+              {data.rows.filter((r) => r.costQuality === 'missing').length} of the products below
+              have no product cost, so their profit is overstated. Enter the costs one by one,
+              import them from a CSV file, or set one cost for a whole collection or vendor.
+            </s-paragraph>
+            <s-stack direction="inline" gap="base">
+              <s-link href="/settings?tab=costs&filter=missing">Add the missing costs</s-link>
+              <s-link href="/settings?tab=costs">Import or bulk edit</s-link>
+            </s-stack>
+          </s-stack>
+        </s-banner>
+      )}
       <s-section
         padding="none"
         heading={`Products, ${periodLabel(data.period.from, data.period.to)}`}
@@ -191,6 +206,12 @@ function ProductsTable({
 
       <s-section heading="How products add up to your profit">
         <s-stack gap="small-300">
+          <s-text color="subdued">
+            Sales, discounts and refunds are split over an order&apos;s products, and each product
+            carries its own product cost. Shipping, payment fees and shipping cost belong to the
+            whole order, so they are not given to any product. They are listed below as unallocated
+            so the products add up to the contribution profit on the Overview.
+          </s-text>
           <Line label="All products" value={formatMoney(rec.productProfit, cur)} />
           <Line label="Shipping charged" value={formatMoney(un.shippingRevenue, cur)} />
           <Line label="Shipping refunded" value={formatMoney(un.shippingRefund, cur)} />

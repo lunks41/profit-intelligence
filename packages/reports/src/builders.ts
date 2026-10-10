@@ -12,6 +12,7 @@ import {
   totalAdSpend,
 } from '@pi/profit-engine';
 import type { Dec, ExpenseInput, FigureStatus, Summary } from '@pi/profit-engine';
+import { dataNotes } from './audit.js';
 import { productRows } from './products.js';
 import { REPORT_TITLES } from './types.js';
 import type { ReportColumn, ReportContext, ReportSpec, ReportTable } from './types.js';
@@ -29,6 +30,16 @@ const col = (key: string, label: string, type: ReportColumn['type'] = 'money'): 
 });
 const neg = (v: string) => toStored(dec(v).neg());
 const periodText = (r: Range) => (r.from === r.to ? r.from : `${r.from} to ${r.to}`);
+
+/** Where an order's fee or shipping cost came from, in words for a spreadsheet. */
+export const sourceOf = (s: OrderCostStatus): string =>
+  s === 'confirmed'
+    ? 'Reported'
+    : s === 'estimated'
+      ? 'Estimated from rule'
+      : s === 'missing'
+        ? 'Missing'
+        : 'None due';
 
 function head(
   spec: ReportSpec,
@@ -372,7 +383,9 @@ async function orders(
         r.revenue,
         unknown(r.cogs, r.statuses.cogs),
         unknown(r.paymentFees, r.statuses.paymentFees),
+        sourceOf(r.statuses.paymentFees),
         unknown(r.shippingCost, r.statuses.shippingCost),
+        sourceOf(r.statuses.shippingCost),
         r.profit,
         r.margin ?? '',
         gaps.length > 0
@@ -393,7 +406,9 @@ async function orders(
       col('revenue', 'Revenue'),
       col('cogs', 'Product cost'),
       col('fees', 'Payment fees'),
+      col('feeSource', 'Fee source', 'text'),
       col('ship', 'Shipping cost'),
+      col('shipSource', 'Shipping source', 'text'),
       col('profit', 'Profit'),
       col('margin', 'Margin', 'percent'),
       col('data', 'Data', 'text'),
@@ -407,7 +422,9 @@ async function orders(
         toStored(revenue),
         toStored(cogs),
         toStored(fees),
+        '',
         toStored(ship),
+        '',
         toStored(profit),
         '',
         '',
@@ -539,16 +556,26 @@ export async function buildReport(
   spec: ReportSpec,
   ctx: ReportContext,
 ): Promise<ReportTable> {
-  switch (spec.kind) {
-    case 'profit_loss':
-      return profitLoss(db, scope, spec, ctx);
-    case 'products':
-      return products(db, scope, spec, ctx);
-    case 'orders':
-      return orders(db, scope, spec, ctx);
-    case 'marketing':
-      return marketing(db, scope, spec, ctx);
-    case 'expenses':
-      return expenses(db, scope, spec, ctx);
-  }
+  const table = await (() => {
+    switch (spec.kind) {
+      case 'profit_loss':
+        return profitLoss(db, scope, spec, ctx);
+      case 'products':
+        return products(db, scope, spec, ctx);
+      case 'orders':
+        return orders(db, scope, spec, ctx);
+      case 'marketing':
+        return marketing(db, scope, spec, ctx);
+      case 'expenses':
+        return expenses(db, scope, spec, ctx);
+    }
+  })();
+  return {
+    ...table,
+    audit: {
+      generatedAt: (ctx.now ?? new Date()).toISOString(),
+      timezone: ctx.timezone,
+      dataNotes: spec.kind === 'expenses' ? [] : await dataNotes(db, scope, spec, ctx),
+    },
+  };
 }

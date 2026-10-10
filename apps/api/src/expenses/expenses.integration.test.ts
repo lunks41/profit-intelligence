@@ -582,6 +582,38 @@ describe('expenses', () => {
     expect(last.oneTime).toBe(s.oneTimeThisMonth);
   });
 
+  it('each month has a profit and loss equal to the Overview for that month, and says when net profit is not set up', async () => {
+    await calculateAll(a);
+    const none = expenseSummaryResponseSchema.parse((await json('GET', '/expenses/summary')).body);
+    expect(none.netProfitStatus).toBe('not_configured');
+    for (const m of none.months) expect(m.netProfit).toBeNull();
+
+    await addExpense({ amount: '1200' });
+    await addExpense({
+      name: 'Photos',
+      kind: 'one_time',
+      frequency: undefined,
+      amount: '300',
+      startDate: '2026-09-10',
+    });
+    const s = expenseSummaryResponseSchema.parse((await json('GET', '/expenses/summary')).body);
+    expect(['complete', 'incomplete']).toContain(s.netProfitStatus);
+    expect(s.netProfitStatus === 'incomplete').toBe(s.months.some((m) => m.incomplete));
+    for (const m of s.months) {
+      const [y, mo] = m.month.split('-').map(Number) as [number, number];
+      const last = new Date(Date.UTC(y, mo, 0)).toISOString().slice(0, 10);
+      expect(cents(m.netProfit!)).toBe(cents(m.contributionProfit) - cents(m.total));
+      // a finished month equals the Overview for that month (the current month is still running,
+      // so the Overview only counts its days so far)
+      if (last >= s.today) continue;
+      const o = await opex(`?preset=custom&from=${m.month}&to=${last}`);
+      expect(m.revenue).toBe(o.revenue);
+      expect(m.contributionProfit).toBe(o.contributionProfit);
+      expect(m.netProfit).toBe(o.estimatedNetProfit);
+      expect(m.incomplete).toBe(o.partial);
+    }
+  });
+
   it('records who did what in a readable history', async () => {
     const id = (await addExpense()).body.id;
     await call('PUT', `/expenses/${id}/months/2026-09-01`, 'id-exp-a', { amount: '800' });
@@ -603,21 +635,25 @@ describe('advertising', () => {
 
   it('lists providers and says plainly which cannot be connected yet', async () => {
     const { body } = await json('GET', '/marketing/providers');
-    expect(body.providers.find((p: { id: string }) => p.id === 'manual').available).toBe(true);
-    for (const id of ['meta', 'google', 'tiktok']) {
-      const p = body.providers.find((x: { id: string }) => x.id === id);
-      expect(p.available).toBe(false);
-      expect(p.note.length).toBeGreaterThan(10);
-    }
+    const by = (id: string) => body.providers.find((p: { id: string }) => p.id === id);
+    for (const id of ['manual', 'meta', 'google']) expect(by(id).available).toBe(true);
+    expect(by('tiktok').available).toBe(false);
+    expect(by('tiktok').note.length).toBeGreaterThan(10);
   });
 
-  it('refuses a provider that is not connected, and creating an account twice does not duplicate it', async () => {
-    const res = await json('POST', '/marketing/accounts', 'id-exp-a', {
+  it('refuses TikTok, asks Meta and Google for an account id and token, and does not duplicate an account', async () => {
+    const tiktok = await json('POST', '/marketing/accounts', 'id-exp-a', {
+      provider: 'tiktok',
+      name: 'TikTok',
+    });
+    expect(tiktok.res.statusCode).toBe(400);
+    expect(tiktok.body.error.code).toBe('provider_not_available');
+    const meta = await json('POST', '/marketing/accounts', 'id-exp-a', {
       provider: 'meta',
       name: 'Meta',
     });
-    expect(res.res.statusCode).toBe(400);
-    expect(res.body.error.code).toBe('provider_not_available');
+    expect(meta.res.statusCode).toBe(400);
+    expect(meta.body.error.code).toBe('invalid_input');
     const one = await account('Manual spend');
     const two = await account('manual SPEND');
     expect(one.created).toBe(true);

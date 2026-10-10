@@ -1,4 +1,5 @@
 export * from './types.js';
+export * from './audit.js';
 export * from './products.js';
 export * from './builders.js';
 export * from './csv.js';

@@ -59,9 +59,11 @@ const base64Key32 = z.string().refine((v) => Buffer.from(v, 'base64').length ===
 export const shopifyEnvSchema = z.object({
   SHOPIFY_API_KEY: z.string().min(1),
   SHOPIFY_API_SECRET: z.string().min(1),
-  SHOPIFY_SCOPES: z.string().default(
-    'read_orders,read_products,read_inventory,read_shopify_payments_accounts,read_shopify_payments_payouts',
-  ),
+  SHOPIFY_SCOPES: z
+    .string()
+    .default(
+      'read_orders,read_products,read_inventory,read_shopify_payments_accounts,read_shopify_payments_payouts',
+    ),
   SHOPIFY_API_VERSION: z
     .string()
     .regex(/^\d{4}-\d{2}$/)

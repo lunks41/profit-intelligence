@@ -102,6 +102,18 @@ export async function renderPdf(report: ReportTable): Promise<Buffer> {
     doc.font('Helvetica').fontSize(8).fillColor('#555');
     for (const n of report.notes) doc.text(n, MARGIN, doc.y, { width });
   }
+  if (report.audit) {
+    doc.moveDown(0.8);
+    doc.font('Helvetica-Bold').fontSize(8).fillColor('#333').text('About this report');
+    doc.font('Helvetica').fontSize(8).fillColor('#555');
+    doc.text(
+      `Period ${report.from === report.to ? report.from : `${report.from} to ${report.to}`}, amounts in ${report.currency}, generated ${report.audit.generatedAt} UTC (shop time zone ${report.audit.timezone}).`,
+      MARGIN,
+      doc.y,
+      { width },
+    );
+    for (const n of report.audit.dataNotes) doc.text(n, MARGIN, doc.y, { width });
+  }
   doc.end();
   return done;
 }

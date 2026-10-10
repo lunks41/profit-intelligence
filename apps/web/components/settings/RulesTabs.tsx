@@ -5,7 +5,9 @@ import { Dropdown } from '../dropdown';
 import { useState } from 'react';
 import type { RulesResponse } from '@pi/contracts';
 import { apiDelete, apiGet, apiPost } from '../../lib/api';
+import { downloadText, importSummaryCsv } from '../../lib/import-summary';
 import { formatMoney, longDate } from '../../lib/format';
+import { CoverageSummary, RuleCheck } from './RuleCoverage';
 import { FormError, isAmount, isPercent, todayLocal, useAction } from './shared';
 
 type Reload = () => void;
@@ -75,6 +77,7 @@ export function FeesTab({ rules, onChanged }: { rules: RulesResponse; onChanged:
           </s-paragraph>
         </s-banner>
       )}
+      <CoverageSummary kind="fees" reloadKey={rules.feeRules.length} />
       <s-section heading="Payment fee rules">
         <s-stack gap="base">
           {rules.feeRules.length > 0 && (
@@ -141,6 +144,19 @@ export function FeesTab({ rules, onChanged }: { rules: RulesResponse; onChanged:
             />
           </s-grid>
           <FormError message={error} />
+          <RuleCheck
+            kind="fee"
+            body={
+              percentOk && fixedOk && dateOk
+                ? {
+                    gateway: gateway || null,
+                    percent: percent.trim(),
+                    fixedAmount: fixed.trim(),
+                    effectiveFrom: from,
+                  }
+                : null
+            }
+          />
           <div>
             <s-button variant="primary" disabled={busy} onClick={() => void add()}>
               Add rule
@@ -287,6 +303,7 @@ export function ShippingTab({ rules, onChanged }: { rules: RulesResponse; onChan
           </s-paragraph>
         </s-banner>
       )}
+      <CoverageSummary kind="shipping" reloadKey={rules.shippingRules.length} />
       <s-section heading="Shipping cost rules">
         <s-stack gap="base">
           {rules.shippingRules.length > 0 && (
@@ -390,6 +407,32 @@ export function ShippingTab({ rules, onChanged }: { rules: RulesResponse; onChan
             />
           </s-grid>
           <FormError message={error} />
+          <RuleCheck
+            kind="shipping"
+            body={
+              valueOk && dateOk && countryList !== null && weightOk
+                ? mode === 'percent_of_shipping_charged'
+                  ? {
+                      mode,
+                      percent: value.trim(),
+                      zone: zone.trim() || null,
+                      countries: countryList,
+                      weightMinGrams: minG,
+                      weightMaxGrams: maxG,
+                      effectiveFrom: from,
+                    }
+                  : {
+                      mode,
+                      amount: value.trim(),
+                      zone: zone.trim() || null,
+                      countries: countryList,
+                      weightMinGrams: minG,
+                      weightMaxGrams: maxG,
+                      effectiveFrom: from,
+                    }
+                : null
+            }
+          />
           <div>
             <s-button variant="primary" disabled={busy} onClick={() => void add()}>
               Add rule
@@ -413,11 +456,30 @@ export function ShippingTab({ rules, onChanged }: { rules: RulesResponse; onChan
           />
           {preview && (
             <s-banner tone={preview.invalid > 0 ? 'warning' : 'info'} heading="Import preview">
-              <s-paragraph>
-                {preview.matched} matched, {preview.skipped} skipped, {preview.invalid} invalid.
-                Import replaces the rules you have now.
-                {preview.messages.length > 0 ? ` ${preview.messages.join(' ')}` : ''}
-              </s-paragraph>
+              <s-stack gap="small-300">
+                <s-text>
+                  {preview.matched} matched, {preview.skipped} skipped, {preview.invalid} with a
+                  problem. Import replaces the rules you have now.
+                </s-text>
+                {preview.messages.map((m) => (
+                  <s-text key={m} color="subdued">
+                    {m}
+                  </s-text>
+                ))}
+                <div>
+                  <s-button
+                    variant="tertiary"
+                    onClick={() =>
+                      downloadText(
+                        'import-summary.csv',
+                        importSummaryCsv('Shipping rules', preview, new Date()),
+                      )
+                    }
+                  >
+                    Download summary
+                  </s-button>
+                </div>
+              </s-stack>
             </s-banner>
           )}
           <s-stack direction="inline" gap="base">
@@ -426,7 +488,9 @@ export function ShippingTab({ rules, onChanged }: { rules: RulesResponse; onChan
             </s-button>
             <s-button
               variant="primary"
-              disabled={busy || !csv.trim() || !preview || preview.invalid > 0 || preview.matched === 0}
+              disabled={
+                busy || !csv.trim() || !preview || preview.invalid > 0 || preview.matched === 0
+              }
               onClick={() => void importCsv()}
             >
               Import CSV

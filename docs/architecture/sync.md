@@ -55,3 +55,7 @@ pnpm dev:api ; pnpm --filter @pi/worker start     # api enqueues, worker process
 pnpm sync:verify                                   # reconcile the database against Shopify (dev store)
 pnpm seed:shopify                                  # create test orders (see docs/development/test-data.md)
 ```
+
+## Refund lines beyond the first page
+
+Shopify returns refund line items 25 at a time. The sync now follows `refundLineItems` pages for every refund that has more (`completeRefundLines`), so a large refund is stored in full. If a page cannot be fetched the import fails and is retried; an order is never stored with a silently short refund. An order whose refund lines still could not be completed is marked `refund_lines_incomplete` (`t_order.refund_lines_incomplete`), flagged on Orders (filter "Refund data incomplete"), and reported with the sync warning.

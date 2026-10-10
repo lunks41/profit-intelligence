@@ -101,6 +101,8 @@ export interface ProfitJobPayload {
   orderShopifyIds?: number[];
   /** Ignore costs frozen by earlier calculations (explicit historical recalculation). */
   force?: boolean;
+  /** Set when the merchant asked for this run: its outcome is recorded and shown in Settings. */
+  requestedBy?: 'merchant';
 }
 
 export interface PurgeJobPayload {

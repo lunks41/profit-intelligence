@@ -32,6 +32,16 @@ export interface ReportTable {
   /** rows shown in bold at the end (totals) */
   totalRows: string[][];
   notes: string[];
+  /** how and when the report was made, and how far its figures can be trusted */
+  audit?: ReportAudit;
+}
+
+export interface ReportAudit {
+  /** ISO time the report was generated (UTC) */
+  generatedAt: string;
+  timezone: string;
+  /** plain sentences: which figures are estimated, missing or reported by Shopify */
+  dataNotes: string[];
 }
 
 export interface ReportSpec {
@@ -44,4 +54,6 @@ export interface ReportContext {
   shopName: string;
   currency: string;
   timezone: string;
+  /** the clock for the audit block (tests pass a fixed time) */
+  now?: Date;
 }

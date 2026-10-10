@@ -103,6 +103,23 @@ function Summary({
     data.months.map((m) => Number(f(m)));
   return (
     <>
+      {data.netProfitStatus === 'not_configured' && (
+        <s-banner tone="warning" heading="Net profit is not available yet">
+          <s-paragraph>
+            No expenses are set up, so the Overview shows contribution profit only (revenue less
+            product cost, fees, shipping and advertising). Add rent, salaries, software and other
+            costs below and net profit appears here and on the Overview.
+          </s-paragraph>
+        </s-banner>
+      )}
+      {data.netProfitStatus === 'incomplete' && (
+        <s-banner tone="info" heading="Net profit is an estimate for some months">
+          <s-paragraph>
+            Months marked Incomplete have orders with a missing product cost, payment fee or
+            shipping cost, so their net profit is higher than it really is.
+          </s-paragraph>
+        </s-banner>
+      )}
       <s-grid gridTemplateColumns="repeat(auto-fit, minmax(15rem, 1fr))" gap="base">
         <Kpi
           icon="wallet"
@@ -139,6 +156,51 @@ function Summary({
           )}
         />
       </s-grid>
+      <s-section padding="none" heading="Monthly profit and loss">
+        <s-table>
+          <s-table-header-row>
+            <s-table-header listSlot="primary">Month</s-table-header>
+            <s-table-header format="numeric">Revenue</s-table-header>
+            <s-table-header format="numeric">Contribution profit</s-table-header>
+            <s-table-header format="numeric">Recurring expenses</s-table-header>
+            <s-table-header format="numeric">One-time expenses</s-table-header>
+            <s-table-header format="numeric">Net profit</s-table-header>
+            <s-table-header>Data</s-table-header>
+          </s-table-header-row>
+          <s-table-body>
+            {[...data.months].reverse().map((m) => (
+              <s-table-row key={m.month}>
+                <s-table-cell>{monthName(m.month)}</s-table-cell>
+                <s-table-cell>{formatMoney(m.revenue, cur)}</s-table-cell>
+                <s-table-cell>{formatMoney(m.contributionProfit, cur)}</s-table-cell>
+                <s-table-cell>{formatMoney(m.recurring, cur)}</s-table-cell>
+                <s-table-cell>{formatMoney(m.oneTime, cur)}</s-table-cell>
+                <s-table-cell>
+                  {m.netProfit === null ? (
+                    <s-text color="subdued">Not set up</s-text>
+                  ) : (
+                    <s-text type="strong">{formatMoney(m.netProfit, cur)}</s-text>
+                  )}
+                </s-table-cell>
+                <s-table-cell>
+                  {m.incomplete ? (
+                    <s-badge tone="caution">Incomplete</s-badge>
+                  ) : (
+                    <s-text color="subdued">Complete</s-text>
+                  )}
+                </s-table-cell>
+              </s-table-row>
+            ))}
+          </s-table-body>
+        </s-table>
+        <s-box padding="base">
+          <s-text color="subdued">
+            Net profit is contribution profit less the month&apos;s expenses. Recurring expenses are
+            spread over the days of each month; one-time expenses fall in the month they are dated.
+            Advertising is already taken off contribution profit.
+          </s-text>
+        </s-box>
+      </s-section>
       {names.length > 0 && (
         <s-section heading="Expenses by month">
           <SampleBars

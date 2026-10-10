@@ -187,10 +187,11 @@ describe('recalculateProfit', () => {
   it('does nothing for an empty order list', async () => {
     await seedCatalog(a);
     await loadOrders(a);
-    expect(await recalc(a, { orderShopifyIds: [] })).toEqual({
+    expect(await recalc(a, { orderShopifyIds: [] })).toMatchObject({
       orders: 0,
       recognized: 0,
       entries: 0,
+      changed: 0,
     });
     expect(await count('f_profit_entry')).toBe(0);
   });
@@ -211,6 +212,73 @@ describe('recalculateProfit', () => {
       )
     ).rows[0];
     expect(missing).toEqual({ a: '0.0000', status: 'missing' });
+  });
+});
+
+describe('what a recalculation reports', () => {
+  it('the first run changes every order, a repeat run changes none, and profit before and after add up', async () => {
+    await seedCatalog(a);
+    await loadOrders(a);
+    const first = await recalc(a);
+    expect(first.changed).toBe(first.orders); // nothing was calculated before
+    expect(Number(first.profitBefore)).toBe(0);
+    const total = (
+      await admin.query(
+        'select coalesce(sum(contribution_amount),0)::numeric(19,4)::text p from f_order_profit where shop_id = $1 and recognized',
+        [a.shopId],
+      )
+    ).rows[0].p as string;
+    expect(Number(first.profitAfter).toFixed(2)).toBe(Number(total).toFixed(2));
+
+    const again = await recalc(a);
+    expect(again.changed).toBe(0);
+    expect(again.nowComplete).toBe(0);
+    expect(again.profitBefore).toBe(again.profitAfter);
+  });
+
+  it('a cost added afterwards changes only the orders that sold it, and moves profit by that cost', async () => {
+    const variants = await seedCatalog(a, []);
+    await loadOrders(a);
+    await admin.query(
+      'update t_product_variant set unit_cost_amount = null where shopify_id = $1',
+      [variants[0]],
+    );
+    const gap = await recalc(a);
+    expect(gap.stillIncomplete).toBeGreaterThan(0);
+    await setProductCost(db, a, {
+      variantShopifyId: variants[0]!,
+      amount: '12.00',
+      currency: 'USD',
+      effectiveFrom: '2026-01-01',
+      actor: 'tester',
+      reason: 'invoice',
+    });
+    const fixed = await recalc(a);
+    expect(fixed.changed).toBe(1);
+    // the missing cost used to count as nothing; now 12.00 is subtracted
+    expect(Number(fixed.profitBefore) - Number(fixed.profitAfter)).toBeCloseTo(12, 2);
+    // these orders still have no shipping cost rule, so they stay incomplete: not claimed as fixed
+    expect(fixed.nowComplete).toBe(0);
+    expect(fixed.stillIncomplete).toBe(gap.stillIncomplete);
+  });
+
+  it('records the outcome in the history only for a run the merchant asked for', async () => {
+    await seedCatalog(a);
+    await loadOrders(a);
+    await recalc(a); // after a sync: not recorded
+    expect(await count('a_audit_log', "action = 'profit.recalculated'")).toBe(0);
+    await recalc(a, { requestedBy: 'merchant', force: true });
+    const rows = (
+      await admin.query(
+        "select new_value from a_audit_log where action = 'profit.recalculated' and shop_id = $1",
+        [a.shopId],
+      )
+    ).rows;
+    expect(rows).toHaveLength(1);
+    expect(rows[0].new_value).toMatchObject({ mode: 'everything', orders: orderNodes.length });
+    // a run for a few orders is never recorded as the merchant's recalculation
+    await recalc(a, { requestedBy: 'merchant', orderShopifyIds: [1] });
+    expect(await count('a_audit_log', "action = 'profit.recalculated'")).toBe(1);
   });
 });
 

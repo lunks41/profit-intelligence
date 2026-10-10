@@ -10,21 +10,21 @@ Profit engine (cash view, half-up, decimal safe, frozen cost history) · Overvie
 
 ## What competitors have that matters, and where we stand
 
-| Capability                                        | TrueProfit | BeProfit | Lifetimely | MerchantFlow   | PodVector  | Triple Whale | Us today                     |
-| ------------------------------------------------- | ---------- | -------- | ---------- | -------------- | ---------- | ------------ | ---------------------------- |
-| Live ad spend: Meta, Google, TikTok               | yes        | yes      | yes        | yes            | Meta       | yes          | **Meta and Google daily spend; TikTok manual** |
-| Snapchat, Pinterest, X, Amazon ads                | yes        | yes      | -          | Snapchat       | -          | some         | no                           |
+| Capability                                        | TrueProfit | BeProfit | Lifetimely | MerchantFlow   | PodVector  | Triple Whale | Us today                                            |
+| ------------------------------------------------- | ---------- | -------- | ---------- | -------------- | ---------- | ------------ | --------------------------------------------------- |
+| Live ad spend: Meta, Google, TikTok               | yes        | yes      | yes        | yes            | Meta       | yes          | **Meta and Google daily spend; TikTok manual**      |
+| Snapchat, Pinterest, X, Amazon ads                | yes        | yes      | -          | Snapchat       | -          | some         | no                                                  |
 | Actual payment fees                               | yes        | yes      | -          | -              | -          | yes          | **Shopify-reported fees, rule as labeled fallback** |
-| Carrier shipping cost by zone or country          | yes        | yes      | -          | -              | by product | yes          | **zone, country, and weight rules, plus CSV** |
-| COGS import (CSV) and bulk edit                   | yes        | yes      | yes        | yes            | -          | yes          | **CSV import and export, and bulk edit** |
-| Dropshipping or POD cost sync (CJ, Printify)      | CJ         | -        | -          | -              | Printify   | -            | no                           |
-| Profit by country, platform, store                | -          | yes      | -          | -              | -          | -            | channel only                 |
-| Cohorts, LTV, CAC payback                         | LTV        | yes      | **core**   | -              | -          | yes          | no                           |
-| First-party pixel attribution, creative analytics | -          | UTM      | modeled    | -              | -          | **core**     | no                           |
-| AI assistant                                      | -          | -        | forecasts  | MCP, valuation | -          | Moby         | no                           |
-| Multi-store and agency view                       | -          | yes      | -          | yes            | -          | yes          | no                           |
-| Bank reconciliation for untracked expenses        | -          | -        | -          | yes            | -          | -            | no                           |
-| Custom dashboards                                 | -          | yes      | -          | -              | -          | yes          | no                           |
+| Carrier shipping cost by zone or country          | yes        | yes      | -          | -              | by product | yes          | **zone, country, and weight rules, plus CSV**       |
+| COGS import (CSV) and bulk edit                   | yes        | yes      | yes        | yes            | -          | yes          | **CSV import and export, and bulk edit**            |
+| Dropshipping or POD cost sync (CJ, Printify)      | CJ         | -        | -          | -              | Printify   | -            | no                                                  |
+| Profit by country, platform, store                | -          | yes      | -          | -              | -          | -            | channel only                                        |
+| Cohorts, LTV, CAC payback                         | LTV        | yes      | **core**   | -              | -          | yes          | no                                                  |
+| First-party pixel attribution, creative analytics | -          | UTM      | modeled    | -              | -          | **core**     | no                                                  |
+| AI assistant                                      | -          | -        | forecasts  | MCP, valuation | -          | Moby         | no                                                  |
+| Multi-store and agency view                       | -          | yes      | -          | yes            | -          | yes          | no                                                  |
+| Bank reconciliation for untracked expenses        | -          | -        | -          | yes            | -          | -            | no                                                  |
+| Custom dashboards                                 | -          | yes      | -          | -              | -          | yes          | no                                                  |
 
 ## V1: launch version (the smallest product merchants will pay for)
 
@@ -40,6 +40,12 @@ Ordered by importance. The first six decide whether the profit figure is right a
 8. **Email delivery in production** (SMTP or a mail service) for scheduled reports and alerts. Code is done. _S. Owner: provide the account._
 9. **Alerts by email.** _Built: Settings, Alerts, "Email alerts" (up to 5 addresses). Warnings and serious findings of the daily profit check and stale-data notices are emailed in one message per run, never twice. Needs the mail account (item 8) to actually deliver._
 10. **Real-data testing and a UI polish pass.** Reconcile against the dev store passed (`pnpm sync:verify`, `pnpm profit:verify`): 81 orders in the 90-day window match Shopify, and the profit ledger matches the approved examples. One older order stays stored after it ages out of the window. UI polish is still open. _M._
+
+### V1 review items (products, orders, expenses, settings, reports, sync)
+
+Built: fee source per order (Reported, Estimated from rule, Missing) with filters; refund lines beyond 25 fetched, and orders still incomplete flagged; order detail links to the Settings screen that fixes a missing cost, fee rule or shipping rule; partial sync lists what was skipped with a retry; rule coverage and a check before saving a fee or shipping rule; shipping data gaps (no country, no weight); recalculation result (orders changed, now complete, profit before and after); CSV import problem list with a downloadable summary; export audit block and fee and shipping source labels; expenses net-profit banner and monthly profit and loss; products missing-cost banner and an explanation of what stays unallocated; collection bulk edit verified with tests; reconciliation against Shopify run (`pnpm sync:verify`, `pnpm profit:verify`); fresh-database migration run; privacy and support pages, listing text and the history decision (`docs/decisions/0002-order-history-window.md`).
+
+Not built (needs the owner or later): billing prices, hosting and monitoring, the mail account, `read_all_orders` approval, rotating the leaked Shopify secret.
 
 ## V1.1: fast follow (weeks after launch)
 

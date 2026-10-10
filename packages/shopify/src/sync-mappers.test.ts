@@ -146,4 +146,19 @@ describe('mapProduct', () => {
     expect(variants.some((v) => v.unitCostAmount === null)).toBe(true);
     for (const v of variants) expect(v.priceAmount).toMatch(/^-?\d+\.\d{4}$/);
   });
+
+  it('reads collection titles: trimmed, without blanks, at most 20, and none when absent', () => {
+    expect(productNodes.map(mapProduct).every((m) => m.product.collectionTitles.length === 0)).toBe(
+      true,
+    ); // the stored fixture predates the collections field
+    const node = JSON.parse(JSON.stringify(productNodes[1]));
+    node.collections = {
+      nodes: [{ title: ' Winter ' }, { title: '' }, { title: null }, {}, { title: 'Sale' }],
+    };
+    expect(mapProduct(node).product.collectionTitles).toEqual(['Winter', 'Sale']);
+    node.collections = {
+      nodes: Array.from({ length: 30 }, (_, i) => ({ title: `C${i}` })),
+    };
+    expect(mapProduct(node).product.collectionTitles).toHaveLength(20);
+  });
 });

@@ -153,7 +153,8 @@ describe('daily leakage scan', () => {
       expect(['warning', 'critical']).toContain(n.severity);
       expect(n.kind).toMatch(/^leakage_/);
       expect(n.body.length).toBeGreaterThan(10);
-      expect(n.link).toBe('/profit');
+      // the finding's own action (Settings, Orders, Products...), or the Profit screen
+      expect(n.link).toMatch(/^\/(profit|settings|orders|products|marketing|expenses)(\?.*)?$/);
     }
     expect(list.map((n) => n.kind)).toContain('leakage_missing_costs');
   });

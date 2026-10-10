@@ -92,6 +92,10 @@ function fakeShopify(
           },
         };
       }
+      if (q.includes('BalanceFees')) {
+        calls.push({ kind: 'balanceFees', after });
+        return { shopifyPaymentsAccount: null }; // a store without Shopify Payments
+      }
       if (q.includes('SyncMoreRefundLines')) {
         calls.push({ kind: 'moreRefundLines', after });
         if (opts.failRefundLines) throw new ShopifyApiError('Network error calling Shopify');
@@ -190,7 +194,9 @@ describe('runSync', () => {
     await runSync(deps(retry.gql), payload(job.id), { retryCount: 1, retryLimit: 5 });
     expect(await count('t_order')).toBe(orderNodes.length);
     // the retry started at the checkpoint: no products, no first order page
-    expect(retry.calls.map((c) => `${c.kind}:${c.after}`)).toEqual(['orders:c4', 'orders:c8']);
+    expect(
+      retry.calls.filter((c) => c.kind !== 'balanceFees').map((c) => `${c.kind}:${c.after}`),
+    ).toEqual(['orders:c4', 'orders:c8']);
     expect(await getSyncJob(db, shop, job.id)).toMatchObject({ status: 'succeeded', attempts: 2 });
   });
 

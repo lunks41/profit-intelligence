@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import type { AuditResponse } from '@pi/contracts';
-import { apiPost } from '../../lib/api';
+import { useEffect, useState } from 'react';
+import type { AuditResponse, RecalcResultResponse } from '@pi/contracts';
+import { apiGet, apiPost } from '../../lib/api';
+import { formatMoney } from '../../lib/format';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { SyncNotice } from '../sync/SyncNotice';
 import { SyncSection } from '../sync/SyncSection';
@@ -26,12 +27,79 @@ export function DataTab({ reloadKey }: { reloadKey: number }) {
   );
 }
 
+/**
+ * What the last recalculation did: how many orders it read, how many changed, how many that had
+ * something missing are now complete, and the profit of the counted orders before and after. While
+ * a run the merchant just started is in progress it checks every few seconds for the result.
+ */
+function RecalcResult({ since }: { since: string | null }) {
+  const [data, setData] = useState<RecalcResultResponse['result']>(null);
+  const [waiting, setWaiting] = useState(false);
+
+  useEffect(() => {
+    let stop = false;
+    let tries = 0;
+    setWaiting(since !== null);
+    const check = async () => {
+      try {
+        const r = await apiGet<RecalcResultResponse>('/settings/recalculate/last');
+        if (stop) return;
+        const fresh = r.result && (since === null || r.result.finishedAt >= since);
+        if (fresh || since === null) {
+          setData(r.result);
+          setWaiting(false);
+          return;
+        }
+      } catch {
+        if (stop) return;
+      }
+      if (++tries < 60) timer = setTimeout(() => void check(), 3000);
+      else setWaiting(false);
+    };
+    let timer = setTimeout(() => void check(), since === null ? 0 : 2000);
+    return () => {
+      stop = true;
+      clearTimeout(timer);
+    };
+  }, [since]);
+
+  if (waiting) {
+    return (
+      <s-stack direction="inline" gap="small" alignItems="center">
+        <s-spinner accessibilityLabel="Recalculating" />
+        <s-text color="subdued">Recalculating your orders…</s-text>
+      </s-stack>
+    );
+  }
+  if (!data) return null;
+  const delta = Number(data.profitAfter) - Number(data.profitBefore);
+  const signed = `${delta > 0 ? '+' : delta < 0 ? '-' : ''}${formatMoney(Math.abs(delta).toFixed(2), data.currency)}`;
+  return (
+    <s-banner tone="success" heading="Last recalculation">
+      <s-stack gap="small-300">
+        <s-text>
+          Read {data.orders} orders ({data.recognized} counted). {data.changed} changed,{' '}
+          {data.nowComplete} that had something missing are now complete, and {data.stillIncomplete}{' '}
+          counted orders still have a missing cost, fee or shipping cost.
+        </s-text>
+        <s-text>
+          Contribution profit of the counted orders went from{' '}
+          {formatMoney(data.profitBefore, data.currency)} to{' '}
+          {formatMoney(data.profitAfter, data.currency)} ({signed}).
+        </s-text>
+        <s-text color="subdued">Finished {new Date(data.finishedAt).toLocaleString()}.</s-text>
+      </s-stack>
+    </s-banner>
+  );
+}
+
 function Recalculate() {
   const fill = useAction();
   const all = useAction();
   const [filled, setFilled] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [redone, setRedone] = useState(false);
+  const [startedAt, setStartedAt] = useState<string | null>(null);
 
   return (
     <s-section heading="Apply changes to existing orders">
@@ -44,7 +112,7 @@ function Recalculate() {
         <FormError message={fill.error} />
         {filled ? (
           <s-banner tone="success">
-            <s-paragraph>Started. Figures update in a minute or two.</s-paragraph>
+            <s-paragraph>Started. The result appears below when it finishes.</s-paragraph>
           </s-banner>
         ) : (
           <div>
@@ -52,8 +120,13 @@ function Recalculate() {
               variant="primary"
               disabled={fill.busy}
               onClick={async () => {
-                if (await fill.run(() => apiPost('/settings/recalculate', { mode: 'fill_gaps' })))
+                const r = await fill.run(() =>
+                  apiPost<{ startedAt: string }>('/settings/recalculate', { mode: 'fill_gaps' }),
+                );
+                if (r) {
+                  setStartedAt(r.startedAt);
                   setFilled(true);
+                }
               }}
             >
               Apply to existing orders
@@ -70,7 +143,7 @@ function Recalculate() {
         <FormError message={all.error} />
         {redone ? (
           <s-banner tone="success">
-            <s-paragraph>Started. Figures update in a minute or two.</s-paragraph>
+            <s-paragraph>Started. The result appears below when it finishes.</s-paragraph>
           </s-banner>
         ) : confirming ? (
           <s-banner tone="warning" heading="Change past figures?">
@@ -81,9 +154,13 @@ function Recalculate() {
                   tone="critical"
                   disabled={all.busy}
                   onClick={async () => {
-                    if (
-                      await all.run(() => apiPost('/settings/recalculate', { mode: 'everything' }))
-                    ) {
+                    const r = await all.run(() =>
+                      apiPost<{ startedAt: string }>('/settings/recalculate', {
+                        mode: 'everything',
+                      }),
+                    );
+                    if (r) {
+                      setStartedAt(r.startedAt);
                       setRedone(true);
                       setConfirming(false);
                     }
@@ -102,6 +179,7 @@ function Recalculate() {
             </s-button>
           </div>
         )}
+        <RecalcResult since={startedAt} />
       </s-stack>
     </s-section>
   );

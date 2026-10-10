@@ -25,6 +25,40 @@ type Executor = Db | Tx;
 // ---- reading orders for the engine ----------------------------------------------------------
 
 /** Structurally identical to the profit engine's EngineOrder (db does not depend on the engine). */
+/** What an order's profit looked like before a recalculation, to report what changed. */
+export interface ProfitSnapshot {
+  recognized: boolean;
+  /** contribution profit in the order currency, null when the order is not counted */
+  contribution: string | null;
+  partial: boolean;
+}
+
+export async function loadProfitSnapshots(
+  tx: Executor,
+  scope: { shopId: string },
+  orderIds: string[],
+): Promise<Map<string, ProfitSnapshot>> {
+  const out = new Map<string, ProfitSnapshot>();
+  if (orderIds.length === 0) return out;
+  const res = await tx.execute(sql`
+    select order_id::text as id, recognized, contribution_amount::text as c, partial
+      from f_order_profit
+     where shop_id = ${scope.shopId}
+       and order_id = any(${sql`ARRAY[${sql.join(
+         orderIds.map((i) => sql`${i}::uuid`),
+         sql`, `,
+       )}]`})`);
+  for (const r of res.rows as Array<{
+    id: string;
+    recognized: boolean;
+    c: string | null;
+    partial: boolean;
+  }>) {
+    out.set(r.id, { recognized: r.recognized, contribution: r.c, partial: r.partial });
+  }
+  return out;
+}
+
 export interface ProfitOrderData {
   shopifyId: number;
   processedAt: Date;
@@ -82,9 +116,10 @@ export interface LoadedOrder {
 export async function loadOrdersForProfit(
   tx: Executor,
   scope: ShopScope,
-  opts: { orderShopifyIds?: number[]; afterId?: string; limit: number },
+  opts: { orderShopifyIds?: number[]; afterId?: string; limit: number; since?: Date },
 ): Promise<LoadedOrder[]> {
   const conditions = [eq(tOrder.shopId, scope.shopId)];
+  if (opts.since) conditions.push(gte(tOrder.processedAt, opts.since));
   if (opts.orderShopifyIds) conditions.push(inArray(tOrder.shopifyId, opts.orderShopifyIds));
   if (opts.afterId) conditions.push(gt(tOrder.id, opts.afterId));
   const orders = await tx

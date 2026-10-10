@@ -541,7 +541,9 @@ describe('data completeness and issues', () => {
     const shipping = o.issues.find((i) => i.id === 'missing_shipping_cost')!;
     expect(shipping.title).toContain(`${q.shipping!.missing} of`);
     for (const i of o.issues) {
-      expect(i.action.href).toMatch(/^(#sync|\/(settings|marketing|expenses)(\?.*)?)$/);
+      expect(i.action.href).toMatch(
+        /^(#sync|\/(settings|marketing|expenses|orders|products)(\?.*)?)$/,
+      );
     }
     // most severe first
     const rank = { critical: 0, warning: 1, info: 2 } as const;

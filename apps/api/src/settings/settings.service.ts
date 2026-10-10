@@ -7,6 +7,8 @@ import type {
   BulkCostBody,
   FeeRuleBody,
   ProductCostImportBody,
+  RecalcResultResponse,
+  RuleCoverageResponse,
   RulesResponse,
   SetCostBody,
   ShippingRuleBody,
@@ -24,6 +26,8 @@ import {
   listCostHistory,
   listCostRows,
   listRules,
+  loadOrdersForProfit,
+  loadRuleData,
   logAudit,
   replaceShippingCostRules,
   revokePaymentFeeRule,
@@ -37,6 +41,7 @@ import {
   setProductCosts,
   setShippingCostRule,
   variantBelongsToShop,
+  withTenant,
 } from '@pi/db';
 import type { Db } from '@pi/db';
 import {
@@ -45,7 +50,9 @@ import {
   formatShippingRulesCsv,
   parseProductCostCsv,
   parseShippingRulesCsv,
+  ruleCoverage,
 } from '@pi/profit-engine';
+import type { EngineOrder } from '@pi/profit-engine';
 import type { PgBoss } from 'pg-boss';
 import type { TenantContext } from '../auth/installation.service.js';
 import { DB, QUEUE } from '../tokens.js';
@@ -206,7 +213,7 @@ export class SettingsService {
         matched: messages.length ? 0 : rows.length,
         skipped: parsed.skipped,
         invalid: messages.length,
-        messages: messages.slice(0, 12),
+        messages: messages.slice(0, 200),
       };
     }
     if (errors.length || parsed.errors.length) {
@@ -372,7 +379,7 @@ export class SettingsService {
         matched: messages.length ? 0 : parsed.rules.length,
         skipped: 0,
         invalid: messages.length,
-        messages: messages.slice(0, 12),
+        messages: messages.slice(0, 200),
       };
     }
     if (messages.length) {
@@ -447,8 +454,96 @@ export class SettingsService {
       tenantId: scope.tenantId,
       shopId: scope.shopId,
       force,
+      requestedBy: 'merchant',
     });
-    return { queued: true, mode };
+    return { queued: true, mode, startedAt: new Date().toISOString() };
+  }
+
+  /** The outcome of the latest recalculation the merchant started (null until one has finished). */
+  async lastRecalculation(scope: TenantContext): Promise<RecalcResultResponse> {
+    const rows = await listAudit(this.db, scope, 50);
+    const hit = rows.find((r) => r.action === 'profit.recalculated');
+    const v = (hit?.newValue ?? null) as Record<string, unknown> | null;
+    if (!hit || !v) return { result: null };
+    const shop = await this.shop(scope);
+    return {
+      result: {
+        finishedAt: hit.createdAt,
+        mode: v.mode === 'everything' ? 'everything' : 'fill_gaps',
+        currency: shop.currency,
+        orders: Number(v.orders ?? 0),
+        recognized: Number(v.recognized ?? 0),
+        changed: Number(v.changed ?? 0),
+        nowComplete: Number(v.nowComplete ?? 0),
+        stillIncomplete: Number(v.stillIncomplete ?? 0),
+        profitBefore: String(v.profitBefore ?? '0.0000'),
+        profitAfter: String(v.profitAfter ?? '0.0000'),
+      },
+    };
+  }
+
+  /**
+   * How the saved rules cover the last 90 days of orders, or, with a candidate rule that has not been
+   * saved, how many payments or orders that rule would be chosen for. Nothing is changed.
+   */
+  async coverage(
+    scope: TenantContext,
+    candidate: { fee?: FeeRuleBody; shipping?: ShippingRuleBody } = {},
+  ): Promise<RuleCoverageResponse> {
+    const WINDOW_DAYS = 90;
+    const LIMIT = 1000;
+    const since = new Date(Date.now() - WINDOW_DAYS * 86_400_000);
+    const { loaded, rules } = await withTenant(this.db, scope.tenantId, async (tx) => {
+      const loaded = await loadOrdersForProfit(tx, scope, { limit: LIMIT, since });
+      const variantIds = [
+        ...new Set(
+          loaded.flatMap((l) =>
+            l.order.lines.map((x) => x.variantShopifyId).filter((v): v is number => v !== null),
+          ),
+        ),
+      ];
+      return { loaded, rules: await loadRuleData(tx, scope, variantIds) };
+    });
+    const { currency: cur } = await this.shop(scope);
+    const result = ruleCoverage(
+      loaded.map((l) => l.order as EngineOrder),
+      {
+        timezone: rules.timezone,
+        feeRules: rules.feeRules,
+        shippingRules: rules.shippingRules,
+        variantWeights: rules.variantWeights,
+      },
+      {
+        fee: candidate.fee
+          ? {
+              gateway: candidate.fee.gateway,
+              percent: candidate.fee.percent,
+              fixedAmount: candidate.fee.fixedAmount,
+              currency: cur,
+              effectiveFrom: candidate.fee.effectiveFrom,
+            }
+          : undefined,
+        shipping: candidate.shipping
+          ? {
+              mode: candidate.shipping.mode,
+              amount:
+                candidate.shipping.mode === 'percent_of_shipping_charged'
+                  ? null
+                  : candidate.shipping.amount,
+              percent:
+                candidate.shipping.mode === 'percent_of_shipping_charged'
+                  ? candidate.shipping.percent
+                  : null,
+              effectiveFrom: candidate.shipping.effectiveFrom,
+              zone: candidate.shipping.zone ?? null,
+              countries: candidate.shipping.countries ?? [],
+              weightMinGrams: candidate.shipping.weightMinGrams ?? null,
+              weightMaxGrams: candidate.shipping.weightMaxGrams ?? null,
+            }
+          : undefined,
+      },
+    );
+    return { windowDays: WINDOW_DAYS, sampled: loaded.length >= LIMIT, ...result };
   }
 
   async audit(scope: TenantContext): Promise<AuditResponse> {

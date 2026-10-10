@@ -25,7 +25,11 @@ import type {
 const ZERO = new D(0);
 
 /** Grams of everything that ships. Null when any shippable line has no recorded weight. */
-function shipmentOf(order: EngineOrder, cfg: EngineConfig, lines: readonly EngineLine[]): Shipment {
+export function shipmentOf(
+  order: EngineOrder,
+  cfg: EngineConfig,
+  lines: readonly EngineLine[],
+): Shipment {
   let grams = 0;
   let unknown = false;
   for (const line of lines) {

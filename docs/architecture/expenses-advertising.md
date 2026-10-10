@@ -29,3 +29,7 @@ Tables: `f_ad_account`, `f_ad_spend_daily`.
 1. Implement `AdProvider.fetchDaily(account, range)` and register it in `PROVIDERS`.
 2. Mark it `available` in `apps/api/src/marketing/marketing.service.ts` and add its connect flow.
 3. Add tests with a fake of the platform: window filtering, duplicates, failure handling (see `sync.integration.test.ts`).
+
+## Monthly profit and loss
+
+The expenses summary has, for each of the last six months, revenue, contribution profit, advertising, this month's expenses (recurring and one-time) and net profit, all from `summarizePeriod`, so a finished month equals the Overview for the same dates. `netProfitStatus` is `not_configured` when no expenses exist (the page says net profit is not available), `incomplete` when a month has a missing cost, fee or shipping cost (net profit is an estimate), otherwise `complete`.

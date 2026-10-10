@@ -23,3 +23,9 @@ Turns estimated profit into confirmed profit. All endpoints are tenant-scoped an
 
 Code: `packages/db/src/settings.ts` (queries), `packages/db/src/profit.ts` (writes, audit), `apps/api/src/settings/`, `apps/web/components/settings/`.
 The original sample-data design is kept at `/dev/settings-design` (development only).
+
+## Rule coverage, previews and recalculation results
+
+- `GET /settings/rules/coverage` shows how the saved rules cover the last 90 days of counted orders (up to 1,000): per gateway, payments with a fee Shopify reported, priced by a rule, or with no fee data; and for orders that ship, how many have a shipping rule, no destination country, or an item with no weight. `POST /settings/fee-rules/preview` and `/shipping-rules/preview` take a rule that is not saved and say how many payments or orders it would be chosen for (`candidateApplies`), so a rule that matches nothing is visible. They use the same selection as the profit calculation (`ruleCoverage`, `packages/profit-engine/src/coverage.ts`) and change nothing.
+- A recalculation the merchant starts (`requestedBy: 'merchant'`) records its outcome in the audit log as `profit.recalculated`: orders read, orders changed, orders that had something missing and are now complete, counted orders still incomplete, and contribution profit before and after. `GET /settings/recalculate/last` returns the latest; Settings, Data shows it when the run finishes. Runs started by a sync or webhook are not recorded.
+- The CSV import previews (costs and shipping rules) list every problem line (up to 200), and the page offers a downloadable summary file.

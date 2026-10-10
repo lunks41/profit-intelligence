@@ -65,7 +65,9 @@ export function ReportTable({ report }: { report: ReportTableResponse }) {
             </s-table-body>
           </s-table>
         )}
-        {(report.truncated || report.notes.length > 0) && (
+        {(report.truncated ||
+          report.notes.length > 0 ||
+          (report.audit?.dataNotes.length ?? 0) > 0) && (
           <s-box padding="base">
             <s-stack gap="small-300">
               {report.truncated && (
@@ -75,6 +77,11 @@ export function ReportTable({ report }: { report: ReportTableResponse }) {
               )}
               {report.notes.map((n) => (
                 <s-text key={n} color="subdued">
+                  {n}
+                </s-text>
+              ))}
+              {(report.audit?.dataNotes ?? []).map((n) => (
+                <s-text key={n} tone="caution">
                   {n}
                 </s-text>
               ))}

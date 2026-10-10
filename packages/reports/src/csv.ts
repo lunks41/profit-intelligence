@@ -23,5 +23,23 @@ export function renderCsv(report: ReportTable): Buffer {
       row.map((cell, i) => csvCell(cell ?? '', report.columns[i]?.type ?? 'text')).join(','),
     );
   }
+  // a labelled block under the table: when and for what the report was made, and how reliable it is
+  const info: Array<[string, string]> = [
+    ['Report', report.title],
+    ['Store', report.subtitle.split(',')[0] ?? ''],
+    ['Period', report.from === report.to ? report.from : `${report.from} to ${report.to}`],
+    ['Currency', report.currency],
+  ];
+  if (report.audit) {
+    info.push(
+      ['Generated (UTC)', report.audit.generatedAt],
+      ['Shop time zone', report.audit.timezone],
+    );
+  }
+  lines.push('');
+  for (const [k, v] of info) lines.push(`${csvCell(k, 'text')},${csvCell(v, 'text')}`);
+  for (const n of report.audit?.dataNotes ?? [])
+    lines.push(`${csvCell('Data note', 'text')},${csvCell(n, 'text')}`);
+  for (const n of report.notes) lines.push(`${csvCell('Note', 'text')},${csvCell(n, 'text')}`);
   return Buffer.from('﻿' + lines.join('\r\n') + '\r\n', 'utf8');
 }

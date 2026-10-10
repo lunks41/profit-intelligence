@@ -48,11 +48,34 @@ describe('renderCsv', () => {
   it('writes a header, the rows, then the totals, with CRLF and a byte order mark', () => {
     const text = renderCsv(report()).toString('utf8');
     expect(text.startsWith('﻿')).toBe(true);
-    expect(text.split('\r\n')).toEqual([
+    expect(text.split('\r\n').slice(0, 3)).toEqual([
       '﻿Product,Units,Profit,Margin',
       'Trail Backpack,3,1234.5000,0.3706',
       'Total,,1234.5000,',
-      '',
+    ]);
+  });
+
+  it('ends with a labelled block: report, store, period, currency, time, data notes and notes', () => {
+    const text = renderCsv(
+      report({
+        audit: {
+          generatedAt: '2026-10-10T06:00:00.000Z',
+          timezone: 'Asia/Dubai',
+          dataNotes: ['Payment fees are estimated from your rule on 4 of 10 orders.'],
+        },
+      }),
+    ).toString('utf8');
+    const lines = text.split('\r\n');
+    expect(lines[3]).toBe('');
+    expect(lines.slice(4, 12)).toEqual([
+      'Report,Product profitability',
+      'Store,Test shop',
+      'Period,2026-09-01 to 2026-09-30',
+      'Currency,USD',
+      'Generated (UTC),2026-10-10T06:00:00.000Z',
+      'Shop time zone,Asia/Dubai',
+      'Data note,Payment fees are estimated from your rule on 4 of 10 orders.',
+      'Note,A note',
     ]);
   });
 

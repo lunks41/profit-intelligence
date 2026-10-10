@@ -36,3 +36,9 @@ Package `@pi/reports` builds reports; the API shows them and the worker prepares
 ## Retention
 
 Export files are deleted after 7 days by the nightly cleanup (`deleteExpiredExports`); a purge of a shop removes its exports, schedules, deliveries and notifications.
+
+## Audit block and estimate labels
+
+- Every CSV ends with a labelled block under the table (after a blank line): report, store, period, currency, generated time (UTC), shop time zone, then one `Data note` line per caveat and the report's own notes. The PDF has the same under "About this report". The Reports screen shows the data notes under the preview.
+- Data notes come from `dataNotesFrom` (`packages/reports/src/audit.ts`), written from the same aggregate as the Overview: product cost missing or only Shopify's estimate (share of sales value), payment fees estimated from a rule or unknown (orders and amount), shipping cost estimated or unknown. No orders, or nothing to qualify, says so.
+- The order report has **Fee source** and **Shipping source** columns: Reported, Estimated from rule, Missing, or None due. A missing fee is the word Missing, never 0.00.

@@ -117,6 +117,13 @@ export function SyncSection({
                 {status.progress.products} products, {status.progress.orders} orders imported so far
               </s-text>
             )}
+            {process.env.NEXT_PUBLIC_READ_ALL_ORDERS !== 'true' && (
+              <s-text color="subdued">
+                Shopify shares the last 60 days of orders with a new app. Older orders appear once
+                the app is approved for all orders, so a 3 month or 1 year view can show fewer days
+                than you chose.
+              </s-text>
+            )}
             <s-text>
               Stored now: {status.counts.orders} orders, {status.counts.products} products,{' '}
               {status.counts.refunds} refunds.

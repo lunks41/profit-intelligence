@@ -168,6 +168,28 @@ export class SettingsController {
     return this.service.setThreshold(t, parse(thresholdBodySchema, body).missingCostWarningPct);
   }
 
+  @Get('rules/coverage')
+  coverage(@Tenant() t: TenantContext) {
+    return this.service.coverage(t);
+  }
+
+  @Post('fee-rules/preview')
+  @HttpCode(200)
+  previewFeeRule(@Tenant() t: TenantContext, @Body() body: unknown) {
+    return this.service.coverage(t, { fee: parse(feeRuleBodySchema, body) });
+  }
+
+  @Post('shipping-rules/preview')
+  @HttpCode(200)
+  previewShippingRule(@Tenant() t: TenantContext, @Body() body: unknown) {
+    return this.service.coverage(t, { shipping: parse(shippingRuleBodySchema, body) });
+  }
+
+  @Get('recalculate/last')
+  lastRecalculation(@Tenant() t: TenantContext) {
+    return this.service.lastRecalculation(t);
+  }
+
   @Post('recalculate')
   @HttpCode(202)
   recalculate(@Tenant() t: TenantContext, @Body() body: unknown) {

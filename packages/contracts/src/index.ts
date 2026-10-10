@@ -697,6 +697,63 @@ export const recalcBodySchema = z.object({
   mode: z.enum(['fill_gaps', 'everything']),
 });
 
+const gatewayCoverageSchema = z.object({
+  gateway: z.string().nullable(),
+  payments: z.number(),
+  reported: z.number(),
+  covered: z.number(),
+  uncovered: z.number(),
+});
+
+/** How the fee and shipping rules cover recent orders, optionally with a rule not yet saved. */
+export const ruleCoverageResponseSchema = z.object({
+  /** days of orders looked at */
+  windowDays: z.number(),
+  /** true when there were more recent orders than were looked at */
+  sampled: z.boolean(),
+  orders: z.number(),
+  fees: z.object({
+    payments: z.number(),
+    reported: z.number(),
+    covered: z.number(),
+    uncovered: z.number(),
+    byGateway: z.array(gatewayCoverageSchema),
+    /** payments the previewed rule would be chosen for; null when no rule was previewed */
+    candidateApplies: z.number().nullable(),
+  }),
+  shipping: z.object({
+    orders: z.number(),
+    covered: z.number(),
+    uncovered: z.number(),
+    missingCountry: z.number(),
+    missingWeight: z.number(),
+    candidateApplies: z.number().nullable(),
+  }),
+});
+export type RuleCoverageResponse = z.infer<typeof ruleCoverageResponseSchema>;
+
+export const recalcResultResponseSchema = z.object({
+  result: z
+    .object({
+      finishedAt: z.string(),
+      mode: z.enum(['fill_gaps', 'everything']),
+      /** currency of the profit amounts: the shop currency */
+      currency: z.string(),
+      orders: z.number(),
+      recognized: z.number(),
+      /** orders whose counted status, profit or completeness differs from before */
+      changed: z.number(),
+      /** orders that had something missing and are now complete */
+      nowComplete: z.number(),
+      /** counted orders that still have something missing */
+      stillIncomplete: z.number(),
+      profitBefore: z.string(),
+      profitAfter: z.string(),
+    })
+    .nullable(),
+});
+export type RecalcResultResponse = z.infer<typeof recalcResultResponseSchema>;
+
 export const rulesResponseSchema = z.object({
   currency: z.string(),
   today: z.string(),
@@ -875,8 +932,24 @@ export const expenseSummaryResponseSchema = z.object({
       /** the total over that month's revenue, null when the month had no revenue */
       shareOfRevenue: ratio,
       byCategory: z.array(z.object({ category: z.string(), amount: money })),
+      /** the month's profit and loss, from the same calculation as the Overview */
+      revenue: money,
+      /** revenue less product cost, fees, shipping and advertising (when set up) */
+      contributionProfit: money,
+      /** advertising spend in the month, null when no advertising account exists */
+      advertising: money.nullable(),
+      /** contribution profit less this month's expenses; null when no expenses are set up */
+      netProfit: money.nullable(),
+      /** true when the month has a missing product cost, fee or shipping cost */
+      incomplete: z.boolean(),
     }),
   ),
+  /**
+   * Whether net profit can be trusted: "not_configured" when no expenses exist (net profit is not
+   * calculated anywhere), "incomplete" when a month in the list has missing costs (net profit is an
+   * estimate), otherwise "complete".
+   */
+  netProfitStatus: z.enum(['not_configured', 'incomplete', 'complete']),
 });
 export type ExpenseSummaryResponse = z.infer<typeof expenseSummaryResponseSchema>;
 
@@ -1013,6 +1086,9 @@ export const reportTableSchema = z.object({
   rows: z.array(z.array(z.string())),
   totalRows: z.array(z.array(z.string())),
   notes: z.array(z.string()),
+  audit: z
+    .object({ generatedAt: z.string(), timezone: z.string(), dataNotes: z.array(z.string()) })
+    .optional(),
   /** true when the rows were cut for the screen; the download has them all */
   truncated: z.boolean(),
 });

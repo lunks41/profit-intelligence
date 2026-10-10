@@ -13,6 +13,7 @@ import {
   changeExpense,
   createCategory,
   createExpense,
+  getAdSpend,
   getProfitAggregate,
   getShopOverview,
   listAudit,
@@ -29,6 +30,7 @@ import {
   monthStart,
   nextCharge,
   summarizeFromTotals,
+  summarizePeriod,
   toStored,
   businessDate,
   daysInMonth,
@@ -157,18 +159,33 @@ export class ExpensesService {
 
     const oneTimeIds = new Set(expenses.filter((e) => e.kind === 'one_time').map((e) => e.id));
     const monthStarts = Array.from({ length: 6 }, (_, i) => addMonths(monthStart(today), i - 5));
-    const monthRevenue = await Promise.all(
+    // each month goes through the same calculation as the Overview, so the monthly profit and loss
+    // here always agrees with it (revenue, advertising and expenses included)
+    const monthFigures = await Promise.all(
       monthStarts.map(async (m) => {
-        const agg = await getProfitAggregate(this.db, scope, { from: m, to: lastOfMonth(m) });
-        return summarizeFromTotals(agg.totals, {
-          orderCount: agg.orderCount,
+        const range = { from: m, to: lastOfMonth(m) };
+        const [agg, ads] = await Promise.all([
+          getProfitAggregate(this.db, scope, range),
+          getAdSpend(this.db, scope, range),
+        ]);
+        const spend = toStored(ads.byAccount.reduce((a, x) => a.plus(dec(x.spend)), new D(0)));
+        const exp = expenses.length
+          ? expensesForPeriod(inputs, overrides, range, currency).total
+          : null;
+        return summarizePeriod({
+          totals: agg.totals,
           coverage: agg.coverage,
           anyMissing: agg.anyMissing,
-        }).revenue;
+          orderCount: agg.orderCount,
+          ads: { configured: ads.hasAccounts, hasData: ads.hasData, spend },
+          operatingExpenses: exp,
+        });
       }),
     );
+    const monthRevenue = monthFigures.map((f) => f.revenue);
     const months = monthStarts.map((m, i) => {
       const r = expensesForPeriod(inputs, overrides, { from: m, to: lastOfMonth(m) }, currency);
+      const f = monthFigures[i]!;
       const oneTimeAmount = r.slices
         .filter((sl) => oneTimeIds.has(sl.expenseId))
         .reduce((a, sl) => a.plus(dec(sl.amount)), new D(0));
@@ -183,6 +200,11 @@ export class ExpensesService {
         byCategory: Object.entries(r.byCategory)
           .map(([id, amount]) => ({ category: names.get(id) ?? 'Other', amount }))
           .sort((a, b) => Number(b.amount) - Number(a.amount)),
+        revenue: f.revenue,
+        contributionProfit: f.contributionProfit,
+        advertising: f.adSpend,
+        netProfit: f.estimatedNetProfit,
+        incomplete: f.partial,
       };
     });
     const current = expensesForPeriod(inputs, overrides, thisMonthRange, currency);
@@ -221,6 +243,12 @@ export class ExpensesService {
         ? null
         : dec(spend30).div(dec(revenue)).toDecimalPlaces(4).toFixed(4),
       months,
+      netProfitStatus:
+        expenses.length === 0
+          ? ('not_configured' as const)
+          : months.some((m) => m.incomplete)
+            ? ('incomplete' as const)
+            : ('complete' as const),
     };
   }
 

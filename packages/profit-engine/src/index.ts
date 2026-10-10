@@ -12,3 +12,4 @@ export * from './allocate.js';
 export * from './expenses.js';
 export * from './period.js';
 export * from './ecb.js';
+export * from './coverage.js';

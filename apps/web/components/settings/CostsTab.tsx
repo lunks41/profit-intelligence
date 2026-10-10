@@ -5,6 +5,7 @@ import { Dropdown, ShowDropdown } from '../dropdown';
 import { useEffect, useState } from 'react';
 import type { CostHistoryResponse, CostListResponse, CostRow } from '@pi/contracts';
 import { apiDelete, apiGet, apiPost, apiPut } from '../../lib/api';
+import { downloadText, importSummaryCsv } from '../../lib/import-summary';
 import { formatMoney, longDate } from '../../lib/format';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormError, Saved, isAmount, todayLocal, useAction } from './shared';
@@ -299,10 +300,30 @@ function CostFileTools({ onSaved }: { onSaved: () => void }) {
         <FormError message={error} />
         {preview && (
           <s-banner tone={preview.invalid > 0 ? 'warning' : 'info'} heading="Import preview">
-            <s-paragraph>
-              {preview.matched} matched, {preview.skipped} skipped, {preview.invalid} invalid.
-              {preview.messages.length > 0 ? ` ${preview.messages.join(' ')}` : ''}
-            </s-paragraph>
+            <s-stack gap="small-300">
+              <s-text>
+                {preview.matched} matched, {preview.skipped} skipped, {preview.invalid} with a
+                problem.
+              </s-text>
+              {preview.messages.map((m) => (
+                <s-text key={m} color="subdued">
+                  {m}
+                </s-text>
+              ))}
+              <div>
+                <s-button
+                  variant="tertiary"
+                  onClick={() =>
+                    downloadText(
+                      'import-summary.csv',
+                      importSummaryCsv('Product costs', preview, new Date()),
+                    )
+                  }
+                >
+                  Download summary
+                </s-button>
+              </div>
+            </s-stack>
           </s-banner>
         )}
         <s-stack direction="inline" gap="base">
@@ -311,7 +332,9 @@ function CostFileTools({ onSaved }: { onSaved: () => void }) {
           </s-button>
           <s-button
             variant="primary"
-            disabled={busy || !csv.trim() || !preview || preview.invalid > 0 || preview.matched === 0}
+            disabled={
+              busy || !csv.trim() || !preview || preview.invalid > 0 || preview.matched === 0
+            }
             onClick={() => void importCsv()}
           >
             Import CSV

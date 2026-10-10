@@ -6,13 +6,22 @@ import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import {
   auditResponseSchema,
+  recalcResultResponseSchema,
+  ruleCoverageResponseSchema,
   costHistoryResponseSchema,
   costListResponseSchema,
   rulesResponseSchema,
 } from '@pi/contracts';
-import { createDb, createPool, installShop, upsertProducts, withTenant } from '@pi/db';
+import {
+  createDb,
+  createPool,
+  installShop,
+  upsertOrders,
+  upsertProducts,
+  withTenant,
+} from '@pi/db';
 import type { InstallResult } from '@pi/db';
-import { AuthError, mapProduct } from '@pi/shopify';
+import { AuthError, mapOrder, mapProduct } from '@pi/shopify';
 import type { ShopifyAuth } from '@pi/shopify';
 import pg from 'pg';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -139,6 +148,7 @@ describe('authentication', () => {
     ['GET', '/costs'],
     ['GET', '/rules'],
     ['POST', '/recalculate'],
+    ['GET', '/recalculate/last'],
     ['GET', '/audit'],
   ] as const)('%s %s requires a session', async (method, url) => {
     const res = await app.inject({ method, url: `/api/v1/settings${url}` });
@@ -342,6 +352,61 @@ describe('product costs', () => {
     const file = await json('GET', '/costs/export');
     expect(file.body.csv).toContain(variant.variantShopifyId);
     expect(file.body.csv).toContain('effective_from');
+  });
+});
+
+describe('bulk cost edit by collection', () => {
+  const list = async () =>
+    costListResponseSchema.parse((await json('GET', '/costs?pageSize=100')).body).rows;
+
+  it('uses the collection titles stored by the product sync, case-insensitively, for that collection only', async () => {
+    const rows = await list();
+    const titles = [...new Set(rows.map((r) => r.productTitle))];
+    expect(titles.length).toBeGreaterThan(2);
+    // what a product sync stores: collection titles on the product
+    await admin.query(
+      "update t_product set collection_titles = array['Winter Sale'] where shop_id = $1 and title = $2",
+      [a.shopId, titles[0]],
+    );
+    await admin.query(
+      "update t_product set collection_titles = array['Summer'] where shop_id = $1 and title = $2",
+      [a.shopId, titles[1]],
+    );
+    const inWinter = rows.filter((r) => r.productTitle === titles[0]);
+    const res = await json('POST', '/costs/bulk', 'id-set-a', {
+      amount: '4.50',
+      effectiveFrom: '2026-02-01',
+      by: 'collection',
+      value: 'winter sale',
+    });
+    expect(res.res.statusCode).toBe(201);
+    expect(res.body.saved).toBe(inWinter.length);
+    const after = await list();
+    for (const r of after) {
+      const hit = r.productTitle === titles[0];
+      expect(r.merchantCost?.amount ?? null).toBe(hit ? '4.5000' : null);
+    }
+  });
+
+  it('refuses a collection that no product has been synced with, and says to sync products', async () => {
+    const res = await json('POST', '/costs/bulk', 'id-set-a', {
+      amount: '4.50',
+      effectiveFrom: '2026-02-01',
+      by: 'collection',
+      value: 'Winter Sale',
+    });
+    expect(res.res.statusCode).toBe(400);
+    expect(JSON.stringify(res.body)).toMatch(/sync products/);
+  });
+
+  it('the cost export lists each product collection', async () => {
+    const rows = await list();
+    await admin.query(
+      "update t_product set collection_titles = array['A','B'] where shop_id = $1 and title = $2",
+      [a.shopId, rows[0]!.productTitle],
+    );
+    const file = await json('GET', '/costs/export');
+    expect(file.body.csv).toContain('A; B');
   });
 });
 
@@ -574,13 +639,111 @@ describe('missing-cost warning limit', () => {
   });
 });
 
+describe('rule coverage and previews', () => {
+  const orderNodes = JSON.parse(
+    readFileSync(
+      new URL('../../../../packages/shopify/test/fixtures/orders-page.json', import.meta.url),
+      'utf8',
+    ),
+  ).orders.nodes as Record<string, unknown>[];
+  // the fixture orders are older than the 90-day window, so they are moved to today
+  const seedOrders = async (who: InstallResult) => {
+    await withTenant(db, who.tenantId, (tx) => upsertOrders(tx, who, orderNodes.map(mapOrder)));
+    await admin.query('update t_order set processed_at = now() where shop_id = $1', [who.shopId]);
+  };
+  const coverage = async (
+    path = '/rules/coverage',
+    method: 'GET' | 'POST' = 'GET',
+    body?: unknown,
+    token?: string,
+  ) => ruleCoverageResponseSchema.parse((await json(method, path, token, body)).body);
+  const feeBody = (over: Record<string, unknown> = {}) => ({
+    gateway: null,
+    percent: '2.9',
+    fixedAmount: '0.30',
+    effectiveFrom: '2026-01-01',
+    ...over,
+  });
+
+  it('says which payments a rule covers, and updates when a rule is saved', async () => {
+    await seedOrders(a);
+    const before = await coverage();
+    expect(before.orders).toBeGreaterThan(0);
+    expect(before.fees.payments).toBeGreaterThan(0);
+    expect(before.fees.covered).toBe(0);
+    expect(before.fees.uncovered).toBe(before.fees.payments - before.fees.reported);
+    expect(before.fees.candidateApplies).toBeNull();
+    expect(before.fees.byGateway.reduce((n, g) => n + g.payments, 0)).toBe(before.fees.payments);
+
+    expect((await call('POST', '/fee-rules', 'id-set-a', feeBody())).statusCode).toBe(201);
+    const after = await coverage();
+    expect(after.fees.uncovered).toBe(0);
+    expect(after.fees.covered).toBe(before.fees.uncovered);
+  });
+
+  it('previews a fee rule without saving it, and flags one that would match nothing', async () => {
+    await seedOrders(a);
+    const all = await coverage('/fee-rules/preview', 'POST', feeBody());
+    expect(all.fees.candidateApplies).toBeGreaterThan(0);
+    const none = await coverage(
+      '/fee-rules/preview',
+      'POST',
+      feeBody({ gateway: 'no_such_gateway' }),
+    );
+    expect(none.fees.candidateApplies).toBe(0);
+    const future = await coverage(
+      '/fee-rules/preview',
+      'POST',
+      feeBody({ effectiveFrom: '2099-01-01' }),
+    );
+    expect(future.fees.candidateApplies).toBe(0);
+    // nothing was saved
+    expect(rulesResponseSchema.parse((await json('GET', '/rules')).body).feeRules).toEqual([]);
+  });
+
+  it('previews a shipping rule and reports orders missing a country or weight', async () => {
+    await seedOrders(a);
+    const base = { mode: 'flat', amount: '6.00', effectiveFrom: '2026-01-01' };
+    const any = await coverage('/shipping-rules/preview', 'POST', base);
+    expect(any.shipping.candidateApplies).toBe(any.shipping.orders);
+    expect(any.shipping.missingCountry + any.shipping.missingWeight).toBeGreaterThanOrEqual(0);
+    const nowhere = await coverage('/shipping-rules/preview', 'POST', {
+      ...base,
+      countries: ['ZZ'],
+    });
+    expect(nowhere.shipping.candidateApplies).toBe(0);
+    expect(rulesResponseSchema.parse((await json('GET', '/rules')).body).shippingRules).toEqual([]);
+  });
+
+  it('rejects a bad rule, is per shop, and needs a session', async () => {
+    await seedOrders(a);
+    expect(
+      (await call('POST', '/fee-rules/preview', 'id-set-a', { percent: 'abc' })).statusCode,
+    ).toBe(400);
+    const theirs = await coverage('/rules/coverage', 'GET', undefined, 'id-set-b');
+    expect(theirs.orders).toBe(0);
+    for (const [method, url] of [
+      ['GET', '/rules/coverage'],
+      ['POST', '/fee-rules/preview'],
+      ['POST', '/shipping-rules/preview'],
+    ] as const) {
+      expect((await app.inject({ method, url: `/api/v1/settings${url}` })).statusCode).toBe(401);
+    }
+  });
+});
+
 describe('recalculation', () => {
   it('"fill gaps" queues a normal recalculation for this shop only', async () => {
     const res = await call('POST', '/recalculate', 'id-set-a', { mode: 'fill_gaps' });
     expect(res.statusCode).toBe(202);
     expect(send).toHaveBeenCalledTimes(1);
     const [, payload] = send.mock.calls[0] as [string, Record<string, unknown>];
-    expect(payload).toEqual({ tenantId: a.tenantId, shopId: a.shopId, force: false });
+    expect(payload).toEqual({
+      tenantId: a.tenantId,
+      shopId: a.shopId,
+      force: false,
+      requestedBy: 'merchant',
+    });
   });
 
   it('"everything" forces it and leaves an audit record', async () => {
@@ -592,6 +755,50 @@ describe('recalculation', () => {
     expect(audit.rows[0]!.summary).toMatch(/Recalculated all past orders/);
     expect(auditResponseSchema.parse((await json('GET', '/audit', 'id-set-b')).body).rows).toEqual(
       [],
+    );
+  });
+
+  it('shows no result until a recalculation has finished, then the latest one for this shop only', async () => {
+    const none = await json('GET', '/recalculate/last');
+    expect(none.body).toEqual({ result: null });
+    const done = (shopId: string, tenantId: string, orders: number) =>
+      admin.query(
+        `insert into a_audit_log (tenant_id, shop_id, actor, action, entity, entity_id, new_value)
+         values ($1, $2, 'system', 'profit.recalculated', 'f_profit_entry', $4, $3::jsonb)`,
+        [
+          tenantId,
+          shopId,
+          JSON.stringify({
+            mode: 'everything',
+            orders,
+            recognized: 3,
+            changed: 2,
+            nowComplete: 1,
+            stillIncomplete: 1,
+            profitBefore: '100.0000',
+            profitAfter: '90.0000',
+          }),
+          shopId,
+        ],
+      );
+    await done(a.shopId, a.tenantId, 5);
+    await done(a.shopId, a.tenantId, 7);
+    await done(b.shopId, b.tenantId, 99);
+    const res = recalcResultResponseSchema.parse((await json('GET', '/recalculate/last')).body);
+    expect(res.result).toMatchObject({
+      mode: 'everything',
+      orders: 7,
+      changed: 2,
+      nowComplete: 1,
+      stillIncomplete: 1,
+      profitBefore: '100.0000',
+      profitAfter: '90.0000',
+    });
+    expect(res.result!.currency).toBeTruthy();
+    // the history describes it in words
+    const audit = auditResponseSchema.parse((await json('GET', '/audit')).body);
+    expect(audit.rows[0]!.summary).toBe(
+      'Recalculation finished: 7 orders, 2 changed, 1 now complete',
     );
   });
 
