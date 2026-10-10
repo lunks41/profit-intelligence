@@ -20,3 +20,6 @@ packages/seed/out/
 # database backups
 backups/
 backups-test/
+
+# load-test output
+apps/api/src/load/out/

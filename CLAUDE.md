@@ -15,7 +15,8 @@ row-level security. Read `docs/roadmap.md` for what is built and pending.
 
 1. `pnpm check:fast` while building (formatting, lint, typecheck and related unit tests of the changed files;
    add `--integration` for the touched packages, needs Docker Postgres on :5433).
-2. Once before saying "done": `pnpm lint`, `pnpm build`, `pnpm test`, `pnpm test:integration`.
+2. Once before saying "done": `pnpm lint`, `pnpm build`, `pnpm test`, `pnpm test:integration`. After a change to a list, the profit calculation or a query, also `pnpm test:load` (50,000 synthetic orders on its own `_load_test` database; see docs/operations/performance.md).
+   Each worktree or session must run integration tests against its own test database (`TEST_DATABASE_ADMIN_URL=postgresql://postgres:postgres@localhost:5433/<name>_test`); two sessions sharing one reset each other's data.
 3. `pnpm graph:refresh` to update `graphify-out` (code only; changed docs need the `/graphify` skill).
 4. Update `docs/roadmap.md` if a roadmap item changed state.
 5. Report exactly which commands ran and their results. Never say a test passed that was not run.

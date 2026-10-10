@@ -1,4 +1,4 @@
-import { getProductTitles, loadPeriodBundles } from '@pi/db';
+import { getProductTitles, getProfitFingerprint, loadPeriodBundles } from '@pi/db';
 import type { Db, OrderBundle } from '@pi/db';
 import { D, allocateOrder, dec, toStored } from '@pi/profit-engine';
 import type { CostStatus, Dec } from '@pi/profit-engine';
@@ -61,20 +61,35 @@ const worse = (a: CostStatus, b: CostStatus): CostStatus => (RANK[b] > RANK[a] ?
 const productKey = (productId: string | null, title: string) =>
   productId ?? `line:${title.toLowerCase()}`;
 
+interface Computed {
+  acc: Map<string, Acc>;
+  lines: Map<string, ProductLineRecord[]>;
+  unallocated: Unallocated;
+  productIds: Set<string>;
+  orders: number;
+}
+
 /**
- * Allocates every counted order with activity in the period over its products (the approved rule,
- * packages/profit-engine/src/allocate.ts) and groups the result by product. Shared by the product
- * screens and the product report so both always show the same numbers.
+ * Allocating every order of a long period costs seconds for a big shop, and the answer only changes
+ * when some order is recalculated. So the allocation for a period with many orders is kept, per
+ * shop and period, until the shop's ledger fingerprint changes (any recalculation, new refund or
+ * removed order). Small periods are fast and are never kept. Product titles are read again on every
+ * request. At most a few results are held, the oldest dropped first.
  */
-export async function productRows(
+const keepFromOrders = () => Number(process.env.PRODUCT_CACHE_MIN_ORDERS ?? 2000);
+const KEEP_AT_MOST = 4;
+const kept = new Map<string, { fingerprint: string; value: Computed }>();
+
+/** Forgets every kept allocation (tests and maintenance). */
+export function clearProductCache(): void {
+  kept.clear();
+}
+
+async function compute(
   db: Db,
   scope: { tenantId: string; shopId: string },
   range: { from: string; to: string },
-): Promise<{
-  rows: ProductRowData[];
-  lines: Map<string, ProductLineRecord[]>;
-  unallocated: Unallocated;
-}> {
+): Promise<Computed> {
   const bundles = await loadPeriodBundles(db, scope, range);
   const acc = new Map<string, Acc>();
   const lines = new Map<string, ProductLineRecord[]>();
@@ -152,6 +167,35 @@ export async function productRows(
     });
   }
 
+  return { acc, lines, unallocated, productIds, orders: bundles.length };
+}
+
+/**
+ * Allocates every counted order with activity in the period over its products (the approved rule,
+ * packages/profit-engine/src/allocate.ts) and groups the result by product. Shared by the product
+ * screens and the product report so both always show the same numbers.
+ */
+export async function productRows(
+  db: Db,
+  scope: { tenantId: string; shopId: string },
+  range: { from: string; to: string },
+): Promise<{
+  rows: ProductRowData[];
+  lines: Map<string, ProductLineRecord[]>;
+  unallocated: Unallocated;
+}> {
+  const key = `${scope.shopId}|${range.from}|${range.to}`;
+  const fingerprint = await getProfitFingerprint(db, scope);
+  let value = kept.get(key)?.fingerprint === fingerprint ? kept.get(key)!.value : undefined;
+  if (!value) {
+    value = await compute(db, scope, range);
+    kept.delete(key);
+    if (value.orders >= keepFromOrders()) {
+      kept.set(key, { fingerprint, value });
+      while (kept.size > KEEP_AT_MOST) kept.delete(kept.keys().next().value as string);
+    }
+  }
+  const { acc, lines, unallocated, productIds } = value;
   const titles = await getProductTitles(db, scope, [...productIds]);
   const rows: ProductRowData[] = [...acc.values()].map((p) => {
     const net = p.gross.plus(p.discounts).plus(p.refunds);

@@ -29,6 +29,7 @@
     "db:generate": "pnpm --filter @pi/db exec drizzle-kit generate",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "check:fast": "node scripts/check-fast.mjs",
+    "test:load": "vitest run --config vitest.load.config.ts",
     "dev:all": "node scripts/dev-all.mjs",
     "graph:refresh": "py -3 -X utf8 scripts/graphify-refresh.py",
     "shopify:dev": "shopify app dev",

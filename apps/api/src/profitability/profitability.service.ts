@@ -184,7 +184,7 @@ export class ProfitabilityService {
         code: 'not_found',
         message: 'Product not found in this period',
       });
-    const all = (lines.get(key) ?? []).sort(
+    const all = [...(lines.get(key) ?? [])].sort(
       (a, b) => b.orderDate.localeCompare(a.orderDate) || b.orderName.localeCompare(a.orderName),
     );
     const start = (q.page - 1) * q.pageSize;

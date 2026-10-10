@@ -51,7 +51,8 @@ Not built (needs the owner or later): billing prices, hosting and monitoring, th
 
 - **M1 done (financial definitions):** contribution profit = revenue - product cost - payment fees - shipping cost; advertising is an operating cost and is no longer inside it. Estimated operating profit = contribution profit - advertising - other operating expenses (field `estimatedOperatingProfit`, margin `operatingMargin`, basis `operatingProfitBasis`; expenses summary `operatingProfit` and `operatingProfitStatus`). Overview Total costs = product + shipping + fees, with advertising and other operating expenses listed apart. The old `contributionBeforeAds`, `estimatedNetProfit`, `netProfitBasis` and the comparison `basis` fields are gone; no screen says "net profit". Definitions: `docs/finance/figures.md`.
 - **M2 done (Refund report and Missing cost report):** both are reports 6 and 7 of the seven: preview with search, filter and sort, CSV and PDF with the audit block, scheduled emails, totals equal to the Overview to the cent. Migration `0024_report_kinds_refund_missing` widens the kind lists on exports and schedules. Migration numbers: Cursor's expenses migration is now `0025`, and my performance migration will be `0026`.
-- Next: M6 (order-list performance), M7 (browser acceptance).
+- **M6 done (performance, measured):** `pnpm test:load` runs 50,000 synthetic orders through the real API. Overview p95 under 1 s, Orders list p95 under 200 ms; the Products list was the slow one (4.2 s) and is now kept per shop and period until an order is recalculated (p95 about 0.5 s warm, 4.2 s for the first request at 50,000 orders in the period). The order-list rewrite the plan expected was not needed: it measured fast. Numbers, method and limits: `docs/operations/performance.md`.
+- Next: M7 (browser acceptance, with you).
 
 ## V1.1: fast follow (weeks after launch)
 

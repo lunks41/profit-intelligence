@@ -22,6 +22,7 @@ import {
 } from '@pi/db';
 import type { InstallResult } from '@pi/db';
 import { calculateOrder } from '@pi/profit-engine';
+import { clearProductCache } from '@pi/reports';
 import type { EngineConfig, EngineOrder } from '@pi/profit-engine';
 import { AuthError, mapOrder } from '@pi/shopify';
 import type { ShopifyAuth } from '@pi/shopify';
@@ -214,6 +215,69 @@ const parseLines = (x: unknown) => {
   const d = productDetailResponseSchema.parse(x);
   return { ...d, rows: d.lines };
 };
+
+describe('a kept product list', () => {
+  const productProfit = async (token?: string) =>
+    parseProducts((await api(`/products?${PERIOD}&pageSize=100`, token)).body).reconciliation
+      .productProfit;
+
+  beforeEach(() => {
+    process.env.PRODUCT_CACHE_MIN_ORDERS = '0'; // keep every result, to prove it is dropped when it must be
+    clearProductCache();
+  });
+  afterAll(() => {
+    delete process.env.PRODUCT_CACHE_MIN_ORDERS;
+    clearProductCache();
+  });
+
+  it('gives the same answer when asked again, and the same as an unkept calculation', async () => {
+    await calculateAll(a);
+    const first = await productProfit();
+    expect(await productProfit()).toBe(first);
+    process.env.PRODUCT_CACHE_MIN_ORDERS = '1000000'; // nothing is kept, so this is worked out afresh
+    clearProductCache();
+    expect(await productProfit()).toBe(first);
+  });
+
+  it('is dropped the moment any order is recalculated', async () => {
+    await calculateAll(a);
+    const before = await productProfit();
+    expect(await productProfit()).toBe(before); // now kept
+    const { rows } = await admin.query(
+      'select order_id, order_date::text d from f_order_profit where shop_id = $1 and recognized limit 1',
+      [a.shopId],
+    );
+    // the order stops being counted, as when a sale is voided: its ledger is replaced by nothing
+    await withTenant(db, a.tenantId, (tx) =>
+      replaceProfitEntries(
+        tx,
+        a,
+        rows[0].order_id as string,
+        'USD',
+        'test',
+        {
+          orderDate: rows[0].d as string,
+          recognized: false,
+          exclusionReason: 'voided_or_expired',
+          flags: [],
+          contributionAmount: null,
+          partial: false,
+        },
+        [],
+      ),
+    );
+    const after = await productProfit();
+    expect(after).not.toBe(before);
+    expect(await productProfit()).toBe(after);
+  });
+
+  it('is never shared between shops', async () => {
+    await calculateAll(a);
+    expect(Number(await productProfit())).not.toBe(0);
+    // shop b has no orders, and must not see shop a's kept result
+    expect(await productProfit('id-prof-b')).toBe('0.0000');
+  });
+});
 
 describe('product profitability', () => {
   it('requires authentication', async () => {

@@ -4,12 +4,16 @@
     "hash": "4bd5146becd7feefb81ce48da1f093a6"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\vitest.config.ts": {
-    "mtime": 1791539237.0257635,
-    "hash": "878ff7b2ec681f5bda15ec218cb015d2"
+    "mtime": 1791667036.6279044,
+    "hash": "f18f8aac65ed42392bf28984dd0ef552"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\vitest.integration.config.ts": {
     "mtime": 1791529941.0595896,
     "hash": "f4ef2a4493b770fa718b4c4cb7ba6f54"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\vitest.load.config.ts": {
+    "mtime": 1791666226.4402158,
+    "hash": "cd0012da2ea59c5e3a6c11dbdb5d4855"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\app.module.ts": {
     "mtime": 1791546338.1505785,
@@ -191,6 +195,10 @@
     "mtime": 1791563657.2658668,
     "hash": "a7d3c6853ab181ef0b83648a10130951"
   },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\load\\load.load.test.ts": {
+    "mtime": 1791666615.7673998,
+    "hash": "e9691a9c0ae167bcec8b66e15850fd06"
+  },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\marketing\\marketing.controller.ts": {
     "mtime": 1791542516.9241776,
     "hash": "01a2a5f0030e4a304b304dc79e50b8ec"
@@ -212,16 +220,16 @@
     "hash": "ab247c2b5e702090b8825e9799ff5fe4"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\profitability\\profitability.integration.test.ts": {
-    "mtime": 1791611313.334153,
-    "hash": "8a0915ce61fa5fdc2f967dedf47e5122"
+    "mtime": 1791666716.8816266,
+    "hash": "dae76b15a1893b77661af3cb9fa159ea"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\profitability\\profitability.module.ts": {
     "mtime": 1791540464.559094,
     "hash": "4e0b5f0a0caccc0896796f903a0c78d5"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\profitability\\profitability.service.ts": {
-    "mtime": 1791663712.9182055,
-    "hash": "ceae5b5ddd46542438c225c4cd654d57"
+    "mtime": 1791666589.1078238,
+    "hash": "40cc2983362442558953bdadd00927fa"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\queue\\queue.module.ts": {
     "mtime": 1791534314.0299127,
@@ -1124,8 +1132,8 @@
     "hash": "5492b512510bbb5d919fb396aa2e8df6"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\src\\profitability.ts": {
-    "mtime": 1791611534.891358,
-    "hash": "7fddaa6e31103ce60ae757138f44f690"
+    "mtime": 1791666546.8844197,
+    "hash": "e806742e8d553c06fc87469029ca4e9f"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\src\\queue.ts": {
     "mtime": 1791614761.6852567,
@@ -1380,8 +1388,8 @@
     "hash": "3e164d00a12447b2c959bee733393d44"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\reports\\src\\products.ts": {
-    "mtime": 1791543862.5367026,
-    "hash": "a06ad0f96e200f48587c641074e15f89"
+    "mtime": 1791666562.1630702,
+    "hash": "3cfbadff363059a50415ec879003f85e"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\reports\\src\\render.test.ts": {
     "mtime": 1791614629.2680962,
@@ -1536,8 +1544,8 @@
     "hash": "8a91290b15faab4bef5d4ec22fd5b748"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\CLAUDE.md": {
-    "mtime": 1791613342.4820168,
-    "hash": "f06ef585485d321c7bf3dc004eb1bfc8"
+    "mtime": 1791666819.6685817,
+    "hash": "ad55f07decc296341f7915262c1569aa"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\pnpm-workspace.yaml": {
     "mtime": 1791527122.5837421,
@@ -1560,8 +1568,8 @@
     "hash": "b77e287a1f70ba45f37818e567a623d7"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\roadmap.md": {
-    "mtime": 1791665813.4346685,
-    "hash": "2c32af83ee036337069b18915b664ebd"
+    "mtime": 1791666819.6695824,
+    "hash": "519ccce9cbbd1ccef6404bb9fc757de1"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\architecture\\billing.md": {
     "mtime": 1791549276.7097468,
@@ -1654,6 +1662,10 @@
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\operations\\monitoring.md": {
     "mtime": 1791549278.143805,
     "hash": "cf649da4b4384c1b49167890118ac3d3"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\operations\\performance.md": {
+    "mtime": 1791666825.7335725,
+    "hash": "f33ff73d65892e9c092b13b85ccf43c0"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\privacy\\retention.md": {
     "mtime": 1791664619.958809,

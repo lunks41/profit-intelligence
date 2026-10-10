@@ -149,6 +149,22 @@ export async function loadPeriodBundles(
   );
 }
 
+/**
+ * A fingerprint of everything calculated for a shop: it changes whenever any order's profit is
+ * recalculated or removed (every change goes through `replaceProfitEntries`, which stamps
+ * `calculated_at`). Anything computed from the ledger can be kept until the fingerprint changes.
+ */
+export async function getProfitFingerprint(db: Db, scope: ShopScope): Promise<string> {
+  return withTenant(db, scope.tenantId, async (tx) => {
+    const res = rows(
+      await tx.execute(sql`
+        select count(*)::int as n, coalesce(max(calculated_at)::text, '') as last
+          from f_order_profit where shop_id = ${scope.shopId}`),
+    )[0];
+    return `${res?.n ?? 0}|${res?.last ?? ''}`;
+  });
+}
+
 /** One counted order with every entry (lifetime view), or null when it is not counted or unknown. */
 export async function loadOrderBundle(
   db: Db,
