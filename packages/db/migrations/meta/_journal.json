@@ -183,6 +183,13 @@
       "when": 1791750000000,
       "tag": "0025_expense_reference_currency",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1791760000000,
+      "tag": "0026_expense_default_settings",
+      "breakpoints": true
     }
   ]
 }

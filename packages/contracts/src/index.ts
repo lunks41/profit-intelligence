@@ -1396,6 +1396,13 @@ export const alertEmailsBodySchema = z.object({
 });
 export type AlertEmailsBody = z.infer<typeof alertEmailsBodySchema>;
 
+/** What a new expense starts as. Existing expenses are never changed by it. */
+export const expenseDefaultsSchema = z.object({
+  kind: z.enum(['recurring', 'one_time']),
+  frequency: z.enum(['monthly', 'yearly']),
+});
+export type ExpenseDefaults = z.infer<typeof expenseDefaultsSchema>;
+
 export const limitsBodySchema = z.object({
   marginPct: limitPercent,
   refundRatePct: limitPercent,

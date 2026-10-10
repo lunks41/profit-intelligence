@@ -14,11 +14,14 @@ import type {
   SetCostBody,
   ShippingRuleBody,
   ShippingRulesImportBody,
+  ExpenseDefaults,
 } from '@pi/contracts';
 import {
   costTotals,
   enqueueProfitRecalc,
   getAlertEmailRecipients,
+  getExpenseDefaults,
+  setExpenseDefaults,
   getLeakageSettings,
   getMissingCogsThreshold,
   getShopOverview,
@@ -482,6 +485,15 @@ export class SettingsService {
   async setAlertEmails(scope: TenantContext, recipients: string[]) {
     await setAlertEmailRecipients(this.db, scope, recipients, actorOf(scope));
     return { alertEmails: recipients };
+  }
+
+  expenseDefaults(scope: TenantContext) {
+    return getExpenseDefaults(this.db, scope);
+  }
+
+  async setExpenseDefaults(scope: TenantContext, value: ExpenseDefaults) {
+    await setExpenseDefaults(this.db, scope, value, actorOf(scope));
+    return value;
   }
 
   async setThreshold(scope: TenantContext, pct: string) {

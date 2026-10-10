@@ -607,6 +607,9 @@ export const sAppSetting = pgTable(
       .array()
       .notNull()
       .default(sql`'{}'::text[]`),
+    /** What a new expense starts as: one-time or recurring, and monthly or yearly. */
+    expenseDefaultKind: text('expense_default_kind').notNull().default('recurring'),
+    expenseDefaultFrequency: text('expense_default_frequency').notNull().default('monthly'),
     updatedBy: text('updated_by'),
     updatedAt: updatedAt(),
   },
@@ -622,6 +625,10 @@ export const sAppSetting = pgTable(
       sql`${t.missingCogsWarningPct} >= 0 and ${t.missingCogsWarningPct} <= 100`,
     ),
     check('ck_s_app_setting_alert_emails', sql`cardinality(${t.alertEmailRecipients}) <= 5`),
+    check(
+      'ck_s_app_setting_expense_defaults',
+      sql`${t.expenseDefaultKind} in ('recurring', 'one_time') and ${t.expenseDefaultFrequency} in ('monthly', 'yearly')`,
+    ),
     check(
       'ck_s_app_setting_leakage',
       sql`${t.marginWarningPct} between 0 and 100 and ${t.refundRateWarningPct} between 0 and 100 and ${t.costChangeWarningPct} between 0 and 1000`,

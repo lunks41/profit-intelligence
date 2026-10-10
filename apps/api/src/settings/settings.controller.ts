@@ -16,6 +16,7 @@ import {
   costListQuerySchema,
   feeRuleBodySchema,
   alertEmailsBodySchema,
+  expenseDefaultsSchema,
   limitsBodySchema,
   recalcBodySchema,
   bulkCostBodySchema,
@@ -166,6 +167,16 @@ export class SettingsController {
   @Put('alert-emails')
   alertEmails(@Tenant() t: TenantContext, @Body() body: unknown) {
     return this.service.setAlertEmails(t, parse(alertEmailsBodySchema, body).recipients);
+  }
+
+  @Get('expense-defaults')
+  expenseDefaults(@Tenant() t: TenantContext) {
+    return this.service.expenseDefaults(t);
+  }
+
+  @Put('expense-defaults')
+  setExpenseDefaults(@Tenant() t: TenantContext, @Body() body: unknown) {
+    return this.service.setExpenseDefaults(t, parse(expenseDefaultsSchema, body));
   }
 
   @Put('threshold')

@@ -228,8 +228,19 @@ function AddExpense({
   const [name, setName] = useState('');
   const [amount, setAmount] = useState('');
   const [categoryId, setCategoryId] = useState(categories[0]?.id ?? '');
+  const defaults = useApi<{ kind: 'one_time' | 'recurring'; frequency: 'monthly' | 'yearly' }>(
+    '/settings/expense-defaults',
+  );
   const [kind, setKind] = useState<'one_time' | 'recurring'>('recurring');
   const [frequency, setFrequency] = useState<'monthly' | 'yearly'>('monthly');
+  const [defaultsApplied, setDefaultsApplied] = useState(false);
+  useEffect(() => {
+    if (defaults.data && !defaultsApplied) {
+      setKind(defaults.data.kind);
+      setFrequency(defaults.data.frequency);
+      setDefaultsApplied(true);
+    }
+  }, [defaults.data, defaultsApplied]);
   const [start, setStart] = useState(todayLocal());
   const [end, setEnd] = useState('');
   const [reference, setReference] = useState('');

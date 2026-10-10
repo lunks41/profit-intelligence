@@ -1,11 +1,11 @@
 # Graph Report - .  (2026-10-11)
 
 ## Corpus Check
-- Large corpus: 424 files · ~257,997 words. Semantic extraction will be expensive (many Claude tokens). Consider running on a subfolder, or use --no-semantic to run AST-only.
+- Large corpus: 426 files · ~258,918 words. Semantic extraction will be expensive (many Claude tokens). Consider running on a subfolder, or use --no-semantic to run AST-only.
 
 ## Summary
-- 3436 nodes · 5021 edges · 207 communities (180 shown, 27 thin omitted)
-- Extraction: 95% EXTRACTED · 5% INFERRED · 0% AMBIGUOUS · INFERRED: 260 edges (avg confidence: 0.85)
+- 3456 nodes · 5095 edges · 198 communities (176 shown, 22 thin omitted)
+- Extraction: 95% EXTRACTED · 5% INFERRED · 0% AMBIGUOUS · INFERRED: 261 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
@@ -133,7 +133,7 @@
 - [[_COMMUNITY_Community 121|Community 121]]
 - [[_COMMUNITY_Community 122|Community 122]]
 - [[_COMMUNITY_Community 123|Community 123]]
-- [[_COMMUNITY_Community 124|Community 124]]
+- [[_COMMUNITY_Community 125|Community 125]]
 - [[_COMMUNITY_Community 126|Community 126]]
 - [[_COMMUNITY_Community 127|Community 127]]
 - [[_COMMUNITY_Community 128|Community 128]]
@@ -170,39 +170,30 @@
 - [[_COMMUNITY_Community 159|Community 159]]
 - [[_COMMUNITY_Community 160|Community 160]]
 - [[_COMMUNITY_Community 161|Community 161]]
-- [[_COMMUNITY_Community 162|Community 162]]
 - [[_COMMUNITY_Community 163|Community 163]]
 - [[_COMMUNITY_Community 164|Community 164]]
 - [[_COMMUNITY_Community 165|Community 165]]
 - [[_COMMUNITY_Community 166|Community 166]]
 - [[_COMMUNITY_Community 167|Community 167]]
-- [[_COMMUNITY_Community 168|Community 168]]
 - [[_COMMUNITY_Community 169|Community 169]]
-- [[_COMMUNITY_Community 171|Community 171]]
-- [[_COMMUNITY_Community 172|Community 172]]
-- [[_COMMUNITY_Community 173|Community 173]]
-- [[_COMMUNITY_Community 174|Community 174]]
-- [[_COMMUNITY_Community 175|Community 175]]
-- [[_COMMUNITY_Community 177|Community 177]]
-- [[_COMMUNITY_Community 184|Community 184]]
-- [[_COMMUNITY_Community 187|Community 187]]
+- [[_COMMUNITY_Community 176|Community 176]]
+- [[_COMMUNITY_Community 179|Community 179]]
+- [[_COMMUNITY_Community 188|Community 188]]
+- [[_COMMUNITY_Community 189|Community 189]]
 - [[_COMMUNITY_Community 190|Community 190]]
-- [[_COMMUNITY_Community 197|Community 197]]
-- [[_COMMUNITY_Community 198|Community 198]]
-- [[_COMMUNITY_Community 199|Community 199]]
-- [[_COMMUNITY_Community 200|Community 200]]
+- [[_COMMUNITY_Community 191|Community 191]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `withTenant()` - 62 edges
-2. `SettingsService` - 27 edges
-3. `SettingsController` - 26 edges
+2. `SettingsService` - 31 edges
+3. `SettingsController` - 29 edges
 4. `installShop()` - 20 edges
 5. `ReportsService` - 19 edges
 6. `ExpensesService` - 18 edges
 7. `ExpensesController` - 16 edges
-8. `EntitlementsService` - 15 edges
-9. `main()` - 15 edges
-10. `APP_URL` - 15 edges
+8. `actorOf()` - 16 edges
+9. `EntitlementsService` - 15 edges
+10. `main()` - 15 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `mk()` --calls--> `installShop()`  [INFERRED]
@@ -224,11 +215,11 @@
 - **Profit Figure Contract** — figures_summarize_period, figures_revenue, figures_contribution_profit, figures_estimated_net_profit, figures_data_status, profitspec_ledger, profitspec_d4_missing_never_zero [INFERRED 0.85]
 - **Phase 13 Production Readiness** — securityreview_document, backuprestore_document, monitoring_document, incidentresponse_document, deploymentchecklist_document, retention_document [INFERRED 0.85]
 
-## Communities (207 total, 27 thin omitted)
+## Communities (198 total, 22 thin omitted)
 
 ### Community 0 - "Community 0"
 Cohesion: 0.01
-Nodes (168): adProviderSchema, AdProvidersResponse, adProvidersResponseSchema, AdSpendBody, adSpendBodySchema, adSpendRowSchema, Alert, AlertEmailsBody (+160 more)
+Nodes (170): adProviderSchema, AdProvidersResponse, adProvidersResponseSchema, AdSpendBody, adSpendBodySchema, adSpendRowSchema, Alert, AlertEmailsBody (+162 more)
 
 ### Community 1 - "Community 1"
 Cohesion: 0.05
@@ -239,140 +230,140 @@ Cohesion: 0.06
 Nodes (13): describeAudit(), num(), obj(), s(), V, idParam(), parse(), SettingsController (+5 more)
 
 ### Community 3 - "Community 3"
+Cohesion: 0.05
+Nodes (39): BillingService, FeedbackRow, getSubscription(), listFeedback(), pauseSchedulesBeyond(), Row, str(), SubscriptionRow (+31 more)
+
+### Community 4 - "Community 4"
 Cohesion: 0.07
 Nodes (54): account(), addExpense(), admin, by(), byClass, byName, calculateAll(), call() (+46 more)
 
-### Community 4 - "Community 4"
-Cohesion: 0.05
-Nodes (40): pages(), ProfitabilityService, Scope, weakest(), getAdSpend(), Acc, compute(), Computed (+32 more)
-
 ### Community 5 - "Community 5"
-Cohesion: 0.05
-Nodes (43): all, amounts, c, calculateAll(), call(), cents(), dates, delivery() (+35 more)
+Cohesion: 0.07
+Nodes (47): deliverExport(), Deps, processExport(), safeName(), Deps, runDueSchedules(), countRecentFeedback(), createFeedback() (+39 more)
 
 ### Community 6 - "Community 6"
 Cohesion: 0.05
-Nodes (41): admin, after, all, audit, base, before, body, call() (+33 more)
+Nodes (43): all, amounts, c, calculateAll(), call(), cents(), dates, delivery() (+35 more)
 
 ### Community 7 - "Community 7"
-Cohesion: 0.07
-Nodes (44): deliverExport(), processExport(), Deps, runDueSchedules(), withTenant(), getShopOverview(), claimExport(), claimSchedulePeriod() (+36 more)
+Cohesion: 0.08
+Nodes (49): admin, after, again, all, audit, base, before, body (+41 more)
 
 ### Community 8 - "Community 8"
+Cohesion: 0.04
+Nodes (36): ExpenseDefaults, getExpenseDefaults(), Row, STANDARD_EXPENSE_DEFAULTS, aAuditLog, bytea, fAdAccount, fAdSpendDaily (+28 more)
+
+### Community 9 - "Community 9"
 Cohesion: 0.05
 Nodes (39): admin, allPages(), api(), calculateAll(), counted, d, dash, dates (+31 more)
 
-### Community 9 - "Community 9"
+### Community 10 - "Community 10"
 Cohesion: 0.09
 Nodes (26): apiDelete(), apiGet(), apiPatch(), apiPost(), apiPut(), ApiRequestError, downloadFile(), isEmbedded() (+18 more)
 
-### Community 10 - "Community 10"
+### Community 11 - "Community 11"
 Cohesion: 0.06
 Nodes (34): cfg, ln, asSummary(), aug, before, cases, contribution(), missing (+26 more)
 
-### Community 11 - "Community 11"
+### Community 12 - "Community 12"
 Cohesion: 0.08
 Nodes (39): sum, col(), COMPLETENESS, costFigure(), expenses(), Figure, Figures, figuresFrom() (+31 more)
 
-### Community 12 - "Community 12"
+### Community 13 - "Community 13"
 Cohesion: 0.05
 Nodes (37): addSpend(), admin, aed, amounts, before, calculateAll(), db, env (+29 more)
 
-### Community 13 - "Community 13"
+### Community 14 - "Community 14"
 Cohesion: 0.05
 Nodes (37): amt(), base, cfg, discounted, early, flat, frozen, late (+29 more)
 
-### Community 14 - "Community 14"
+### Community 15 - "Community 15"
 Cohesion: 0.06
 Nodes (31): markShopUninstalled(), purgeShopData(), has(), admin, appPool, arg, billingOn, broken (+23 more)
 
-### Community 15 - "Community 15"
+### Community 16 - "Community 16"
 Cohesion: 0.05
 Nodes (34): admin, allowed, body, boss, cells, ctx, db, deps (+26 more)
 
-### Community 16 - "Community 16"
-Cohesion: 0.06
-Nodes (32): mk(), resolveTenantByShopDomain(), InstallInput, InstallResult, installShop(), isUniqueViolation(), refreshInstallation(), ShopOverview (+24 more)
-
 ### Community 17 - "Community 17"
-Cohesion: 0.05
-Nodes (29): aAuditLog, bytea, fAdAccount, fExpenseOverride, fOrderProfit, fProductCost, fProfitEntry, mShop (+21 more)
+Cohesion: 0.1
+Nodes (38): assignCosts(), BuildContext, buildOrder(), CatalogVariant, cents(), compact(), createRng(), CUSTOMERS (+30 more)
 
 ### Community 18 - "Community 18"
-Cohesion: 0.06
-Nodes (14): AdAccountRow, AdSpendSummary, CategoryRow, DEFAULT_CATEGORIES, EXPENSE_CLASSES, ExpenseClass, ExpenseRecord, NewExpense (+6 more)
+Cohesion: 0.07
+Nodes (26): A, B, expectPgError(), loadFixtures(), pgCode(), admin, appPool, db (+18 more)
 
 ### Community 19 - "Community 19"
-Cohesion: 0.11
-Nodes (34): assignCosts(), BuildContext, buildOrder(), compact(), createRng(), CUSTOMERS, dailyCount(), DailyOptions (+26 more)
+Cohesion: 0.07
+Nodes (25): Deps, admin, db, lines, log, mk(), NOW, pool (+17 more)
 
 ### Community 20 - "Community 20"
-Cohesion: 0.08
-Nodes (22): admin, db, mk(), NOW, pool, provider, RANGE, silent (+14 more)
+Cohesion: 0.06
+Nodes (12): AdAccountRow, AdSpendSummary, CategoryRow, DEFAULT_CATEGORIES, EXPENSE_CLASSES, ExpenseClass, ExpenseError, ExpenseRecord (+4 more)
 
 ### Community 21 - "Community 21"
+Cohesion: 0.08
+Nodes (28): mk(), resolveTenantByShopDomain(), getShopOverview(), InstallInput, InstallResult, installShop(), isUniqueViolation(), refreshInstallation() (+20 more)
+
+### Community 22 - "Community 22"
 Cohesion: 0.07
 Nodes (21): composeAlertEmail(), Deps, emailAlerts(), admin, db, down, m, NOW (+13 more)
 
-### Community 22 - "Community 22"
+### Community 23 - "Community 23"
 Cohesion: 0.09
 Nodes (17): cell(), downloadText(), ImportPreview, importSummaryCsv(), AT, text, describeCheck(), plural() (+9 more)
 
-### Community 23 - "Community 23"
+### Community 24 - "Community 24"
 Cohesion: 0.06
 Nodes (11): Executor, FeeRuleInput, LedgerRow, LoadedOrder, OrderProfitHeader, PeriodEntry, ProfitOrderData, ProfitSnapshot (+3 more)
 
-### Community 24 - "Community 24"
-Cohesion: 0.17
-Nodes (12): InstallationService, TenantContext, FastifyRequest, SessionGuard, tooMany(), unauthorized(), Tenant, shopLimitPerMinute() (+4 more)
-
 ### Community 25 - "Community 25"
-Cohesion: 0.09
-Nodes (15): AuthModule, ApiErrorFilter, AppEnv, ConfigModule, DbModule, ExpensesModule, HealthController, result (+7 more)
+Cohesion: 0.16
+Nodes (12): InstallationService, TenantContext, FastifyRequest, SessionGuard, tooMany(), unauthorized(), Tenant, shopLimitPerMinute() (+4 more)
 
 ### Community 26 - "Community 26"
 Cohesion: 0.08
-Nodes (27): at, base, below, drop, f, few, findings, healthy() (+19 more)
+Nodes (15): AuthModule, BillingModule, ApiErrorFilter, ConfigModule, DashboardController, DashboardModule, DbModule, ExpensesModule (+7 more)
 
 ### Community 27 - "Community 27"
+Cohesion: 0.07
+Nodes (20): limiters, SlidingWindowLimiter, { l }, { l, advance }, admin, all, db, env (+12 more)
+
+### Community 28 - "Community 28"
+Cohesion: 0.12
+Nodes (29): mapBalanceFees(), OrderBalanceFee, fees, countryCode(), date(), fromScaled(), GRAMS, Json (+21 more)
+
+### Community 29 - "Community 29"
+Cohesion: 0.08
+Nodes (27): at, base, below, drop, f, few, findings, healthy() (+19 more)
+
+### Community 30 - "Community 30"
 Cohesion: 0.08
 Nodes (28): admin, after, audit, before, calculateAll(), call(), db, env (+20 more)
 
-### Community 28 - "Community 28"
+### Community 31 - "Community 31"
 Cohesion: 0.07
 Nodes (27): add(), admin, apps, baseEnv, db, fakeAuth, fakeBoss, fakeCrypto (+19 more)
 
-### Community 29 - "Community 29"
-Cohesion: 0.14
-Nodes (20): CARD_PERIODS, CardPeriod, cardRequest(), listQuery(), pageQuery(), converted, custom, buildListQuery() (+12 more)
-
-### Community 30 - "Community 30"
+### Community 32 - "Community 32"
 Cohesion: 0.07
 Nodes (27): a, all, b, catalog, cost, costed, counts, d (+19 more)
 
-### Community 31 - "Community 31"
+### Community 33 - "Community 33"
 Cohesion: 0.09
 Nodes (23): AuthError, createShopifyAuth(), OfflineToken, shopFromClaims(), ShopifyAuth, ShopifyAuthConfig, auth, b64() (+15 more)
 
-### Community 32 - "Community 32"
+### Community 34 - "Community 34"
 Cohesion: 0.1
 Nodes (15): ConnectionStatus(), State, GetStarted(), Step, clock(), OverviewHeader(), QUICK_PERIODS, detailQuery() (+7 more)
 
-### Community 33 - "Community 33"
-Cohesion: 0.13
-Nodes (27): OrderBalanceFee, countryCode(), date(), fromScaled(), GRAMS, Json, mapLineItem(), mapOrder() (+19 more)
-
-### Community 34 - "Community 34"
-Cohesion: 0.15
-Nodes (23): addDays(), NOW, r, eachDay(), firstOfMonth(), inclusiveDays(), InvalidRangeError, isRealDate() (+15 more)
-
 ### Community 35 - "Community 35"
-Cohesion: 0.09
-Nodes (21): cleanupOldData(), Deps, admin, appPool, boss, db, failed, rows (+13 more)
+Cohesion: 0.1
+Nodes (20): createLogger(), Level, Logger, LoggerOptions, ORDER, PATTERNS, redact(), redactValue() (+12 more)
 
 ### Community 36 - "Community 36"
-Cohesion: 0.09
-Nodes (17): Tx, claimWebhookEvent(), deleteOrderByShopifyId(), Executor, finishWebhookEvent(), getLastWebhookAt(), getWebhookEvent(), getWebhookHealth() (+9 more)
+Cohesion: 0.15
+Nodes (22): addDays(), NOW, r, eachDay(), firstOfMonth(), inclusiveDays(), InvalidRangeError, isRealDate() (+14 more)
 
 ### Community 37 - "Community 37"
 Cohesion: 0.16
@@ -391,152 +382,152 @@ Cohesion: 0.1
 Nodes (8): exportFor(), actorOf(), DAYS, describeSchedule(), Preset, ReportsService, toExportRow(), buildReport()
 
 ### Community 41 - "Community 41"
-Cohesion: 0.08
-Nodes (19): admin, aOrders, appPool, before, cogsBefore, COUNTED, db, id (+11 more)
+Cohesion: 0.16
+Nodes (8): EntitlementsService, planLimit(), Scope, AppEnv, Reports, Exports and Notifications, countAdAccounts(), countEnabledSchedules(), countExportsThisMonth()
 
 ### Community 42 - "Community 42"
 Cohesion: 0.1
-Nodes (25): Cash View Refunds, Contribution Profit, Data Status, Decimal Money, Figures and Data Status, Estimated Net Profit, Revenue, summarizePeriod (+17 more)
+Nodes (16): claimWebhookEvent(), deleteOrderByShopifyId(), Executor, finishWebhookEvent(), getLastWebhookAt(), getWebhookEvent(), getWebhookHealth(), recordWebhookEvent() (+8 more)
 
 ### Community 43 - "Community 43"
+Cohesion: 0.08
+Nodes (19): admin, aOrders, appPool, before, cogsBefore, COUNTED, db, id (+11 more)
+
+### Community 44 - "Community 44"
+Cohesion: 0.11
+Nodes (13): applySecurity(), securityHeaders(), StructuredLogger, AppModule, bootstrap(), configureApp(), admin, db (+5 more)
+
+### Community 45 - "Community 45"
+Cohesion: 0.17
+Nodes (24): customerPool(), monthsBetween(), PlannedOrder, SCENARIOS, bag(), cancelOrder(), createOrder(), existingOrders() (+16 more)
+
+### Community 46 - "Community 46"
+Cohesion: 0.1
+Nodes (25): Cash View Refunds, Contribution Profit, Data Status, Decimal Money, Figures and Data Status, Estimated Net Profit, Revenue, summarizePeriod (+17 more)
+
+### Community 47 - "Community 47"
 Cohesion: 0.12
 Nodes (24): asDecimals(), Band, ComponentCoverage, Confidence, confidenceFromCoverage(), coverageFrom(), coverageFromEntries(), FigureStatus (+16 more)
 
-### Community 44 - "Community 44"
+### Community 48 - "Community 48"
 Cohesion: 0.17
 Nodes (4): PageBody(), Notice(), PageNotices(), TONES
 
-### Community 45 - "Community 45"
+### Community 49 - "Community 49"
 Cohesion: 0.09
 Nodes (19): admin, all, allowed, appPool, beforeB, byTable, db, editable (+11 more)
 
-### Community 46 - "Community 46"
-Cohesion: 0.17
-Nodes (8): BillingModule, EntitlementsService, planLimit(), Scope, Reports, Exports and Notifications, countAdAccounts(), countEnabledSchedules(), countExportsThisMonth()
+### Community 50 - "Community 50"
+Cohesion: 0.1
+Nodes (20): make(), operatingExpensesFor(), PeriodInputs, summarizePeriod(), adsGap, allActual, base, bigAds (+12 more)
 
-### Community 47 - "Community 47"
+### Community 51 - "Community 51"
 Cohesion: 0.18
 Nodes (15): BY_MONTH, ExpensesPreview(), DAYS, MarketingPreview(), SettingsPreview(), Tab, Kpi(), KpiGrid() (+7 more)
 
-### Community 48 - "Community 48"
-Cohesion: 0.16
-Nodes (22): CatalogVariant, cents(), customerPool(), PlannedOrder, SCENARIOS, bag(), cancelOrder(), createOrder() (+14 more)
-
-### Community 49 - "Community 49"
+### Community 52 - "Community 52"
 Cohesion: 0.13
 Nodes (18): countriesOf(), estimateShippingCost(), latestOnOrBefore(), matches(), outranks(), pickShippingRule(), rank(), ResolvedCost (+10 more)
 
-### Community 50 - "Community 50"
-Cohesion: 0.15
-Nodes (20): mapBalanceFees(), fees, getSyncJob(), loadShopCredential(), markShopReauthRequired(), completeLineItems(), completeRefundLines(), completeVariants() (+12 more)
-
-### Community 51 - "Community 51"
-Cohesion: 0.17
-Nodes (3): actorOf(), ExpensesService, lastOfMonth()
-
-### Community 52 - "Community 52"
-Cohesion: 0.13
-Nodes (5): NotificationsController, parse(), ReportsController, uuid(), ReportsModule
-
 ### Community 53 - "Community 53"
-Cohesion: 0.1
-Nodes (15): countRecentFeedback(), createFeedback(), FeedbackRow, listFeedback(), Row, str(), SubscriptionRow, toFeedback() (+7 more)
+Cohesion: 0.11
+Nodes (14): createSyncJob(), ex(), Executor, getSyncJob(), isActiveJobConflict(), loadShopCredential(), markShopReauthRequired(), newest() (+6 more)
 
 ### Community 54 - "Community 54"
 Cohesion: 0.1
-Nodes (16): admin, all, db, env, fakeAuth, fakeBoss, guarded, logged (+8 more)
+Nodes (20): AllocEntry, AllocLine, AllocRefund, bundlesFor(), getOrderExtras(), getOrderHeader(), loadOrderBundle(), OrderBundle (+12 more)
 
 ### Community 55 - "Community 55"
+Cohesion: 0.17
+Nodes (3): actorOf(), ExpensesService, lastOfMonth()
+
+### Community 56 - "Community 56"
+Cohesion: 0.13
+Nodes (5): NotificationsController, parse(), ReportsController, uuid(), ReportsModule
+
+### Community 57 - "Community 57"
+Cohesion: 0.11
+Nodes (18): cleanupOldData(), Deps, admin, appPool, boss, db, failed, rows (+10 more)
+
+### Community 58 - "Community 58"
+Cohesion: 0.11
+Nodes (21): Dashboard, Dashboard Alerts, Counted Order Statuses, Display Currency Conversion, Deferred Product Ranking, Overview UI, Daily Leakage Check, evaluateLeakage (+13 more)
+
+### Community 59 - "Community 59"
 Cohesion: 0.1
 Nodes (16): a, admin, after, b, before, body, crypto, env (+8 more)
 
-### Community 56 - "Community 56"
-Cohesion: 0.12
-Nodes (20): Downgrade Pauses Without Deleting, EntitlementsService, Billing Mode Off, Growth Plan, plan_limit 403, Pro Plan, Plan Catalogue, loss_orders (+12 more)
-
-### Community 57 - "Community 57"
-Cohesion: 0.13
-Nodes (11): createSyncJob(), ex(), Executor, isActiveJobConflict(), newest(), OrderInput, ProductInput, ShopCredentialRow (+3 more)
-
-### Community 58 - "Community 58"
-Cohesion: 0.17
-Nodes (15): BreakdownRow, breakdownRows(), negate(), Standing, STANDING_LABEL, CostBreakdown, CostRow, feeDetail() (+7 more)
-
-### Community 59 - "Community 59"
-Cohesion: 0.11
-Nodes (17): operatingExpensesFor(), PeriodInputs, adsGap, allActual, base, bigAds, estimated, many (+9 more)
-
 ### Community 60 - "Community 60"
-Cohesion: 0.19
-Nodes (4): ExpensesController, parse(), uuid(), z_uuid
+Cohesion: 0.1
+Nodes (16): admin, appPool, base, before, db, edited, [first], items (+8 more)
 
 ### Community 61 - "Community 61"
-Cohesion: 0.29
-Nodes (14): configureAppUser(), createDatabaseIfMissing(), databaseName(), migrationsFolder, resetDatabase(), runMigrations(), adminUrl, main() (+6 more)
+Cohesion: 0.15
+Nodes (20): plan_limit 403, Dashboard Overview Endpoint, packages/db/src/dashboard.ts, summarizeFromTotals, f_ad_account, AdProvider, f_ad_spend_daily, Daily Ad Spend Sync (+12 more)
 
 ### Community 62 - "Community 62"
 Cohesion: 0.17
-Nodes (10): BillingService, getSubscription(), pauseSchedulesBeyond(), upsertSubscription(), BillingEnv, RANK, refreshSubscription(), resolveShopPlan() (+2 more)
+Nodes (15): BreakdownRow, breakdownRows(), negate(), Standing, STANDING_LABEL, CostBreakdown, CostRow, feeDetail() (+7 more)
 
 ### Community 63 - "Community 63"
-Cohesion: 0.13
-Nodes (19): Database, PostgreSQL 17, Prompt Section 32 Naming Rules, pnpm Workspace, Profit Intelligence README, apps/api, apps/web, infra/docker (+11 more)
+Cohesion: 0.19
+Nodes (4): ExpensesController, parse(), uuid(), z_uuid
 
 ### Community 64 - "Community 64"
 Cohesion: 0.15
 Nodes (3): Dropdown(), DropdownOption, PERIOD_OPTIONS
 
 ### Community 65 - "Community 65"
+Cohesion: 0.16
+Nodes (15): fetchGoogleDaily(), googleAdsQuery(), GoogleRow, mapGoogleAdsStream(), microsToAmount(), AdProvider, Deps, isoDay() (+7 more)
+
+### Community 66 - "Community 66"
 Cohesion: 0.12
 Nodes (18): SummaryEntry, base, c, cost(), e(), entries, fee(), many (+10 more)
 
-### Community 66 - "Community 66"
-Cohesion: 0.14
-Nodes (12): createShopifyGraphql(), GraphqlClientOptions, Json, ShopifyAccessError, ShopifyApiError, ShopifyGraphql, client(), { gql } (+4 more)
-
 ### Community 67 - "Community 67"
-Cohesion: 0.13
-Nodes (13): Deps, admin, db, lines, log, mk(), NOW, pool (+5 more)
+Cohesion: 0.29
+Nodes (14): configureAppUser(), createDatabaseIfMissing(), databaseName(), migrationsFolder, resetDatabase(), runMigrations(), adminUrl, main() (+6 more)
 
 ### Community 68 - "Community 68"
-Cohesion: 0.14
-Nodes (18): Billing, Plans, Onboarding and Support, currentAppInstallation.activeSubscriptions, Billing API, Shopify App Pricing, Privacy Retention, POST /billing/subscribe, POST /support, app_subscriptions/update Webhook (+10 more)
+Cohesion: 0.19
+Nodes (18): Backup and Restore, PostgreSQL Custom Dump, backup:verify, read_all_orders Before Launch, Incident Response, Incident Severity, Monitoring, Health Endpoints (+10 more)
 
 ### Community 69 - "Community 69"
-Cohesion: 0.12
-Nodes (18): Dashboard, Dashboard Alerts, Counted Order Statuses, Display Currency Conversion, Deferred Product Ranking, Overview UI, Daily Leakage Check, evaluateLeakage (+10 more)
-
-### Community 70 - "Community 70"
 Cohesion: 0.11
 Nodes (7): AuditRow, CostCatalogRow, CostFilter, CostHistoryRow, CostRow, Row, RuleLists
 
-### Community 71 - "Community 71"
-Cohesion: 0.16
-Nodes (14): fetchMetaDaily(), mapMetaInsights(), metaInsightsUrl(), MetaRow, AdProvider, Deps, isoDay(), PROVIDERS (+6 more)
-
-### Community 72 - "Community 72"
+### Community 70 - "Community 70"
 Cohesion: 0.18
 Nodes (13): DashboardService, feeSplit(), NO_COVERAGE, relative(), Scope, buildIssues(), Coverage, dataQualityOf() (+5 more)
 
-### Community 73 - "Community 73"
+### Community 71 - "Community 71"
+Cohesion: 0.2
+Nodes (11): CARD_PERIODS, cardRequest(), listQuery(), pageQuery(), converted, custom, buildListQuery(), buildQuery() (+3 more)
+
+### Community 72 - "Community 72"
 Cohesion: 0.24
 Nodes (12): Band, describeBand(), describeDelta(), describePoints(), formatCount(), formatMoney(), formatMoneyCompact(), formatPercent() (+4 more)
 
-### Community 74 - "Community 74"
+### Community 73 - "Community 73"
 Cohesion: 0.15
-Nodes (13): createLogger(), Level, Logger, LoggerOptions, ORDER, PATTERNS, redact(), redactValue() (+5 more)
+Nodes (17): Onboarding Checklist, Merchant Alert Limits, calculateOrder, s_payment_fee_rule, s_app_setting, s_shipping_cost_rule, Product Cost CSV and Bulk Edit, Production Email Delivery (+9 more)
+
+### Community 74 - "Community 74"
+Cohesion: 0.16
+Nodes (17): Expenses and Advertising, expensesForPeriod, pnpm Workspace, Profit Engine, Measure First, Profit Engine Package, Profit Calculation Spec, pnpm profit:verify (+9 more)
 
 ### Community 75 - "Community 75"
-Cohesion: 0.17
-Nodes (17): Dashboard Overview Endpoint, packages/db/src/dashboard.ts, summarizeFromTotals, f_ad_account, AdProvider, f_ad_spend_daily, Daily Ad Spend Sync, Net Profit (+9 more)
-
-### Community 76 - "Community 76"
-Cohesion: 0.15
-Nodes (17): Onboarding Checklist, Merchant Alert Limits, calculateOrder, s_payment_fee_rule, s_app_setting, s_shipping_cost_rule, Product Cost CSV and Bulk Edit, Meta and Google Ads Integration (+9 more)
-
-### Community 77 - "Community 77"
 Cohesion: 0.16
 Nodes (15): buildFx(), days(), addDays(), ecbCurrencies(), ecbProvider(), EcbRate, parseDay(), parseEcbXml() (+7 more)
+
+### Community 76 - "Community 76"
+Cohesion: 0.24
+Nodes (15): completeLineItems(), completeRefundLines(), completeVariants(), FeesState, fetchBalanceFees(), fetchOrder(), fetchProduct(), isFeesError() (+7 more)
+
+### Community 77 - "Community 77"
+Cohesion: 0.17
+Nodes (15): seed(), CoverageCandidate, GatewayCoverage, PAYMENT_KINDS, RuleCoverage, calculateOrder(), COUNTED_STATUSES, exclusionReason() (+7 more)
 
 ### Community 78 - "Community 78"
 Cohesion: 0.13
@@ -544,31 +535,31 @@ Nodes (13): after, base, before, eur, existing, future, line(), none (+5 more)
 
 ### Community 79 - "Community 79"
 Cohesion: 0.17
-Nodes (15): seed(), CoverageCandidate, GatewayCoverage, PAYMENT_KINDS, RuleCoverage, calculateOrder(), COUNTED_STATUSES, exclusionReason() (+7 more)
-
-### Community 80 - "Community 80"
-Cohesion: 0.17
 Nodes (14): costChangeFindings(), evaluateLeakage(), Finding, FindingRule, gatherLeakageInputs(), leakageFindings(), LeakageInputs, money() (+6 more)
 
-### Community 81 - "Community 81"
+### Community 80 - "Community 80"
 Cohesion: 0.12
 Nodes (14): admin, DAYS, db, env, fakeAuth, ORDERS, pct(), Result (+6 more)
+
+### Community 81 - "Community 81"
+Cohesion: 0.13
+Nodes (13): Acc, compute(), Computed, keepFromOrders(), kept, ProductLineRecord, ProductRowData, productRows() (+5 more)
 
 ### Community 82 - "Community 82"
 Cohesion: 0.12
 Nodes (13): all, approved, code, created, DESTRUCTIVE, dir, files, journal (+5 more)
 
 ### Community 83 - "Community 83"
-Cohesion: 0.12
-Nodes (12): admin, appPool, db, header, orderId, orderNodes, product, rows (+4 more)
-
-### Community 84 - "Community 84"
 Cohesion: 0.16
 Nodes (16): Unrecognized Subscription Means Free, Free Plan, DATABASE_ADMIN_URL, app_current_tenant, app_user, Forced Row Level Security, withTenant, a_audit_log (+8 more)
 
-### Community 85 - "Community 85"
+### Community 84 - "Community 84"
 Cohesion: 0.17
 Nodes (16): Expense requestKey, profit.recalculate, f_order_profit, apps/worker, Shopify Data Sync, Paginated GraphQL, Sync Page Idempotency, o_sync_job (+8 more)
+
+### Community 85 - "Community 85"
+Cohesion: 0.19
+Nodes (16): ADR 0001 Phase 0 Architecture, NestJS on Fastify, Next.js Embedded Client, pg-boss Queue, pnpm Workspaces, Railway Hosting, Tenant Isolation, Approved Phase 0 Decisions (+8 more)
 
 ### Community 86 - "Community 86"
 Cohesion: 0.16
@@ -579,270 +570,254 @@ Cohesion: 0.12
 Nodes (6): ExportJobPayload, HISTORY_DAYS, ProfitJobPayload, PurgeJobPayload, SyncJobPayload, WebhookJobPayload
 
 ### Community 88 - "Community 88"
+Cohesion: 0.16
+Nodes (9): CategoriesSection(), CLASS_LABEL, CLASS_OPTIONS, overlapWarning(), CHOICES, CurrencyTab(), RATE_STATUS, Tab (+1 more)
+
+### Community 89 - "Community 89"
 Cohesion: 0.17
 Nodes (8): InfoTip(), Change(), KPI_COLOR, KpiIcon, range(), TILE, Sparkline(), Delta
 
-### Community 89 - "Community 89"
+### Community 90 - "Community 90"
 Cohesion: 0.13
 Nodes (8): ChannelDay, ChannelOrders, DailyTotals, DateRange, OrderAttention, PeriodGaps, ProfitAggregate, Quality
 
-### Community 90 - "Community 90"
+### Community 91 - "Community 91"
 Cohesion: 0.13
 Nodes (12): b, backdated, bundles, cancelled, copy, fx, mapped, node (+4 more)
 
-### Community 91 - "Community 91"
+### Community 92 - "Community 92"
 Cohesion: 0.19
 Nodes (11): channelOf(), ChannelRevenue, groupChannels(), KNOWN, OTHER, cents, convert(), out (+3 more)
 
-### Community 92 - "Community 92"
-Cohesion: 0.21
-Nodes (11): BillingMode, effectivePlan(), Entitlements, Plan, PLAN_IDS, planFor(), planFromSubscriptionName(), PlanId (+3 more)
-
 ### Community 93 - "Community 93"
+Cohesion: 0.31
+Nodes (9): CardPeriod, CardHeader(), CardPeriodFilter(), useCardOverview(), ChannelDonut(), COLORS, Interval, INTERVALS (+1 more)
+
+### Community 94 - "Community 94"
 Cohesion: 0.2
 Nodes (10): iso(), latestOccurrence(), LocalTime, ms(), Occurrence, ScheduleRule, at, now (+2 more)
 
-### Community 94 - "Community 94"
+### Community 95 - "Community 95"
+Cohesion: 0.19
+Nodes (14): Billing, Plans, Onboarding and Support, currentAppInstallation.activeSubscriptions, Billing API, EntitlementsService, Shopify App Pricing, Billing Mode Off, Growth Plan, Pro Plan (+6 more)
+
+### Community 96 - "Community 96"
 Cohesion: 0.18
 Nodes (14): Honest Ad Attribution, Product Roadmap, Competitor Benchmark, BeProfit, Lifetimely, LTV and Cohort Privacy Boundary, MerchantFlow, First-party Pixel Attribution (+6 more)
 
-### Community 95 - "Community 95"
+### Community 97 - "Community 97"
 Cohesion: 0.14
 Nodes (12): changed, code, dirs, formatable, given, m, pkg, root (+4 more)
 
-### Community 96 - "Community 96"
+### Community 98 - "Community 98"
 Cohesion: 0.21
 Nodes (10): csvCell(), renderCsv(), formatCell(), nf(), renderPdf(), lines, long, rows (+2 more)
 
-### Community 97 - "Community 97"
-Cohesion: 0.18
-Nodes (4): limiters, SlidingWindowLimiter, { l }, { l, advance }
-
-### Community 98 - "Community 98"
-Cohesion: 0.17
-Nodes (11): admin, appPool, awaiting, calculateAll(), db, FULL, mixedConfig(), mk() (+3 more)
-
 ### Community 99 - "Community 99"
-Cohesion: 0.19
-Nodes (9): buildTrend(), intervalFor(), covered, d, { interval, points }, { points }, TrendDay, TrendInterval (+1 more)
+Cohesion: 0.23
+Nodes (7): pages(), ProfitabilityService, Scope, weakest(), getAdSpend(), listOrders(), listProductCostHistory()
 
 ### Community 100 - "Community 100"
-Cohesion: 0.24
-Nodes (11): blank(), formatShippingRulesCsv(), grams(), HEADER, MODES, parseCsv(), parseShippingRulesCsv(), quote() (+3 more)
+Cohesion: 0.27
+Nodes (8): arg(), printCounts(), shopifyCount(), SeedOptions, connect(), Json, need(), ShopifyClient
 
 ### Community 101 - "Community 101"
 Cohesion: 0.15
-Nodes (9): b, base, none, nospend, r, s, ship, sum (+1 more)
+Nodes (13): Database, PostgreSQL 17, Prompt Section 32 Naming Rules, Profit Leakage and Data Quality, System Monitoring, Profit Intelligence README, infra/docker, Operations Docs (+5 more)
 
 ### Community 102 - "Community 102"
+Cohesion: 0.19
+Nodes (9): buildTrend(), intervalFor(), covered, d, { interval, points }, { points }, TrendDay, TrendInterval (+1 more)
+
+### Community 103 - "Community 103"
+Cohesion: 0.24
+Nodes (11): blank(), formatShippingRulesCsv(), grams(), HEADER, MODES, parseCsv(), parseShippingRulesCsv(), quote() (+3 more)
+
+### Community 104 - "Community 104"
+Cohesion: 0.15
+Nodes (9): b, base, none, nospend, r, s, ship, sum (+1 more)
+
+### Community 105 - "Community 105"
 Cohesion: 0.22
 Nodes (8): Driver, Input, num(), round2(), base, now, WhatChanged, WhatChangedCard()
 
-### Community 103 - "Community 103"
-Cohesion: 0.19
-Nodes (8): CategoriesSection(), CLASS_LABEL, CLASS_OPTIONS, overlapWarning(), CurrencyTab(), RATE_STATUS, Tab, TABS
+### Community 106 - "Community 106"
+Cohesion: 0.17
+Nodes (8): admin, db, mk(), NOW, pool, provider, RANGE, silent
 
-### Community 104 - "Community 104"
-Cohesion: 0.3
-Nodes (7): arg(), printCounts(), shopifyCount(), connect(), Json, need(), ShopifyClient
-
-### Community 105 - "Community 105"
+### Community 107 - "Community 107"
 Cohesion: 0.18
 Nodes (9): createShopifyAdmin(), FetchLike, ShopifyAdmin, ShopInfo, admin, bad, empty, fetchMock (+1 more)
 
-### Community 106 - "Community 106"
+### Community 108 - "Community 108"
 Cohesion: 0.2
 Nodes (9): availableCurrencies(), convertDaily(), Converted, PEGS, rateProvider, fx, provider, r (+1 more)
 
-### Community 107 - "Community 107"
+### Community 109 - "Community 109"
 Cohesion: 0.26
 Nodes (10): refreshExchangeRates(), earliestExchangeRateDate(), latestExchangeRateDate(), loadExchangeRates(), StoredRate, upsertExchangeRates(), admin, appPool (+2 more)
 
-### Community 108 - "Community 108"
-Cohesion: 0.2
-Nodes (7): Kpis(), ProfitPage(), QUALITY_RULES, Tab, times(), today(), TONE
-
-### Community 109 - "Community 109"
-Cohesion: 0.23
-Nodes (5): actorOf(), MarketingService, PROVIDERS, ratioOf(), totalAdSpend()
-
 ### Community 110 - "Community 110"
 Cohesion: 0.2
-Nodes (8): all, base(), COMPLETE, list, many, one, quiet, summary()
+Nodes (7): Kpis(), ProfitPage(), QUALITY_RULES, Tab, times(), today(), TONE
 
 ### Community 111 - "Community 111"
 Cohesion: 0.25
 Nodes (5): HeaderBag, WebhookOutcome, WebhookReceiver, WebhooksController, WebhooksModule
 
 ### Community 112 - "Community 112"
+Cohesion: 0.2
+Nodes (8): all, base(), COMPLETE, list, many, one, quiet, summary()
+
+### Community 113 - "Community 113"
 Cohesion: 0.27
 Nodes (8): costRow(), DataQualityCard(), inputTone(), orderRow(), setupRow(), SEVERITY_LABEL, SEVERITY_TONE, Tone
 
-### Community 113 - "Community 113"
-Cohesion: 0.18
-Nodes (7): admin, db, env, fakeBoss, [queue, payload], send, setupPool
-
 ### Community 114 - "Community 114"
-Cohesion: 0.2
-Nodes (11): Expenses and Advertising, expensesForPeriod, Profit Leakage and Data Quality, System Monitoring, Profit Engine, Measure First, Profit Engine Package, Profit Calculation Spec (+3 more)
-
-### Community 115 - "Community 115"
 Cohesion: 0.24
 Nodes (11): assertProductionConfig, Production Readiness Checklist, Secret Rotation, Golden Tests, Rotate Shopify API Secret, AES-256-GCM Token Encryption, app-config.test.ts, Seed Manifest (+3 more)
 
-### Community 116 - "Community 116"
+### Community 115 - "Community 115"
 Cohesion: 0.18
 Nodes (7): admin, db, MON, NEXT_MON, orderNodes, pool, silent
 
-### Community 117 - "Community 117"
+### Community 116 - "Community 116"
 Cohesion: 0.22
 Nodes (9): amt(), base, by(), cents(), keys, none, noSpend, r (+1 more)
 
-### Community 118 - "Community 118"
-Cohesion: 0.29
-Nodes (7): assertProductionConfig(), ProductionInput, productionProblems(), bad, on, remote, WEAK_KEYS
+### Community 117 - "Community 117"
+Cohesion: 0.22
+Nodes (4): SyncController, SyncModule, SyncScope, SyncService
 
-### Community 119 - "Community 119"
+### Community 118 - "Community 118"
 Cohesion: 0.29
 Nodes (10): s_shop_credential, Drizzle ORM, m_shop, m_tenant, Exact Decimal Money, AuthError, AES-256-GCM Token Encryption, installShop (+2 more)
 
-### Community 120 - "Community 120"
+### Community 119 - "Community 119"
 Cohesion: 0.22
-Nodes (10): Table Naming Prefixes, read_all_orders Before Launch, Frozen Ledger Unit Cost, COGS Resolution, D3 Shopify Cost Is Estimated, D8 Variant Cost Granularity, f_product_cost, Database Naming Convention (+2 more)
+Nodes (10): POST /support, resolveTenantByShopDomain, Shop Taken From Session, Shopify Installation and Authentication, frame-ancestors, Managed Installation, App Bridge ID Token, SessionGuard (+2 more)
 
-### Community 121 - "Community 121"
-Cohesion: 0.31
-Nodes (10): Backup and Restore, PostgreSQL Custom Dump, backup:verify, Incident Response, Monitoring, Health Endpoints, ops.monitor, Profit Intelligence Master Prompt (+2 more)
-
-### Community 122 - "Community 122"
+### Community 120 - "Community 120"
 Cohesion: 0.2
 Nodes (8): big, clean, i, ids, issues, ok, q, summary
 
-### Community 124 - "Community 124"
+### Community 121 - "Community 121"
+Cohesion: 0.27
+Nodes (4): actorOf(), MarketingService, PROVIDERS, ratioOf()
+
+### Community 123 - "Community 123"
 Cohesion: 0.33
 Nodes (3): MarketingController, parse(), uuid()
 
-### Community 126 - "Community 126"
-Cohesion: 0.25
-Nodes (5): Deps, safeName(), Mail, MailNotConfigured, MailSender
-
-### Community 127 - "Community 127"
+### Community 125 - "Community 125"
 Cohesion: 0.22
 Nodes (8): client, dir, expected, extra, have, i, missing, weak
 
-### Community 128 - "Community 128"
-Cohesion: 0.28
-Nodes (9): ADR 0001 Phase 0 Architecture, NestJS on Fastify, Next.js Embedded Client, pg-boss Queue, pnpm Workspaces, Railway Hosting, Approved Phase 0 Decisions, Idempotent Jobs (+1 more)
-
-### Community 129 - "Community 129"
+### Community 126 - "Community 126"
 Cohesion: 0.31
 Nodes (9): No Customer PII in V1, Data Retention and Deletion, No Stored Customer Personal Data, 30-Day Uninstall Grace, app/uninstalled, Customer Privacy Webhook Acknowledgement, Webhook Event Retention, Webhook IDs Only (+1 more)
 
-### Community 130 - "Community 130"
-Cohesion: 0.22
-Nodes (6): admin, db, deps, f, pool, silent
-
-### Community 131 - "Community 131"
+### Community 127 - "Community 127"
 Cohesion: 0.25
 Nodes (8): at(), fresh(), lastSuccessAt, late, NOW, PAST, TODAY, v
 
-### Community 132 - "Community 132"
+### Community 128 - "Community 128"
+Cohesion: 0.22
+Nodes (6): admin, db, deps, f, pool, silent
+
+### Community 129 - "Community 129"
 Cohesion: 0.22
 Nodes (5): built, colors, noShopify, procs, root
 
-### Community 133 - "Community 133"
+### Community 130 - "Community 130"
 Cohesion: 0.31
 Nodes (3): describe(), SyncSection(), when()
 
-### Community 134 - "Community 134"
+### Community 131 - "Community 131"
 Cohesion: 0.22
 Nodes (6): base64Key32, Env, envSchema, port, ShopifyEnv, shopifyEnvSchema
 
-### Community 135 - "Community 135"
-Cohesion: 0.46
-Nodes (5): applySecurity(), securityHeaders(), AppModule, bootstrap(), configureApp()
+### Community 132 - "Community 132"
+Cohesion: 0.29
+Nodes (8): Downgrade Pauses Without Deleting, Schedule Period Claim, CSV Formula Guard, o_report_export, latestOccurrence, Seven-day Export Retention, s_report_schedule, SMTP Email
 
-### Community 136 - "Community 136"
-Cohesion: 0.36
-Nodes (8): Tenant Isolation, Incident Severity, In-Memory Rate Limit, purgeShopData, Security Review, Forced Row Level Security, SessionGuard, withTenant Job Context
+### Community 133 - "Community 133"
+Cohesion: 0.29
+Nodes (8): Table Naming Prefixes, Frozen Ledger Unit Cost, COGS Resolution, D3 Shopify Cost Is Estimated, D8 Variant Cost Granularity, f_product_cost, Database Naming Convention, Shopify Development Store Seed Data
 
-### Community 137 - "Community 137"
+### Community 134 - "Community 134"
 Cohesion: 0.36
 Nodes (5): dataNotes(), dataNotesFrom(), pct(), Scope, n
 
-### Community 138 - "Community 138"
-Cohesion: 0.25
-Nodes (7): actual, f, make(), table, text, totals, summarizePeriod()
-
-### Community 139 - "Community 139"
+### Community 135 - "Community 135"
 Cohesion: 0.32
 Nodes (5): FULFILLMENT, fulfillmentStatus(), KNOWN, paymentStatus(), StatusTone
 
-### Community 141 - "Community 141"
+### Community 137 - "Community 137"
 Cohesion: 0.29
 Nodes (4): ProductsPage(), Sort, SORTS, today()
 
-### Community 142 - "Community 142"
-Cohesion: 0.33
-Nodes (5): explainEntry(), LABELS, QUALITY, SOURCE, str()
-
-### Community 143 - "Community 143"
+### Community 138 - "Community 138"
 Cohesion: 0.29
 Nodes (3): LeakageController, LeakageModule, LeakageService
 
-### Community 146 - "Community 146"
+### Community 140 - "Community 140"
 Cohesion: 0.33
-Nodes (7): dayKey(), daysBetween(), generateMonthPlan(), monthsBetween(), historyOptions(), seedHistory(), stamp()
+Nodes (5): explainEntry(), LABELS, QUALITY, SOURCE, str()
 
-### Community 147 - "Community 147"
-Cohesion: 0.52
-Nodes (5): fetchGoogleDaily(), googleAdsQuery(), GoogleRow, mapGoogleAdsStream(), microsToAmount()
-
-### Community 148 - "Community 148"
+### Community 142 - "Community 142"
 Cohesion: 0.38
 Nodes (4): REPORTS, Preview(), Tab, today()
 
-### Community 151 - "Community 151"
+### Community 144 - "Community 144"
+Cohesion: 0.33
+Nodes (3): Mail, MailNotConfigured, MailSender
+
+### Community 145 - "Community 145"
 Cohesion: 0.53
 Nodes (5): AlertsTab(), clean(), EmailAlerts(), parseEmails(), pct()
 
-### Community 152 - "Community 152"
+### Community 146 - "Community 146"
 Cohesion: 0.47
 Nodes (5): AlertInput, buildAlerts(), money(), pct(), SEVERITY_ORDER
 
-### Community 153 - "Community 153"
+### Community 147 - "Community 147"
 Cohesion: 0.47
 Nodes (5): ago(), dayIn(), describeFreshness(), FreshnessTone, FreshnessView
 
-### Community 154 - "Community 154"
+### Community 148 - "Community 148"
+Cohesion: 0.6
+Nodes (4): fetchMetaDaily(), mapMetaInsights(), metaInsightsUrl(), MetaRow
+
+### Community 149 - "Community 149"
 Cohesion: 0.33
 Nodes (4): lines, scopes, toml, uris
 
-### Community 156 - "Community 156"
+### Community 150 - "Community 150"
+Cohesion: 0.33
+Nodes (5): actual, f, table, text, totals
+
+### Community 151 - "Community 151"
 Cohesion: 0.5
 Nodes (3): ParsedRow, parseSpendLines(), r
 
-### Community 157 - "Community 157"
+### Community 152 - "Community 152"
 Cohesion: 0.6
 Nodes (4): cents(), check(), COUNTED, main()
 
-### Community 158 - "Community 158"
+### Community 153 - "Community 153"
 Cohesion: 0.4
 Nodes (5): Drizzle ORM, Forward-Only Migrations, Docker Compose Local PostgreSQL, Local PostgreSQL 17, PostgreSQL Database profit_intelligence
 
-### Community 159 - "Community 159"
-Cohesion: 0.7
-Nodes (5): Webhooks and Incremental Sync, HMAC-SHA256 Webhook Verification, o_webhook_event, processWebhook, webhook.process Job
-
-### Community 160 - "Community 160"
+### Community 154 - "Community 154"
 Cohesion: 0.4
 Nodes (3): daysBetween(), Fetcher, Log
 
-### Community 167 - "Community 167"
+### Community 159 - "Community 159"
 Cohesion: 0.5
 Nodes (3): bad, env, ok
 
-### Community 168 - "Community 168"
+### Community 160 - "Community 160"
 Cohesion: 0.83
 Nodes (3): orderByIdQuery(), orderFields(), ordersQuery()
 
@@ -853,9 +828,9 @@ Nodes (3): orderByIdQuery(), orderFields(), ordersQuery()
   infra/docker/docker-compose.yml · relation: conceptually_related_to
 
 ## Knowledge Gaps
-- **1366 isolated node(s):** `FastifyRequest`, `Scope`, `{ l }`, `{ l, advance }`, `COMPLETE` (+1361 more)
+- **1342 isolated node(s):** `FastifyRequest`, `Scope`, `{ l }`, `{ l, advance }`, `COMPLETE` (+1337 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **27 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **22 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
@@ -864,11 +839,11 @@ _Questions this graph is uniquely positioned to answer:_
   _Edge tagged AMBIGUOUS (relation: conceptually_related_to) - confidence is low._
 - **What is the exact relationship between `Local PostgreSQL 17` and `PostgreSQL Database profit_intelligence`?**
   _Edge tagged AMBIGUOUS (relation: conceptually_related_to) - confidence is low._
-- **Why does `Reports, Exports and Notifications` connect `Community 46` to `Community 68`, `Community 69`, `Community 7`, `Community 75`, `Community 14`, `Community 56`, `Community 126`?**
+- **Why does `Reports, Exports and Notifications` connect `Community 41` to `Community 132`, `Community 5`, `Community 15`, `Community 58`, `Community 61`, `Community 95`?**
   _High betweenness centrality (0.021) - this node is a cross-community bridge._
-- **Why does `main()` connect `Community 61` to `Community 104`, `Community 48`, `Community 146`?**
+- **Why does `main()` connect `Community 67` to `Community 100`, `Community 45`?**
   _High betweenness centrality (0.018) - this node is a cross-community bridge._
-- **Why does `withTenant()` connect `Community 7` to `Community 98`, `Community 35`, `Community 36`, `Community 34`, `Community 46`, `Community 14`, `Community 16`, `Community 83`, `Community 20`, `Community 53`, `Community 61`, `Community 62`, `Community 31`?**
+- **Why does `withTenant()` connect `Community 5` to `Community 33`, `Community 3`, `Community 41`, `Community 42`, `Community 15`, `Community 18`, `Community 19`, `Community 21`, `Community 57`, `Community 60`?**
   _High betweenness centrality (0.016) - this node is a cross-community bridge._
 - **Are the 4 inferred relationships involving `withTenant()` (e.g. with `.start()` and `succeededSync()`) actually correct?**
   _`withTenant()` has 4 INFERRED edges - model-reasoned connections that need verification._

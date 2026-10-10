@@ -54,6 +54,8 @@ export function describeAudit(r: { action: string; oldValue: unknown; newValue: 
         ? `Turned on alert emails to ${list.join(', ')}`
         : 'Turned off alert emails';
     }
+    case 'setting.expense_defaults':
+      return `New expenses now start as ${n?.kind === 'one_time' ? 'one-time' : `recurring and ${s(n?.frequency)}`} (was ${o?.kind === 'one_time' ? 'one-time' : `recurring and ${s(o?.frequency)}`})`;
     case 'expense_category.set_class':
       return `Set the cost class of the category "${s(n?.name)}" to ${s(n?.class)} (was ${s(o?.class)})`;
     case 'profit.recalculated':

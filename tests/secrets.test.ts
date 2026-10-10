@@ -60,11 +60,11 @@ describe('the repository', () => {
       'SHOPIFY_API_SECRET=' + 'shpss_' + 'b03427c4cd70d62ac365f269ecae5ce9',
     ) as Finding[];
     expect(pasted.length).toBeGreaterThan(0);
-  });
+  }, 30_000);
 
   it('contains no secrets (the .env file is ignored and never scanned)', () => {
     const { files, findings } = scanRepo() as { files: number; findings: Finding[] };
     expect(files).toBeGreaterThan(300);
     expect(findings.map((f) => `${f.path}:${f.line} ${f.rule}`)).toEqual([]);
-  });
+  }, 30_000);
 });

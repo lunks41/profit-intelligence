@@ -148,6 +148,8 @@ describe('authentication', () => {
   it.each([
     ['GET', '/costs'],
     ['GET', '/currency'],
+    ['GET', '/expense-defaults'],
+    ['PUT', '/expense-defaults'],
     ['GET', '/rules'],
     ['POST', '/recalculate'],
     ['GET', '/recalculate/last'],
@@ -906,5 +908,48 @@ describe('recalculation', () => {
     const [, payload] = send.mock.calls[0] as [string, Record<string, unknown>];
     expect(payload.shopId).toBe(a.shopId);
     expect(payload.tenantId).toBe(a.tenantId);
+  });
+});
+
+describe('expense defaults', () => {
+  it('start recurring and monthly, can be changed, are audited, and belong to one shop', async () => {
+    expect((await json('GET', '/expense-defaults')).body).toEqual({
+      kind: 'recurring',
+      frequency: 'monthly',
+    });
+    const saved = await json('PUT', '/expense-defaults', 'id-set-a', {
+      kind: 'recurring',
+      frequency: 'yearly',
+    });
+    expect(saved.res.statusCode).toBe(200);
+    expect((await json('GET', '/expense-defaults')).body).toEqual({
+      kind: 'recurring',
+      frequency: 'yearly',
+    });
+    // the other shop is untouched
+    expect((await json('GET', '/expense-defaults', 'id-set-b')).body).toEqual({
+      kind: 'recurring',
+      frequency: 'monthly',
+    });
+    const hist = auditResponseSchema.parse((await json('GET', '/audit')).body);
+    expect(hist.rows[0]!.summary).toBe(
+      'New expenses now start as recurring and yearly (was recurring and monthly)',
+    );
+    await json('PUT', '/expense-defaults', 'id-set-a', { kind: 'one_time', frequency: 'monthly' });
+    const again = auditResponseSchema.parse((await json('GET', '/audit')).body);
+    expect(again.rows[0]!.summary).toBe(
+      'New expenses now start as one-time (was recurring and yearly)',
+    );
+  });
+
+  it('refuses a value that is not one of the choices', async () => {
+    for (const bad of [
+      { kind: 'weekly', frequency: 'monthly' },
+      { kind: 'recurring', frequency: 'daily' },
+      { kind: 'recurring' },
+      {},
+    ]) {
+      expect((await call('PUT', '/expense-defaults', 'id-set-a', bad)).statusCode).toBe(400);
+    }
   });
 });
