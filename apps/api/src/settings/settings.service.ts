@@ -2,6 +2,7 @@ import { BadRequestException, Inject, Injectable, NotFoundException } from '@nes
 import type {
   AuditResponse,
   CostHistoryResponse,
+  CurrencySettingsResponse,
   CostListQuery,
   CostListResponse,
   BulkCostBody,
@@ -21,6 +22,7 @@ import {
   getLeakageSettings,
   getMissingCogsThreshold,
   getShopOverview,
+  latestExchangeRateDate,
   listAudit,
   listCostCatalog,
   listCostHistory,
@@ -46,6 +48,7 @@ import {
 import type { Db } from '@pi/db';
 import {
   businessDate,
+  minorUnitDigits,
   formatProductCostCsv,
   formatShippingRulesCsv,
   parseProductCostCsv,
@@ -60,6 +63,26 @@ import { describeAudit } from './describe.js';
 
 const actorOf = (t: TenantContext) => (t.userId ? `shopify-user:${t.userId}` : 'merchant');
 
+/** Same window as ecbProvider: a rate older than this is estimated. */
+const RATE_STALE_DAYS = 7;
+const DAY_MS = 86_400_000;
+
+/** Whole days from `from` to `to` (YYYY-MM-DD). Negative when `to` is earlier. */
+function daysFrom(from: string, to: string): number {
+  return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / DAY_MS);
+}
+
+function currencyExplanation(currency: string, decimals: number): string[] {
+  return [
+    `Amounts stay in the store currency (${currency}). Shopify sets that currency.`,
+    "Other currencies are converted with the European Central Bank's daily euro reference rates, using the rate of each day, not today's rate.",
+    'US dollars and UAE dirhams use the fixed peg of 3.6725 dirhams per dollar. That rate is exact.',
+    `Each amount is rounded once, half up, to ${decimals} decimal places, the minor unit of ${currency}. Totals add those rounded amounts.`,
+    'If a rate is missing, the amount stays Missing. It is never treated as zero or as a rate of 1.',
+    `A rate older than ${RATE_STALE_DAYS} days is marked Estimated.`,
+  ];
+}
+
 @Injectable()
 export class SettingsService {
   constructor(
@@ -70,7 +93,38 @@ export class SettingsService {
   private async shop(scope: TenantContext) {
     const shop = await getShopOverview(this.db, scope);
     if (!shop) throw new BadRequestException({ code: 'shop_not_found', message: 'Shop not found' });
-    return { currency: shop.currency, today: businessDate(new Date(), shop.ianaTimezone) };
+    return {
+      currency: shop.currency,
+      timezone: shop.ianaTimezone,
+      today: businessDate(new Date(), shop.ianaTimezone),
+    };
+  }
+
+  /**
+   * Store currency, shop time zone, and the conversion rule. Nothing is saved: Shopify owns the
+   * currency and time zone, and the rates are the ones the worker already stores.
+   */
+  async currency(scope: TenantContext): Promise<CurrencySettingsResponse> {
+    const shop = await this.shop(scope);
+    const latest = await latestExchangeRateDate(this.db);
+    const latestRateDate = latest ? String(latest).slice(0, 10) : null;
+    const decimals = minorUnitDigits(shop.currency);
+    const rateStatus =
+      latestRateDate === null
+        ? 'missing'
+        : daysFrom(latestRateDate, shop.today) > RATE_STALE_DAYS
+          ? 'estimated'
+          : 'current';
+    return {
+      currency: shop.currency,
+      timezone: shop.timezone,
+      decimals,
+      rounding: 'half-up',
+      rateSource: 'ECB',
+      latestRateDate,
+      rateStatus,
+      explanation: currencyExplanation(shop.currency, decimals),
+    };
   }
 
   /** A date from the merchant: real, not in the future, and not absurdly old. */

@@ -6,6 +6,7 @@ import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import {
   auditResponseSchema,
+  currencySettingsResponseSchema,
   recalcResultResponseSchema,
   ruleCoverageResponseSchema,
   costHistoryResponseSchema,
@@ -146,6 +147,7 @@ afterAll(async () => {
 describe('authentication', () => {
   it.each([
     ['GET', '/costs'],
+    ['GET', '/currency'],
     ['GET', '/rules'],
     ['POST', '/recalculate'],
     ['GET', '/recalculate/last'],
@@ -153,6 +155,90 @@ describe('authentication', () => {
   ] as const)('%s %s requires a session', async (method, url) => {
     const res = await app.inject({ method, url: `/api/v1/settings${url}` });
     expect(res.statusCode).toBe(401);
+  });
+});
+
+describe('currency and time zone', () => {
+  const day = (offset: number) =>
+    new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10);
+
+  async function withEmptyRates<T>(run: () => Promise<T>): Promise<T> {
+    const saved = await admin.query<{
+      quote: string;
+      rate_date: string;
+      rate: string;
+      source: string;
+    }>(
+      'select quote, rate_date::text as rate_date, rate::text as rate, source from o_exchange_rate',
+    );
+    await admin.query('truncate o_exchange_rate');
+    try {
+      return await run();
+    } finally {
+      await admin.query('truncate o_exchange_rate');
+      for (const row of saved.rows) {
+        await admin.query(
+          'insert into o_exchange_rate (quote, rate_date, rate, source) values ($1, $2, $3, $4)',
+          [row.quote, row.rate_date, row.rate, row.source],
+        );
+      }
+    }
+  }
+
+  it('shows each shop its own currency and time zone, and writes no audit row', async () => {
+    await withEmptyRates(async () => {
+      await admin.query('update m_shop set currency = $1, iana_timezone = $2 where id = $3', [
+        'JPY',
+        'Asia/Tokyo',
+        b.shopId,
+      ]);
+      const before = auditResponseSchema.parse((await json('GET', '/audit')).body);
+      const { res, body } = await json('GET', '/currency');
+      expect(res.statusCode).toBe(200);
+      const mine = currencySettingsResponseSchema.parse(body);
+      expect(mine).toMatchObject({
+        currency: 'USD',
+        timezone: 'UTC',
+        decimals: 2,
+        rounding: 'half-up',
+        rateSource: 'ECB',
+        latestRateDate: null,
+        rateStatus: 'missing',
+      });
+      expect(mine.explanation.join(' ')).toContain('store currency (USD)');
+      expect(mine.explanation.join(' ')).toContain('3.6725');
+      expect(mine.explanation.join(' ')).toContain('Missing');
+
+      const theirs = currencySettingsResponseSchema.parse(
+        (await json('GET', '/currency', 'id-set-b')).body,
+      );
+      expect(theirs.currency).toBe('JPY');
+      expect(theirs.timezone).toBe('Asia/Tokyo');
+      expect(theirs.decimals).toBe(0);
+      expect(theirs.explanation.join(' ')).toContain('store currency (JPY)');
+
+      const after = auditResponseSchema.parse((await json('GET', '/audit')).body);
+      expect(after.rows.map((r) => r.id)).toEqual(before.rows.map((r) => r.id));
+    });
+  });
+
+  it('marks a rate older than 7 days as estimated and a rate from today as current', async () => {
+    const old = day(-8);
+    const today = day(0);
+    await withEmptyRates(async () => {
+      await admin.query(
+        'insert into o_exchange_rate (quote, rate_date, rate, source) values ($1, $2, $3, $4)',
+        ['USD', old, '1.1000000000', 'test'],
+      );
+      const stale = currencySettingsResponseSchema.parse((await json('GET', '/currency')).body);
+      expect(stale.latestRateDate).toBe(old);
+      expect(stale.rateStatus).toBe('estimated');
+
+      await admin.query('update o_exchange_rate set rate_date = $1', [today]);
+      const fresh = currencySettingsResponseSchema.parse((await json('GET', '/currency')).body);
+      expect(fresh.latestRateDate).toBe(today);
+      expect(fresh.rateStatus).toBe('current');
+    });
   });
 });
 

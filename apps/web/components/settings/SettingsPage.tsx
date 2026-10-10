@@ -8,16 +8,18 @@ import { DataTab } from './DataTab';
 import { HelpTab } from './HelpTab';
 import { PlanTab } from './PlanTab';
 import { AlertsTab } from './AlertsTab';
+import { CurrencyTab } from './CurrencyTab';
 import { FeesTab, ShippingTab } from './RulesTabs';
 import { readParam } from '../../lib/url-params';
 
-type Tab = 'costs' | 'fees' | 'shipping' | 'alerts' | 'data' | 'plan' | 'help';
+type Tab = 'costs' | 'fees' | 'shipping' | 'alerts' | 'currency' | 'data' | 'plan' | 'help';
 
 const TABS: Array<{ id: Tab; label: string }> = [
   { id: 'costs', label: 'Product costs' },
   { id: 'fees', label: 'Payment fees' },
   { id: 'shipping', label: 'Shipping costs' },
   { id: 'alerts', label: 'Alerts' },
+  { id: 'currency', label: 'Currency' },
   { id: 'data', label: 'Store and data' },
   { id: 'plan', label: 'Plan and billing' },
   { id: 'help', label: 'Help and feedback' },
@@ -52,6 +54,7 @@ export function SettingsPage() {
       </s-stack>
 
       {tab === 'costs' && <CostsTab onChanged={changed} />}
+      {tab === 'currency' && <CurrencyTab />}
       {tab === 'data' && <DataTab reloadKey={version} />}
       {tab === 'plan' && <PlanTab />}
       {tab === 'help' && <HelpTab />}
