@@ -160,16 +160,16 @@
     "hash": "64454f8b5e7f4141691744adfe86c83e"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\expenses\\expenses.integration.test.ts": {
-    "mtime": 1791668733.0163388,
-    "hash": "579dcae6bcba0615c2021ab4a4aaf62c"
+    "mtime": 1791674930.9070885,
+    "hash": "e6a582b75456734143fbc52f2410c8a0"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\expenses\\expenses.module.ts": {
     "mtime": 1791542481.1136055,
     "hash": "874154e4be27993800afe305b287e032"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\expenses\\expenses.service.ts": {
-    "mtime": 1791667901.7828624,
-    "hash": "8c1ae4d9ba14dea09ff0650a577f217d"
+    "mtime": 1791674903.566406,
+    "hash": "dc55c5fb5799496c5b22acf6da6d5ee7"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\health\\health.controller.test.ts": {
     "mtime": 1791526816.717842,
@@ -508,8 +508,8 @@
     "hash": "1673f4e5ba0fff56e57722c90440b988"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\expenses\\ExpensesPage.tsx": {
-    "mtime": 1791667954.102084,
-    "hash": "596dcbfff0f3bd63b25c8c1f23b2de5a"
+    "mtime": 1791674903.5702658,
+    "hash": "b033bf88369a9c8f5fc294578f40961b"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\marketing\\MarketingPage.tsx": {
     "mtime": 1791674241.2687213,
@@ -964,8 +964,8 @@
     "hash": "0ac6fc02b30b4eb773d3a2351a39a055"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\contracts\\src\\index.ts": {
-    "mtime": 1791668203.6808393,
-    "hash": "d47d89afebebeb31b0be1bfd4cff165d"
+    "mtime": 1791675008.826239,
+    "hash": "0157bb16ec033858e9389c20f1e5935b"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\contracts\\src\\plans.test.ts": {
     "mtime": 1791546108.311282,
@@ -1584,8 +1584,8 @@
     "hash": "b77e287a1f70ba45f37818e567a623d7"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\roadmap.md": {
-    "mtime": 1791668760.2598314,
-    "hash": "85d325efff7950b1d51eb9986eddea4a"
+    "mtime": 1791675200.2161417,
+    "hash": "7d6934e8601db57cbe8b27c27a3864f2"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\architecture\\billing.md": {
     "mtime": 1791549276.7097468,
@@ -1600,8 +1600,8 @@
     "hash": "4dcb29ed80f33397272793f05473a41c"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\architecture\\expenses-advertising.md": {
-    "mtime": 1791664619.955804,
-    "hash": "941b40f279f34ee1fcbbacd6ca451111"
+    "mtime": 1791674925.5715601,
+    "hash": "1f4084b5adad7cb343ebbd9402b9c247"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\architecture\\leakage.md": {
     "mtime": 1791549277.029356,
@@ -1620,8 +1620,8 @@
     "hash": "73ba7fb4461b409f71716e498aec1571"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\architecture\\settings.md": {
-    "mtime": 1791667566.9163086,
-    "hash": "0efa80efe15b22cd8c4a55b7c8f347dd"
+    "mtime": 1791674939.0479403,
+    "hash": "ab7d93582f0a9c9bb9bab183a4da2304"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\architecture\\shopify-auth.md": {
     "mtime": 1791531953.2354586,

@@ -124,6 +124,8 @@ export class ExpensesService {
       search?: string;
       categoryId?: string;
       status?: 'all' | 'active' | 'scheduled' | 'ended';
+      from?: string;
+      to?: string;
     },
   ): Promise<ExpenseListResponse> {
     const { currency, today } = await this.shop(scope);
@@ -141,6 +143,11 @@ export class ExpensesService {
       .filter((e) => q.filter === 'all' || e.kind === q.filter)
       .filter((e) => !q.categoryId || e.categoryId === q.categoryId)
       .filter((e) => !q.status || q.status === 'all' || statusOf(e) === q.status)
+      // a one-time expense applies on its date; a recurring one from its start to its end (or for ever)
+      .filter((e) => {
+        const last = e.kind === 'one_time' ? e.startDate : e.endDate;
+        return (!q.to || e.startDate <= q.to) && (!q.from || last === null || last >= q.from);
+      })
       .filter(
         (e) =>
           !needle ||

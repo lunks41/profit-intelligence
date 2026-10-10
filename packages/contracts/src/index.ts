@@ -591,7 +591,10 @@ export type OrderDetailResponse = z.infer<typeof orderDetailResponseSchema>;
 const isoDate = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/)
-  .refine((d) => new Date(`${d}T00:00:00Z`).toISOString().slice(0, 10) === d, 'Not a real date');
+  .refine((d) => {
+    const t = new Date(`${d}T00:00:00Z`).getTime();
+    return !Number.isNaN(t) && new Date(t).toISOString().slice(0, 10) === d;
+  }, 'Not a real date');
 const amountString = z.string().regex(/^\d{1,12}(\.\d{1,4})?$/, 'Enter a number such as 12.50');
 const percentString = z
   .string()
@@ -912,6 +915,9 @@ export const expenseListQuerySchema = z.object({
   search: z.string().trim().max(100).optional(),
   categoryId: uuidString.optional(),
   status: z.enum(['all', 'active', 'scheduled', 'ended']).default('all'),
+  /** only expenses that apply at some point between these two days (either may be left out) */
+  from: isoDate.optional(),
+  to: isoDate.optional(),
 });
 
 export const createExpenseBodySchema = z

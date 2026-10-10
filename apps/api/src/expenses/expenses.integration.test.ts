@@ -793,6 +793,42 @@ describe('expense details: reference, description and other currencies', () => {
   });
 });
 
+describe('filtering expenses by date', () => {
+  it('keeps what applies between from and to: a one-time expense on its day, a recurring one while it runs', async () => {
+    const get = async (qs: string) =>
+      expenseListResponseSchema
+        .parse((await json('GET', `/expenses${qs}`)).body)
+        .rows.map((r) => r.name);
+    await addExpense({
+      name: 'Jan one-off',
+      kind: 'one_time',
+      frequency: undefined,
+      startDate: '2026-01-15',
+    });
+    await addExpense({
+      name: 'Mar one-off',
+      kind: 'one_time',
+      frequency: undefined,
+      startDate: '2026-03-15',
+    });
+    await addExpense({ name: 'Runs from Feb', startDate: '2026-02-01' });
+    const feb = await get('?from=2026-02-01&to=2026-02-28');
+    expect(feb).toContain('Runs from Feb');
+    expect(feb).not.toContain('Jan one-off');
+    expect(feb).not.toContain('Mar one-off');
+    const jan = await get('?to=2026-01-31');
+    expect(jan).toContain('Jan one-off');
+    expect(jan).not.toContain('Runs from Feb');
+    const late = await get('?from=2026-03-01');
+    expect(late).toEqual(expect.arrayContaining(['Mar one-off', 'Runs from Feb']));
+    expect(late).not.toContain('Jan one-off');
+  });
+
+  it('refuses a date that is not a real day', async () => {
+    expect((await call('GET', '/expenses?from=2026-13-40')).statusCode).toBe(400);
+  });
+});
+
 describe('what kind of cost a category holds', () => {
   const categories = async (token?: string) =>
     categoryListResponseSchema.parse((await json('GET', '/expenses/categories', token)).body)

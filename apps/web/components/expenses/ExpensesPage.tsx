@@ -373,6 +373,8 @@ function List({
   const [kind, setKind] = useState<'all' | 'one_time'>('all');
   const [categoryId, setCategoryId] = useState('');
   const [status, setStatus] = useState('all');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [selected, setSelected] = useState<ExpenseRow | null>(null);
   const exportCsv = useAction();
 
@@ -385,6 +387,8 @@ function List({
   if (applied) q.set('search', applied);
   if (categoryId) q.set('categoryId', categoryId);
   if (status !== 'all') q.set('status', status);
+  if (dateFrom) q.set('from', dateFrom);
+  if (dateTo) q.set('to', dateTo);
   q.set('_', String(version));
   const { data, error, loading, reload } = useApi<ExpenseListResponse>(`/expenses?${q}`);
 
@@ -428,6 +432,16 @@ function List({
                 { value: 'ended', label: 'Ended' },
               ]}
               onChange={setStatus}
+            />
+            <s-date-field
+              label="From"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.currentTarget.value)}
+            />
+            <s-date-field
+              label="To"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.currentTarget.value)}
             />
             <s-button
               variant="tertiary"
