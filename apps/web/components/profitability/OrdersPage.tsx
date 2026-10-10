@@ -215,7 +215,9 @@ export function OrdersPage() {
                           {r.recognized ? <FeeBadge status={r.statuses?.paymentFees} /> : '—'}
                         </s-table-cell>
                         <s-table-cell>{formatMoney(r.profit, data.currency)}</s-table-cell>
-                        <s-table-cell>{formatPercent(r.margin)}</s-table-cell>
+                        <s-table-cell>
+                          {r.statuses?.cogs === 'missing' ? '—' : formatPercent(r.margin)}
+                        </s-table-cell>
                         <s-table-cell>
                           <s-button
                             variant="tertiary"

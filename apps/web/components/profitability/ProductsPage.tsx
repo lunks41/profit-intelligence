@@ -199,9 +199,13 @@ function ProductsTable({
                     <s-table-cell>{r.sku ?? '—'}</s-table-cell>
                     <s-table-cell>{r.units}</s-table-cell>
                     <s-table-cell>{formatMoney(r.netSales, cur)}</s-table-cell>
-                    <s-table-cell>{formatMoney(r.cogs, cur)}</s-table-cell>
+                    <s-table-cell>
+                      {r.costQuality === 'missing' ? 'Missing' : formatMoney(r.cogs, cur)}
+                    </s-table-cell>
                     <s-table-cell>{formatMoney(r.profit, cur)}</s-table-cell>
-                    <s-table-cell>{formatPercent(r.margin)}</s-table-cell>
+                    <s-table-cell>
+                      {r.costQuality === 'missing' ? '—' : formatPercent(r.margin)}
+                    </s-table-cell>
                     <s-table-cell>
                       <QualityBadge quality={r.costQuality} />
                     </s-table-cell>

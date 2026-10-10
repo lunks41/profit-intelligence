@@ -117,7 +117,7 @@ function Kpis({ data }: { data: MarketingResponse }) {
       />
       <StatCard
         label="Platform-reported sales"
-        value={formatMoney(t.platformReportedSales, cur)}
+        value={t.hasData ? formatMoney(t.platformReportedSales, cur) : '—'}
         note="The platforms' own claim"
       />
       <StatCard
