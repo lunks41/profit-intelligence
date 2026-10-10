@@ -428,6 +428,18 @@ export const productDetailResponseSchema = z.object({
   variants: z.array(productRowSchema),
   /** net sales and profit by order date over the period */
   trend: z.array(z.object({ date: z.string(), netSales: money, profit: money, units: z.number() })),
+  /** every order line of this product that had a refund in the period, newest first (not paged) */
+  refundHistory: z.array(
+    z.object({
+      orderShopifyId: z.string(),
+      orderName: z.string(),
+      orderDate: z.string(),
+      variant: z.string().nullable(),
+      sku: z.string().nullable(),
+      quantity: z.number(),
+      refunds: money,
+    }),
+  ),
   /** every cost the merchant entered for this product's variants, newest first; removed ones are marked */
   costHistory: z.array(
     z.object({

@@ -215,6 +215,17 @@ export class ProfitabilityService {
         profit: toStored(d.profit),
         units: d.units,
       }));
+    const refundHistory = all
+      .filter((l) => !dec(l.refunds).isZero())
+      .map((l) => ({
+        orderShopifyId: l.orderShopifyId,
+        orderName: l.orderName,
+        orderDate: l.orderDate,
+        variant: l.variant,
+        sku: l.sku,
+        quantity: l.quantity,
+        refunds: l.refunds,
+      }));
     const costHistory = /^\d+$/.test(product.productKey)
       ? await listProductCostHistory(this.db, scope, product.productKey)
       : [];
@@ -224,6 +235,7 @@ export class ProfitabilityService {
       product,
       variants: variantRows.filter((r) => r.productKey === key),
       trend,
+      refundHistory,
       costHistory,
       lines: all.slice(start, start + q.pageSize).map((l) => ({ ...l, refunds: l.refunds })),
       paging: {

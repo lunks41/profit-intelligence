@@ -399,6 +399,34 @@ function ProductDetail({
               A new cost applies to orders from its date. Earlier orders keep the cost they used.
             </s-text>
           </s-section>
+          <s-section heading="Refund history">
+            {data.refundHistory.length === 0 ? (
+              <s-text color="subdued">No refunds on this product in the period.</s-text>
+            ) : (
+              <s-table>
+                <s-table-header-row>
+                  <s-table-header listSlot="primary">Order</s-table-header>
+                  <s-table-header>Order date</s-table-header>
+                  <s-table-header>Variant</s-table-header>
+                  <s-table-header>SKU</s-table-header>
+                  <s-table-header format="numeric">Qty</s-table-header>
+                  <s-table-header format="numeric">Refunded</s-table-header>
+                </s-table-header-row>
+                <s-table-body>
+                  {data.refundHistory.map((r, i) => (
+                    <s-table-row key={`${r.orderShopifyId}-${i}`}>
+                      <s-table-cell>{r.orderName}</s-table-cell>
+                      <s-table-cell>{longDate(r.orderDate)}</s-table-cell>
+                      <s-table-cell>{r.variant ?? '—'}</s-table-cell>
+                      <s-table-cell>{r.sku ?? '—'}</s-table-cell>
+                      <s-table-cell>{r.quantity}</s-table-cell>
+                      <s-table-cell>{formatMoney(r.refunds, data.currency)}</s-table-cell>
+                    </s-table-row>
+                  ))}
+                </s-table-body>
+              </s-table>
+            )}
+          </s-section>
           <s-section heading="Orders that make up these figures">
             <s-stack gap="base">
               <s-table

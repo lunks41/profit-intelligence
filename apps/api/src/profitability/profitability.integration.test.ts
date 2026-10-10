@@ -580,6 +580,9 @@ describe('orders and products completeness', () => {
     expect(d.variants.reduce((s, v) => s + cents(v.profit), 0)).toBe(cents(row.profit));
     expect(d.trend.reduce((s, t) => s + cents(t.profit), 0)).toBe(cents(row.profit));
     expect(Array.isArray(d.costHistory)).toBe(true);
+    // refund history lists exactly the lines with a refund, and adds up to the product's refunds
+    expect(d.refundHistory.reduce((s, r) => s + cents(r.refunds), 0)).toBe(cents(row.refunds));
+    for (const r of d.refundHistory) expect(cents(r.refunds)).not.toBe(0);
   });
 });
 
