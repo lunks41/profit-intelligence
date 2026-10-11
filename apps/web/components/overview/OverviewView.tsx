@@ -7,6 +7,7 @@ import { periodLabel } from '../../lib/format';
 import { CurrencyDropdown, PeriodDropdown } from '../dropdown';
 import { CostBreakdownCard } from './CostBreakdownCard';
 import { DataQualityCard } from './DataQualityCard';
+import { MarketingSummaryCard } from '../marketing/MarketingSummaryCard';
 import { KpiCards } from './KpiCards';
 import { ProfitBreakdown } from './ProfitBreakdown';
 import { TrendSection } from './TrendCard';
@@ -171,6 +172,8 @@ export function OverviewView({
       ) : (
         <>
           <KpiCards data={data} />
+
+          <MarketingSummaryCard period={data.period} currency={data.currency.code} />
 
           <WhatChangedCard data={data} />
 

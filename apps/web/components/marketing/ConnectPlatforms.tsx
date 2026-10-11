@@ -8,7 +8,7 @@ import type {
   PendingAdConnectionsResponse,
 } from '@pi/contracts';
 import { apiDelete, apiPost } from '../../lib/api';
-import { longDate } from '../../lib/format';
+import { formatMoney, longDate } from '../../lib/format';
 import { readParam } from '../../lib/url-params';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormError, useAction } from '../settings/shared';
@@ -56,7 +56,6 @@ export function ConnectPlatforms({
 
   return (
     <s-stack gap="base">
-      <s-text type="strong">Connect an advertising platform</s-text>
       <s-text color="subdued">
         Sign in to the platform and spend is imported every day at 06:00 UTC and counted in profit.
         We only read spend and campaign names; we never change anything in your ad accounts.
@@ -87,6 +86,11 @@ export function ConnectPlatforms({
           const mine = data.accounts.filter(
             (a) => a.provider === id && a.status !== 'disconnected',
           );
+          const rows = data.channels.filter((c) =>
+            data.accounts.some((a) => a.id === c.accountId && a.provider === id),
+          );
+          const spend = rows.reduce((s, c) => s + Number(c.spend), 0);
+          const sales = rows.reduce((s, c) => s + Number(c.platformReportedSales), 0);
           return (
             <s-box key={id} padding="base" borderWidth="base" borderRadius="base">
               <s-stack gap="small">
@@ -95,6 +99,21 @@ export function ConnectPlatforms({
                   {mine.length > 0 && <s-badge tone="success">Connected</s-badge>}
                 </s-stack>
                 <s-text color="subdued">{WHAT[id]}</s-text>
+                {mine.length > 0 && (
+                  <s-stack gap="small-300">
+                    <s-text>
+                      Spend{' '}
+                      <s-text type="strong">
+                        {rows.length > 0 ? formatMoney(spend.toFixed(4), data.currency) : '—'}
+                      </s-text>
+                    </s-text>
+                    <s-text color="subdued">
+                      {rows.length > 0 && spend > 0
+                        ? `Platform reports ${formatMoney(sales.toFixed(4), data.currency)} in sales (${(sales / spend).toFixed(2)}x)`
+                        : 'No spend imported for this period yet'}
+                    </s-text>
+                  </s-stack>
+                )}
                 {mine.map((a) => (
                   <s-stack key={a.id} gap="small-300">
                     <s-text>

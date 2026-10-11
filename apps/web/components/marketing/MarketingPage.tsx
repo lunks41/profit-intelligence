@@ -2,7 +2,7 @@
 
 import { Dropdown } from '../dropdown';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { AdProvidersResponse, MarketingResponse, PeriodPreset } from '@pi/contracts';
 import { apiDelete, apiPost } from '../../lib/api';
 import { formatMoney, longDate, periodLabel } from '../../lib/format';
@@ -15,7 +15,6 @@ import { SampleLines } from '../preview/ui';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormError, isAmount, todayLocal, useAction } from '../settings/shared';
 import { StatCard, StatGrid } from '../common';
-import { readParam } from '../../lib/url-params';
 
 const GRID = 'repeat(auto-fit, minmax(10.625rem, 1fr))';
 const today = () => new Date().toISOString().slice(0, 10);
@@ -27,11 +26,7 @@ export function MarketingPage() {
     to: today(),
     currency: null,
   });
-  const [tab, setTab] = useState<'channels' | 'campaigns' | 'accounts'>('channels');
-  useEffect(() => {
-    const t = readParam('tab', ['channels', 'campaigns', 'accounts'] as const);
-    if (t) setTab(t);
-  }, []);
+  const providers = useApi<AdProvidersResponse>('/marketing/providers');
   const [version, setVersion] = useState(0);
   const q = `${buildListQuery(filters, {})}&_=${version}`;
   const { data, error, loading, reload } = useApi<MarketingResponse>(`/marketing/overview?${q}`);
@@ -62,12 +57,22 @@ export function MarketingPage() {
                 </s-text>
                 <s-text>
                   {data.totals.hasAccounts
-                    ? 'Spend is unknown for this period, not zero. Enter or import it on the Accounts tab. Until then profit excludes advertising.'
-                    : 'Add an account and enter your daily spend on the Accounts tab to see profit after ads. Until then profit excludes advertising.'}
+                    ? 'Spend is unknown for this period, not zero. It imports every day once a platform is connected, or you can enter it below. Until then profit excludes advertising.'
+                    : 'Connect a platform below, or enter your daily spend by hand, to see profit after ads. Until then profit excludes advertising.'}
                 </s-text>
               </Notice>
             )}
             <Kpis data={data} />
+            <s-section heading="Your ad platforms">
+              {providers.error && (
+                <ErrorBanner message={providers.error} onRetry={() => void providers.reload()} />
+              )}
+              {providers.data ? (
+                <ConnectPlatforms data={data} providers={providers.data} onChanged={changed} />
+              ) : (
+                !providers.error && <Loading what="platforms" />
+              )}
+            </s-section>
             {data.totals.hasData && (
               <s-section heading={`Daily spend, ${periodLabel(data.period.from, data.period.to)}`}>
                 <SampleLines
@@ -76,26 +81,9 @@ export function MarketingPage() {
                 />
               </s-section>
             )}
-            <s-stack direction="inline" gap="small">
-              {(
-                [
-                  ['channels', 'Channels'],
-                  ['campaigns', 'Campaigns'],
-                  ['accounts', 'Accounts and spend'],
-                ] as const
-              ).map(([id, label]) => (
-                <s-button
-                  key={id}
-                  variant={tab === id ? 'primary' : 'secondary'}
-                  onClick={() => setTab(id)}
-                >
-                  {label}
-                </s-button>
-              ))}
-            </s-stack>
-            {tab === 'channels' && <Channels data={data} />}
-            {tab === 'campaigns' && <Campaigns data={data} />}
-            {tab === 'accounts' && <Accounts data={data} onChanged={changed} />}
+            <Channels data={data} />
+            <Campaigns data={data} />
+            <Accounts data={data} onChanged={changed} />
             <s-text color="subdued">{data.note}</s-text>
           </s-stack>
         </div>
@@ -153,7 +141,7 @@ function Channels({ data }: { data: MarketingResponse }) {
   if (data.channels.length === 0) {
     return (
       <s-section heading="Results by channel">
-        <s-text color="subdued">No advertising accounts yet. Add one on the Accounts tab.</s-text>
+        <s-text color="subdued">No advertising accounts yet. Connect a platform above.</s-text>
       </s-section>
     );
   }
@@ -224,14 +212,13 @@ function Campaigns({ data }: { data: MarketingResponse }) {
 }
 
 function Accounts({ data, onChanged }: { data: MarketingResponse; onChanged: () => void }) {
-  const providers = useApi<AdProvidersResponse>('/marketing/providers');
   const [name, setName] = useState('');
   const add = useAction();
   const del = useAction();
 
   return (
     <>
-      <s-section heading="Advertising accounts">
+      <s-section heading="Manage accounts and enter spend by hand">
         <s-stack gap="base">
           {data.accounts.length > 0 && (
             <s-table>
@@ -315,9 +302,6 @@ function Accounts({ data, onChanged }: { data: MarketingResponse; onChanged: () 
             </s-button>
           </s-grid>
           <FormError message={add.error} />
-          {providers.data && (
-            <ConnectPlatforms data={data} providers={providers.data} onChanged={onChanged} />
-          )}
         </s-stack>
       </s-section>
       {data.accounts.length > 0 && <AddSpend data={data} onChanged={onChanged} />}
