@@ -227,21 +227,29 @@
     "mtime": 1791540464.3189347,
     "hash": "373d55755461776bda6c8ef29ce11c2d"
   },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\profitability\\product-insights.test.ts": {
+    "mtime": 1791746093.179785,
+    "hash": "b5ad169842cd4e863a53a8a392d1b9a3"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\profitability\\product-insights.ts": {
+    "mtime": 1791745992.1147802,
+    "hash": "c77defdfacacf8db911d85cb064942d3"
+  },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\profitability\\profitability.controller.ts": {
     "mtime": 1791540466.3480072,
     "hash": "ab247c2b5e702090b8825e9799ff5fe4"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\profitability\\profitability.integration.test.ts": {
-    "mtime": 1791675767.7001905,
-    "hash": "2bfd021d4a4853da5f8794497b999d3d"
+    "mtime": 1791746099.1415222,
+    "hash": "17d3395df126e4deb2cce5d42de891ff"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\profitability\\profitability.module.ts": {
     "mtime": 1791540464.559094,
     "hash": "4e0b5f0a0caccc0896796f903a0c78d5"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\profitability\\profitability.service.ts": {
-    "mtime": 1791675754.9776366,
-    "hash": "0deda4ef2d330e66b7b9b6a6bb46fda9"
+    "mtime": 1791745989.8646638,
+    "hash": "ba7752f392101cbeaf7da9315800fe87"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\queue\\queue.module.ts": {
     "mtime": 1791534314.0299127,
@@ -340,16 +348,16 @@
     "hash": "29faa14ff0610db4c12851763efa3d49"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\next-env.d.ts": {
-    "mtime": 1791744825.602587,
-    "hash": "c7b887684e81cfa5830eeeb7286485f6"
+    "mtime": 1791746188.8602831,
+    "hash": "0e4a65e8b2b9aa3ed0f8957b9406bd41"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\next.config.mjs": {
     "mtime": 1791549067.8026998,
     "hash": "f1e84d9d5178cb1b7e3057a208f2f93e"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\app\\layout.tsx": {
-    "mtime": 1791745179.926904,
-    "hash": "8a4c675314dd8add52a48d8dfb460a24"
+    "mtime": 1791746422.1839385,
+    "hash": "0962af0083b47ee771e62e3c9b642bd9"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\app\\page.tsx": {
     "mtime": 1791573839.9521348,
@@ -439,6 +447,10 @@
     "mtime": 1791530041.6063561,
     "hash": "4d34da123c8c5cf998137d1571fe4067"
   },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\TopBar.tsx": {
+    "mtime": 1791746571.9671707,
+    "hash": "d102b48dbf1281a6d2a921652131870b"
+  },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\common\\card.tsx": {
     "mtime": 1791568967.536025,
     "hash": "9e71a31d8c2fe75b3067c7fc444f9b02"
@@ -464,8 +476,8 @@
     "hash": "89364d74648c30ea48180edff806029b"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\common\\sparkline.tsx": {
-    "mtime": 1791568956.9136107,
-    "hash": "b1c5e54fe1760a0182e477495c5e4b39"
+    "mtime": 1791746020.3799715,
+    "hash": "b3b6003f22316efc0c3b53586a7f9be2"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\common\\stat-card.tsx": {
     "mtime": 1791568956.9136107,
@@ -643,9 +655,13 @@
     "mtime": 1791674075.9826853,
     "hash": "f04c25c7c90f38acca3e024f81d135d2"
   },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\profitability\\ProductInsights.tsx": {
+    "mtime": 1791746019.6300683,
+    "hash": "bfc38e51051b9d1fb6886e9bf7e70411"
+  },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\profitability\\ProductsPage.tsx": {
-    "mtime": 1791675767.6996317,
-    "hash": "e977f954abc7218a9d3c7a7dee7db0a9"
+    "mtime": 1791746020.3949764,
+    "hash": "44929bab877340bec50356aa6d9e5eac"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\profitability\\shared.tsx": {
     "mtime": 1791575183.6332953,
@@ -664,8 +680,8 @@
     "hash": "164a4aac7567ce71ee16a8a6faf21465"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\reports\\ReportsPage.tsx": {
-    "mtime": 1791665498.8976936,
-    "hash": "827409de19f0ab00a966d7d8354af290"
+    "mtime": 1791746440.9177675,
+    "hash": "6ec434209187536411dabc75aefb5de7"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\reports\\ReportTable.tsx": {
     "mtime": 1791614719.6173255,
@@ -794,6 +810,14 @@
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\lib\\import-summary.ts": {
     "mtime": 1791615489.961736,
     "hash": "85a66276d2de159841c92faac2f280c4"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\lib\\new-tab-url.test.ts": {
+    "mtime": 1791746440.3513596,
+    "hash": "bbf3e2de0fcb96c8d625c45b20edce55"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\lib\\new-tab-url.ts": {
+    "mtime": 1791746443.7718163,
+    "hash": "6f92f41a3b4c8e2f8612a0fc1b5d7bf3"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\lib\\opportunities.test.ts": {
     "mtime": 1791664001.7299948,
@@ -1004,8 +1028,8 @@
     "hash": "0ac6fc02b30b4eb773d3a2351a39a055"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\contracts\\src\\index.ts": {
-    "mtime": 1791744273.1795354,
-    "hash": "5742a7c5e4cee8afd79fc6d2cb314a0d"
+    "mtime": 1791745989.853061,
+    "hash": "82005af854fe7ea78269c83b84f4e6f1"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\contracts\\src\\plans.test.ts": {
     "mtime": 1791546108.311282,
@@ -1640,8 +1664,8 @@
     "hash": "b77e287a1f70ba45f37818e567a623d7"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\roadmap.md": {
-    "mtime": 1791745240.002023,
-    "hash": "6e3715b045bcccee7639592bf019de79"
+    "mtime": 1791746646.7564952,
+    "hash": "4713b37c87f1da60382b746415a97c3d"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\architecture\\billing.md": {
     "mtime": 1791549276.7097468,

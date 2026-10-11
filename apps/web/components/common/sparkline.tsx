@@ -7,12 +7,21 @@ import { Area, AreaChart, ResponsiveContainer } from 'recharts';
  * A small line under a figure, showing its shape over the period. It is decorative: the figure and
  * its change are written next to it, so it is hidden from screen readers. A null point is a gap.
  */
-export function Sparkline({ values, color }: { values: Array<number | null>; color: string }) {
+export function Sparkline({
+  values,
+  color,
+  height = '2.75rem',
+}: {
+  values: Array<number | null>;
+  color: string;
+  /** CSS height; a table row uses a smaller one */
+  height?: string;
+}) {
   const gradient = `spark-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   if (values.filter((v) => v !== null).length < 2) return null;
   const data = values.map((v, i) => ({ i, v }));
   return (
-    <div aria-hidden="true" style={{ width: '100%', height: '2.75rem' }}>
+    <div aria-hidden="true" style={{ width: '100%', height }}>
       <ResponsiveContainer>
         <AreaChart data={data} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
           <defs>

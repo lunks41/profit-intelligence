@@ -1,6 +1,8 @@
 'use client';
 
 import { QualifiersBanner } from '../common';
+import { Sparkline } from '../common/sparkline';
+import { ProductInsights } from './ProductInsights';
 import { FilterSearch, ShowDropdown } from '../dropdown';
 
 import { useEffect, useState } from 'react';
@@ -147,21 +149,7 @@ function ProductsTable({
   return (
     <>
       <QualifiersBanner qualifiers={rec.qualifiers} />
-      {data.rows.some((r) => r.costQuality === 'missing') && (
-        <s-banner tone="warning" heading="Some products have no cost">
-          <s-stack gap="small-300">
-            <s-paragraph>
-              {data.rows.filter((r) => r.costQuality === 'missing').length} of the products below
-              have no product cost, so their profit is overstated. Enter the costs one by one,
-              import them from a CSV file, or set one cost for a whole collection or vendor.
-            </s-paragraph>
-            <s-stack direction="inline" gap="base">
-              <s-link href="/settings?tab=costs&filter=missing">Add the missing costs</s-link>
-              <s-link href="/settings?tab=costs">Import or bulk edit</s-link>
-            </s-stack>
-          </s-stack>
-        </s-banner>
-      )}
+      <ProductInsights insights={data.insights} currency={cur} />
       <s-section
         padding="none"
         heading={`Products, ${periodLabel(data.period.from, data.period.to)}`}
@@ -188,6 +176,7 @@ function ProductsTable({
                 <s-table-header format="numeric">Product cost</s-table-header>
                 <s-table-header format="numeric">Profit</s-table-header>
                 <s-table-header format="numeric">Margin</s-table-header>
+                <s-table-header>Profit trend</s-table-header>
                 <s-table-header>Cost data</s-table-header>
                 <s-table-header>Details</s-table-header>
               </s-table-header-row>
@@ -205,6 +194,15 @@ function ProductsTable({
                     <s-table-cell>{formatMoney(r.profit, cur)}</s-table-cell>
                     <s-table-cell>
                       {r.costQuality === 'missing' ? '—' : formatPercent(r.margin)}
+                    </s-table-cell>
+                    <s-table-cell>
+                      <div style={{ width: '6.5rem' }}>
+                        <Sparkline
+                          values={r.trend}
+                          color={Number(r.profit) >= 0 ? '#047b5d' : '#d72c0d'}
+                          height="2rem"
+                        />
+                      </div>
                     </s-table-cell>
                     <s-table-cell>
                       <QualityBadge quality={r.costQuality} />

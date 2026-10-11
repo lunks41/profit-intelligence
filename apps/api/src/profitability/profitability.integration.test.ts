@@ -586,6 +586,41 @@ describe('orders and products completeness', () => {
   });
 });
 
+describe('product rows show a trend, and the page says what is missing', () => {
+  it('every row has a chart that adds up to its profit, and the findings match the rows', async () => {
+    await calculateAll(a);
+    const { rows, last } = await allPages(`/products?${PERIOD}`, parseProducts);
+    for (const r of rows) {
+      expect(r.trend.length).toBeGreaterThan(0);
+      expect(r.trend.length).toBeLessThanOrEqual(30);
+      const sum = r.trend.reduce((s, v) => s + v, 0);
+      expect(Math.abs(sum - Number(r.profit))).toBeLessThan(0.05 * Math.max(1, r.trend.length));
+    }
+    const missing = rows.filter((r) => r.missingCostLines > 0);
+    const found = last.insights.find((i) => i.id === 'missing_cost');
+    if (missing.length === 0) expect(found).toBeUndefined();
+    else {
+      expect(found!.count).toBe(missing.length);
+      expect(found!.fix.length).toBeGreaterThan(20);
+      expect(found!.action!.href).toContain('/settings');
+    }
+    // the findings cover all products of the period, not only the first page
+    const small = productListResponseSchema.parse(
+      (await api(`/products?${PERIOD}&pageSize=1`)).body,
+    );
+    expect(small.insights).toEqual(last.insights);
+  });
+
+  it('another shop gets findings of its own, none when it sold nothing', async () => {
+    await calculateAll(a);
+    const theirs = productListResponseSchema.parse(
+      (await api(`/products?${PERIOD}`, 'id-prof-b')).body,
+    );
+    expect(theirs.insights).toEqual([]);
+    expect(theirs.rows).toEqual([]);
+  });
+});
+
 describe('tenant isolation', () => {
   it('another shop sees nothing and cannot open this shop order or product', async () => {
     await calculateAll(a);

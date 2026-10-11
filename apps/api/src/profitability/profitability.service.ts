@@ -1,3 +1,4 @@
+import { productInsights, profitTrend } from './product-insights.js';
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type {
   PeriodPreset,
@@ -93,7 +94,12 @@ export class ProfitabilityService {
 
   async products(scope: Scope, q: ProductListQuery): Promise<ProductListResponse> {
     const { shop, range, period } = await this.context(scope, q);
-    const { rows: productList, variantRows, unallocated } = await this.productsOf(scope, range);
+    const {
+      rows: productList,
+      variantRows,
+      unallocated,
+      lines,
+    } = await this.productsOf(scope, range);
     const rows = q.view === 'variants' ? variantRows : productList;
 
     const needle = q.search?.toLowerCase();
@@ -153,10 +159,21 @@ export class ProfitabilityService {
     const dashboard = periodSummary.contributionProfit;
 
     const start = (q.page - 1) * q.pageSize;
+    // the small chart of each row on this page: profit over the period, for the product or for the variant
+    const trendOf = (r: ProductRow) =>
+      profitTrend(
+        q.view === 'variants'
+          ? (lines.get(r.productKey) ?? []).filter(
+              (l) => (l.variant ?? null) === r.variant && (l.sku ?? null) === r.sku,
+            )
+          : (lines.get(r.key) ?? []),
+        range,
+      );
     return {
       period,
       currency: shop.currency,
-      rows: list.slice(start, start + q.pageSize),
+      rows: list.slice(start, start + q.pageSize).map((r) => ({ ...r, trend: trendOf(r) })),
+      insights: productInsights(productList, variantRows),
       paging: {
         page: q.page,
         pageSize: q.pageSize,

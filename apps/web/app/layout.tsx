@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import './globals.css';
+import { TopBar } from '../components/TopBar';
 
 export const metadata = { title: 'Profit Intelligence' };
 
@@ -34,6 +35,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             </s-link>
           ))}
         </s-app-nav>
+        <TopBar />
         {children}
       </body>
     </html>

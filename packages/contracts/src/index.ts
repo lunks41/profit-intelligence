@@ -381,10 +381,37 @@ const pagingOut = z.object({
   totalPages: z.number(),
 });
 
+/** A row of the products table: the figures, and the profit per bucket of days for the small chart. */
+export const productListRowSchema = productRowSchema.extend({
+  /** profit per bucket of days (at most 30 points); numbers for drawing only */
+  trend: z.array(z.number()),
+});
+
+/** Something the merchant can do to make the products table more complete or more useful. */
+export const productInsightSchema = z.object({
+  id: z.enum(['missing_cost', 'estimated_cost', 'loss_making', 'high_refunds', 'no_sku']),
+  severity: z.enum(['critical', 'warning', 'info']),
+  title: z.string(),
+  /** what is wrong and how much it touches */
+  detail: z.string(),
+  /** how to fix it */
+  fix: z.string(),
+  count: z.number(),
+  /** share of the period's net sales that this touches; null when it does not apply */
+  share: z.string().nullable(),
+  amount: money.nullable(),
+  /** the biggest few products affected */
+  examples: z.array(z.object({ key: z.string(), title: z.string() })),
+  action: z.object({ label: z.string(), href: z.string() }).nullable(),
+});
+export type ProductInsight = z.infer<typeof productInsightSchema>;
+
 export const productListResponseSchema = z.object({
   period: periodSchema,
   currency: z.string(),
-  rows: z.array(productRowSchema),
+  rows: z.array(productListRowSchema),
+  /** what to fix, from all products of the period (not only this page) */
+  insights: z.array(productInsightSchema),
   paging: pagingOut,
   /** how the products add up to the dashboard figure */
   reconciliation: z.object({

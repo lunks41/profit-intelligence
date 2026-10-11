@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import type { PeriodPreset, ReportTableResponse } from '@pi/contracts';
 import { apiPost } from '../../lib/api';
 import { buildListQuery } from '../../lib/query';
+import { readParam } from '../../lib/url-params';
 import { FilterBar, type Filters } from '../overview/OverviewView';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormError, useAction } from '../settings/shared';
@@ -21,6 +22,10 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 export function ReportsPage() {
   const [tab, setTab] = useState<Tab>('reports');
+  useEffect(() => {
+    const t = readParam('tab', ['reports', 'downloads', 'schedules', 'notifications'] as const);
+    if (t) setTab(t);
+  }, []);
   const [version, setVersion] = useState(0);
   const refresh = () => setVersion((v) => v + 1);
 
