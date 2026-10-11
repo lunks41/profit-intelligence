@@ -858,11 +858,13 @@ describe('onboarding checklist', () => {
       'product_costs',
       'payment_fees',
       'shipping_costs',
+      'ad_platforms',
       'expenses',
     ]);
     expect(list.filter((s) => s.status === 'done').map((s) => s.id)).toEqual(['connected']);
     expect(list.find((s) => s.id === 'expenses')!.optional).toBe(true);
-    expect(list.filter((s) => s.optional)).toHaveLength(1);
+    expect(list.filter((s) => s.optional).map((s) => s.id)).toEqual(['ad_platforms', 'expenses']);
+    expect(list.find((s) => s.id === 'ad_platforms')!.href).toBe('/marketing');
     for (const s of list) expect(s.why.length).toBeGreaterThan(15);
     expect(list.find((s) => s.id === 'product_costs')!.href).toBe('/settings');
     expect(list.find((s) => s.id === 'expenses')!.href).toBe('/expenses');

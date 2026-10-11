@@ -11,6 +11,7 @@ import {
   createAdAccount,
   createPendingConnection,
   deletePendingConnection,
+  enqueueAdSync,
   listPendingConnections,
   getAdSpend,
   getProfitAggregate,
@@ -35,7 +36,8 @@ import { buildFx } from '../dashboard/currency.js';
 import { InvalidRangeError, addDays, eachDay, resolveRange } from '../dashboard/range.js';
 import { EntitlementsService } from '../billing/entitlements.service.js';
 import { randomBytes } from 'node:crypto';
-import { APP_ENV, AD_HTTP, DB, TOKEN_CRYPTO } from '../tokens.js';
+import { APP_ENV, AD_HTTP, DB, QUEUE, TOKEN_CRYPTO } from '../tokens.js';
+import type { PgBoss } from 'pg-boss';
 import type { AppEnv } from '../config/config.module.js';
 import {
   OAuthError,
@@ -89,6 +91,7 @@ export class MarketingService {
     @Inject(TOKEN_CRYPTO) private readonly crypto: TokenCrypto,
     @Inject(APP_ENV) private readonly env: AppEnv,
     @Inject(AD_HTTP) private readonly http: typeof fetch,
+    @Inject(QUEUE) private readonly boss: PgBoss,
   ) {}
 
   private get oauth() {
@@ -224,7 +227,32 @@ export class MarketingService {
             message: 'One of the chosen accounts was not offered by the platform.',
           });
     }
-    return { connected: r.created + r.existing };
+    // read the spend now instead of waiting for the daily run; a failure here must not undo the connection
+    const started = await this.queueImport(scope);
+    return { connected: r.created + r.existing, importQueued: started };
+  }
+
+  /** Imports this shop's ad spend now. Pressing it again within a minute does not queue a second one. */
+  async syncNow(scope: TenantContext) {
+    const accounts = (await listAdAccounts(this.db, scope)).filter(
+      (a) => a.provider !== 'manual' && a.status !== 'disconnected',
+    );
+    if (accounts.length === 0) {
+      throw new BadRequestException({
+        code: 'no_connected_accounts',
+        message: 'Connect an ad platform first. Manual accounts have nothing to import.',
+      });
+    }
+    return { queued: await this.queueImport(scope) };
+  }
+
+  private async queueImport(scope: TenantContext): Promise<boolean> {
+    try {
+      await enqueueAdSync(this.boss, scope.shopId);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async cancelPending(scope: TenantContext, pendingId: string) {

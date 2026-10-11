@@ -33,6 +33,7 @@ export const sessionResponseSchema = z.object({
           'product_costs',
           'payment_fees',
           'shipping_costs',
+          'ad_platforms',
           'expenses',
         ]),
         label: z.string(),

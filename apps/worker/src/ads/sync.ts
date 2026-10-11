@@ -99,6 +99,8 @@ interface Deps {
   env?: RefreshEnv;
   /** HTTP client for renewing tokens (replaced in tests). */
   fetchImpl?: typeof fetch;
+  /** Visit only this shop's accounts (a merchant asked for an import now). Default: every shop. */
+  onlyShopId?: string;
 }
 
 const DAY = 86_400_000;
@@ -112,10 +114,12 @@ export async function syncAdAccounts(
   const now = (deps.now ?? (() => new Date()))().getTime();
   const range = { from: isoDay(now - (RESYNC_DAYS - 1) * DAY), to: isoDay(now) };
 
-  const accounts = await listAdAccountsForSync(
-    deps.db,
-    providers.map((p) => p.id),
-  );
+  const accounts = (
+    await listAdAccountsForSync(
+      deps.db,
+      providers.map((p) => p.id),
+    )
+  ).filter((a) => !deps.onlyShopId || a.shopId === deps.onlyShopId);
   let synced = 0;
   let failed = 0;
   for (const account of accounts) {

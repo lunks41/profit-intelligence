@@ -4,6 +4,7 @@ import {
   costTotals,
   getLastSuccessfulSyncAt,
   getShopOverview,
+  listAdAccounts,
   listRules,
   loadExpenses,
 } from '@pi/db';
@@ -26,11 +27,12 @@ export class SessionController {
     const shop = await getShopOverview(this.db, tenant);
     if (!shop) throw new NotFoundException({ code: 'shop_not_found', message: 'Shop not found' });
     const today = businessDate(new Date(), shop.ianaTimezone);
-    const [imported, costs, rules, expenses] = await Promise.all([
+    const [imported, costs, rules, expenses, adAccounts] = await Promise.all([
       getLastSuccessfulSyncAt(this.db, tenant),
       costTotals(this.db, tenant, today),
       listRules(this.db, tenant),
       loadExpenses(this.db, tenant),
+      listAdAccounts(this.db, tenant),
     ]);
     const products = costs.missing + costs.estimated + costs.entered;
     const done = (b: boolean): Step['status'] => (b ? 'done' : 'pending');
@@ -80,12 +82,22 @@ export class SessionController {
         why: 'Shopify does not report what you pay carriers, so you tell the app once.',
       },
       {
+        id: 'ad_platforms',
+        label: 'Connect your ad platforms',
+        status: done(
+          adAccounts.some((a) => a.provider !== 'manual' && a.status !== 'disconnected'),
+        ),
+        href: '/marketing',
+        optional: true,
+        why: 'Sign in to Meta, Google or TikTok and ad spend is imported for you, so profit shows what is left after ads. Read-only: we never change your ads. The first import starts right away and usually takes a few minutes.',
+      },
+      {
         id: 'expenses',
-        label: 'Add your expenses and advertising',
+        label: 'Add your operating expenses',
         status: done(expenses.expenses.length > 0),
         href: '/expenses',
         optional: true,
-        why: 'Rent, salaries and ad spend are needed for operating profit. Skip this if you only want contribution profit.',
+        why: 'Rent, salaries and software are needed for operating profit. Skip this if you only want contribution profit.',
       },
     ];
 

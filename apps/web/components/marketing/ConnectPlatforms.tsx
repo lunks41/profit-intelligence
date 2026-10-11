@@ -53,13 +53,42 @@ export function ConnectPlatforms({
   const problem = readParam('connect_error');
   const start = useAction();
   const disconnect = useAction();
+  const refresh = useAction();
+  const [queued, setQueued] = useState(false);
+  const connectedCount = data.accounts.filter(
+    (a) => a.provider !== 'manual' && a.status !== 'disconnected',
+  ).length;
 
   return (
     <s-stack gap="base">
       <s-text color="subdued">
-        Sign in to the platform and spend is imported every day at 06:00 UTC and counted in profit.
-        We only read spend and campaign names; we never change anything in your ad accounts.
+        Sign in to the platform and spend is imported and counted in profit. The first import starts
+        right away and usually takes a few minutes, then it refreshes every day at 06:00 UTC. It is
+        read-only: we only read spend and campaign names, and we never change anything in your ad
+        accounts.
       </s-text>
+      {connectedCount > 0 && (
+        <s-stack direction="inline" gap="small" alignItems="center">
+          <s-button
+            disabled={refresh.busy || queued}
+            onClick={async () => {
+              if (await refresh.run(() => apiPost('/marketing/sync', {}))) {
+                setQueued(true);
+                setTimeout(onChanged, 20_000);
+                setTimeout(() => setQueued(false), 60_000);
+              }
+            }}
+          >
+            {queued ? 'Import started' : 'Refresh spend now'}
+          </s-button>
+          {queued && (
+            <s-text color="subdued">
+              It usually takes a few minutes. This page updates itself.
+            </s-text>
+          )}
+        </s-stack>
+      )}
+      <FormError message={refresh.error} />
       {problem && (
         <s-banner tone="critical" heading="The platform was not connected">
           <s-paragraph>{PROBLEM[problem] ?? PROBLEM.failed}</s-paragraph>
@@ -123,7 +152,7 @@ export function ConnectPlatforms({
                     <s-text color="subdued">
                       {a.lastSyncAt
                         ? `Last import ${longDate(a.lastSyncAt.slice(0, 10))}`
-                        : 'No import yet. The first one runs at 06:00 UTC.'}
+                        : 'No import yet. It starts right after you connect, or press Refresh spend now.'}
                       {a.lastError ? ` ${a.lastError}` : ''}
                     </s-text>
                     <div>

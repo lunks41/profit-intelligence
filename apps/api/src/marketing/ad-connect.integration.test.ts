@@ -91,6 +91,7 @@ const platform = vi.fn(async (input: string | URL | Request) => {
   return new Response('{}', { status: 404 });
 }) as unknown as typeof fetch;
 
+const boss = { send: vi.fn(async () => 'job'), stop: async () => {} };
 const admin = new pg.Pool({ connectionString: ADMIN_URL, max: 2 });
 const setupPool = createPool(APP_URL, 4);
 const db = createDb(setupPool);
@@ -108,7 +109,7 @@ beforeAll(async () => {
     .overrideProvider(SHOPIFY_ADMIN)
     .useValue({})
     .overrideProvider(QUEUE)
-    .useValue({ send: vi.fn(async () => 'job'), stop: async () => {} })
+    .useValue(boss)
     .overrideProvider(AD_HTTP)
     .useValue(platform)
     .compile();
@@ -122,6 +123,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   vi.mocked(platform).mockClear();
+  boss.send.mockClear();
   await admin.query('truncate m_tenant cascade');
   const mk = (d: string) =>
     installShop(db, {
@@ -258,7 +260,7 @@ describe('connecting Meta by signing in', () => {
       accountIds: ['1001'],
     });
     expect(done.res.statusCode).toBe(201);
-    expect(done.body).toEqual({ connected: 1 });
+    expect(done.body).toEqual({ connected: 1, importQueued: true });
     const rows = await accountRows();
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({
@@ -453,5 +455,52 @@ describe('each shop only sees its own', () => {
       [b.shopId],
     );
     expect(other.rows[0].n).toBe(0);
+  });
+});
+
+describe('importing spend right away', () => {
+  const connectMeta = async () => {
+    const { state } = await start('meta');
+    await callback('meta', `code=CODE&state=${encodeURIComponent(state)}`);
+    const id = (await pending())[0]!.id;
+    return json('POST', `/connections/${id}/accounts`, 'id-adc-a', { accountIds: ['1001'] });
+  };
+
+  it('connecting an account queues an import for that shop only, so spend does not wait for the daily run', async () => {
+    const done = await connectMeta();
+    expect(done.body).toEqual({ connected: 1, importQueued: true });
+    const sent = boss.send.mock.calls.filter((c) => (c as unknown[])[0] === 'ads.sync');
+    expect(sent).toHaveLength(1);
+    expect((sent[0] as unknown[])[1]).toEqual({ shopId: a.shopId });
+  });
+
+  it('a failing queue does not undo the connection', async () => {
+    boss.send.mockRejectedValueOnce(new Error('queue down'));
+    const done = await connectMeta();
+    expect(done.res.statusCode).toBe(201);
+    expect(done.body).toEqual({ connected: 1, importQueued: false });
+    expect(await accountRows()).toHaveLength(1);
+  });
+
+  it('Refresh spend now queues an import, and says so when there is nothing to import', async () => {
+    const none = await json('POST', '/sync', 'id-adc-a', {});
+    expect(none.res.statusCode).toBe(400);
+    expect(none.body.error.code).toBe('no_connected_accounts');
+    await call('POST', '/accounts', 'id-adc-a', { provider: 'manual', name: 'Typed' });
+    expect((await call('POST', '/sync')).statusCode).toBe(400); // a manual account has nothing to import
+    await connectMeta();
+    boss.send.mockClear();
+    const ok = await json('POST', '/sync', 'id-adc-a', {});
+    expect(ok.res.statusCode).toBe(202);
+    expect(ok.body).toEqual({ queued: true });
+    expect(boss.send).toHaveBeenCalledTimes(1);
+  });
+
+  it('Refresh needs a session, and one shop cannot start another shop import', async () => {
+    expect((await call('POST', '/sync', null, {})).statusCode).toBe(401);
+    await connectMeta();
+    boss.send.mockClear();
+    expect((await call('POST', '/sync', 'id-adc-b', {})).statusCode).toBe(400);
+    expect(boss.send).not.toHaveBeenCalled();
   });
 });

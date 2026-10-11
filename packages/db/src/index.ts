@@ -32,6 +32,7 @@ export {
   WEBHOOK_QUEUE,
   WEBHOOK_RETENTION_DAYS,
   WEBHOOK_RETRY_LIMIT,
+  enqueueAdSync,
   enqueueProfitRecalc,
   enqueueSync,
   enqueueWebhook,

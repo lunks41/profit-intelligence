@@ -200,6 +200,14 @@ export async function schedulePurge(
   return boss.sendAfter(PURGE_QUEUE, payload, null, UNINSTALL_GRACE_DAYS * 86_400);
 }
 
+/**
+ * Asks for an advertising import of one shop now (after connecting a platform, or when the merchant presses
+ * Refresh). A second request within a minute for the same shop is folded into the first (returns null).
+ */
+export async function enqueueAdSync(boss: PgBoss, shopId: string): Promise<string | null> {
+  return boss.send(ADS_QUEUE, { shopId }, { singletonKey: `ads:${shopId}`, singletonSeconds: 60 });
+}
+
 export async function enqueueProfitRecalc(
   boss: PgBoss,
   payload: ProfitJobPayload,

@@ -75,6 +75,12 @@ export class MarketingController {
     return this.service.startConnect(t, providerOf(provider));
   }
 
+  @Post('sync')
+  @HttpCode(202)
+  syncNow(@Tenant() t: TenantContext) {
+    return this.service.syncNow(t);
+  }
+
   @Get('connections/pending')
   pending(@Tenant() t: TenantContext) {
     return this.service.pendingConnections(t);

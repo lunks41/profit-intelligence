@@ -142,12 +142,15 @@ await boss.work(MONITOR_QUEUE, { batchSize: 1 }, async () => {
   await runMonitor({ db, log });
 });
 await boss.schedule(MONITOR_QUEUE, '*/15 * * * *');
-await boss.work(ADS_QUEUE, { batchSize: 1 }, async () => {
+await boss.work<{ shopId?: string }>(ADS_QUEUE, { batchSize: 1 }, async (jobs) => {
+  // the daily schedule carries no data and visits every shop; a request from a merchant names its shop
+  const shopId = jobs[0]?.data?.shopId;
   await syncAdAccounts({
     db,
     log,
     decrypt: (value) => crypto.decrypt(value),
     encrypt: (value) => crypto.encrypt(value).value,
+    ...(typeof shopId === 'string' ? { onlyShopId: shopId } : {}),
   });
 });
 await boss.schedule(ADS_QUEUE, '0 6 * * *');

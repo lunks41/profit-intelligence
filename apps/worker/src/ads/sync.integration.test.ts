@@ -278,3 +278,31 @@ describe('renewing sign-in tokens before the import', () => {
     expect(seen).toEqual(['OLD']);
   });
 });
+
+describe('an import asked for by one shop', () => {
+  it('visits only that shop, and a normal run still visits everyone', async () => {
+    await createAdAccount(db, a, { provider: 'fakeads', name: 'A', currency: 'USD', actor: 't' });
+    await createAdAccount(db, b, { provider: 'fakeads', name: 'B', currency: 'USD', actor: 't' });
+    const seen: string[] = [];
+    const p: AdProvider = {
+      id: 'fakeads',
+      fetchDaily: vi.fn(async (acc) => {
+        seen.push(acc.shopId);
+        return [];
+      }),
+    };
+    const one = await syncAdAccounts({
+      db,
+      log: silent,
+      now: () => NOW,
+      providers: [p],
+      onlyShopId: a.shopId,
+    });
+    expect(one).toMatchObject({ accounts: 1, synced: 1 });
+    expect(seen).toEqual([a.shopId]);
+    seen.length = 0;
+    const all = await syncAdAccounts({ db, log: silent, now: () => NOW, providers: [p] });
+    expect(all.accounts).toBe(2);
+    expect(new Set(seen)).toEqual(new Set([a.shopId, b.shopId]));
+  });
+});
