@@ -386,7 +386,12 @@ describe('billing on, no subscription: the free plan is enforced on the server',
       preset: '7d',
     });
     const s = await status(app);
-    expect(s.usage).toEqual({ exportsThisMonth: 1, activeSchedules: 0, adAccounts: 1 });
+    expect(s.usage).toEqual({
+      exportsThisMonth: 1,
+      activeSchedules: 0,
+      adAccounts: 1,
+      ordersThisMonth: 0,
+    });
   });
 });
 

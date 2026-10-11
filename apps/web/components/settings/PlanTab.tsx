@@ -8,6 +8,16 @@ import { FormError, useAction } from './shared';
 
 const GRID = 'repeat(auto-fit, minmax(15rem, 1fr))';
 
+/** What every plan has, so the cards below only need to say what differs. */
+const INCLUDED = [
+  'Profit dashboard: revenue, costs, contribution profit and margin, with how each changed',
+  'Profit for every order and every product, and how it was worked out',
+  'Profit and loss, refund and missing-cost reports on screen',
+  'Your product costs, payment fee rules and shipping rules, applied to past orders',
+  'Operating expenses, and estimated operating profit',
+  'Marketing: connect Meta, Google and TikTok, and see profit after ads',
+];
+
 function Usage({ label, used, limit }: { label: string; used: number; limit: number }) {
   const full = limit > 0 && used >= limit;
   return (
@@ -61,6 +71,10 @@ export function PlanTab() {
             </s-text>
           )}
           <s-stack gap="small-300">
+            <s-text>
+              Orders this month: <s-text type="strong">{data.usage.ordersThisMonth}</s-text>{' '}
+              <s-text color="subdued">(no plan limits orders)</s-text>
+            </s-text>
             <Usage
               label="Reports prepared this month"
               used={data.usage.exportsThisMonth}
@@ -120,6 +134,16 @@ export function PlanTab() {
 
       <s-section heading="Plans">
         <s-stack gap="base">
+          <s-box padding="base" background="subdued" borderRadius="base">
+            <s-stack gap="small-300">
+              <s-text type="strong">In every plan</s-text>
+              <ul style={{ margin: 0, paddingInlineStart: '1.25rem' }}>
+                {INCLUDED.map((x) => (
+                  <li key={x}>{x}</li>
+                ))}
+              </ul>
+            </s-stack>
+          </s-box>
           <s-grid gridTemplateColumns={GRID} gap="base">
             {data.plans.map((p) => (
               <s-box key={p.id} padding="base" background="subdued" borderRadius="base">
@@ -170,6 +194,9 @@ export function PlanTab() {
           <s-text color="subdued">
             Prices and limits marked Draft are proposals and can change before paid plans open.
             Shopify handles every payment; this app never sees card details.
+          </s-text>
+          <s-text>
+            Not sure which plan fits? <s-link href="/settings?tab=help">Ask us</s-link>.
           </s-text>
         </s-stack>
       </s-section>

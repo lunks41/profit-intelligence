@@ -77,6 +77,23 @@ export async function countExportsThisMonth(
   });
 }
 
+/** Orders placed this calendar month in the shop's time zone, as stored from Shopify (shown next to the plan). */
+export async function countOrdersThisMonth(
+  db: Db,
+  scope: ShopScope,
+  timezone: string,
+): Promise<number> {
+  return withTenant(db, scope.tenantId, async (tx) => {
+    const r = rows(
+      await tx.execute(sql`
+        select count(*)::int as n from t_order
+         where shop_id = ${scope.shopId}
+           and processed_at >= (date_trunc('month', now() at time zone ${timezone}) at time zone ${timezone})`),
+    )[0];
+    return Number(r?.n ?? 0);
+  });
+}
+
 export async function countEnabledSchedules(db: Db, scope: ShopScope): Promise<number> {
   return withTenant(db, scope.tenantId, async (tx) => {
     const r = rows(

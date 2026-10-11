@@ -1504,6 +1504,8 @@ export const billingStatusSchema = z.object({
     exportsThisMonth: z.number(),
     activeSchedules: z.number(),
     adAccounts: z.number(),
+    /** orders placed this month, for information: no plan limits orders today */
+    ordersThisMonth: z.number(),
   }),
   subscription: z
     .object({

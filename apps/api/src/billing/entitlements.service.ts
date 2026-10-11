@@ -1,7 +1,12 @@
 import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { PLANS, planFor } from '@pi/contracts';
 import type { Entitlements, PlanId } from '@pi/contracts';
-import { countAdAccounts, countEnabledSchedules, countExportsThisMonth } from '@pi/db';
+import {
+  countAdAccounts,
+  countEnabledSchedules,
+  countExportsThisMonth,
+  countOrdersThisMonth,
+} from '@pi/db';
 import type { Db } from '@pi/db';
 import { resolveShopPlan } from '@pi/reports';
 import type { AppEnv } from '../config/config.module.js';
@@ -141,11 +146,17 @@ export class EntitlementsService {
   }
 
   async usage(scope: Scope, timezone: string) {
-    const [exports, schedules, ads] = await Promise.all([
+    const [exports, schedules, ads, orders] = await Promise.all([
       countExportsThisMonth(this.db, scope, timezone),
       countEnabledSchedules(this.db, scope),
       countAdAccounts(this.db, scope),
+      countOrdersThisMonth(this.db, scope, timezone),
     ]);
-    return { exportsThisMonth: exports, activeSchedules: schedules, adAccounts: ads };
+    return {
+      exportsThisMonth: exports,
+      activeSchedules: schedules,
+      adAccounts: ads,
+      ordersThisMonth: orders,
+    };
   }
 }

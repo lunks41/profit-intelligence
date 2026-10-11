@@ -48,8 +48,8 @@
     "hash": "f00a5a8e2f2fa8f61d9aaea9e3f3b074"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\billing\\billing.integration.test.ts": {
-    "mtime": 1791744229.939778,
-    "hash": "a20c292b607081182530fe02af11d977"
+    "mtime": 1791746745.3345325,
+    "hash": "a601df9eb4720956dd93a8f53c4ec151"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\billing\\billing.module.ts": {
     "mtime": 1791546337.587965,
@@ -60,8 +60,8 @@
     "hash": "c8a47b05201e14bf35ad84d59bd413c8"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\billing\\entitlements.service.ts": {
-    "mtime": 1791737150.6428745,
-    "hash": "a941232d8069a0eeb9284214c909d903"
+    "mtime": 1791746745.3279302,
+    "hash": "3b3410bc4a5aa47a8cbc33b1ae1d89c0"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\common\\error.filter.ts": {
     "mtime": 1791530162.4792821,
@@ -716,8 +716,8 @@
     "hash": "827a3ba5a96c6df9d33e9e10417b9dc8"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\settings\\PlanTab.tsx": {
-    "mtime": 1791568956.9417307,
-    "hash": "878184fcded0dd4427e4de72cca30890"
+    "mtime": 1791746745.348296,
+    "hash": "6bfb239810c1ab58d8b81a0f91ca20f9"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\settings\\RuleCoverage.tsx": {
     "mtime": 1791615226.0283206,
@@ -1028,8 +1028,8 @@
     "hash": "0ac6fc02b30b4eb773d3a2351a39a055"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\contracts\\src\\index.ts": {
-    "mtime": 1791745989.853061,
-    "hash": "82005af854fe7ea78269c83b84f4e6f1"
+    "mtime": 1791746745.3309314,
+    "hash": "2ed69abbfcd1ad4ef04dec7121c2a21e"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\contracts\\src\\plans.test.ts": {
     "mtime": 1791546108.311282,
@@ -1172,8 +1172,8 @@
     "hash": "528a15a3d63cfab367dd82d4a0842a44"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\src\\billing.ts": {
-    "mtime": 1791546180.58663,
-    "hash": "58aada0a17c09ce031d983134454d3c7"
+    "mtime": 1791746745.3219328,
+    "hash": "687ede936e38b559e492999175b3bb4d"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\src\\cli.ts": {
     "mtime": 1791527597.0938182,
@@ -1664,8 +1664,8 @@
     "hash": "b77e287a1f70ba45f37818e567a623d7"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\roadmap.md": {
-    "mtime": 1791746646.7564952,
-    "hash": "4713b37c87f1da60382b746415a97c3d"
+    "mtime": 1791746888.6517398,
+    "hash": "d94bf2ae183b0963afa2a90964df3de8"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\architecture\\billing.md": {
     "mtime": 1791549276.7097468,
