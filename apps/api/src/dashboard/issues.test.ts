@@ -43,7 +43,7 @@ describe('data issues', () => {
     for (const i of issues) {
       expect(i.action.label.length).toBeGreaterThan(3);
       // in-page anchor or an app page, never the page the merchant is already on
-      expect(i.action.href).toMatch(/^(#sync|\/(settings|marketing|expenses)(\?.*)?)$/);
+      expect(i.action.href).toMatch(/^(#sync|\/(settings|marketing|expenses|products)(\?.*)?)$/);
     }
   });
 

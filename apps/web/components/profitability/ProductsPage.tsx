@@ -12,6 +12,7 @@ import { buildListQuery } from '../../lib/query';
 import { FilterBar, type Filters } from '../overview/OverviewView';
 import { ErrorBanner, Loading, QualityBadge, RuleNote, SortControls, useApi } from './shared';
 import { readParam } from '../../lib/url-params';
+import { CostsTab } from '../settings/CostsTab';
 
 type Sort = 'profit' | 'revenue' | 'margin' | 'units' | 'cogs' | 'title';
 const SORTS: Array<{ value: Sort; label: string }> = [
@@ -25,7 +26,38 @@ const SORTS: Array<{ value: Sort; label: string }> = [
 
 const today = () => new Date().toISOString().slice(0, 10);
 
+/**
+ * The Products screen: profit by product, and (the second view) where product costs are set: one by one, in
+ * bulk for a collection or vendor, or imported from a CSV file. Product costs are managed here and nowhere else.
+ */
 export function ProductsPage() {
+  const [tab, setTab] = useState<'profit' | 'costs'>('profit');
+  useEffect(() => {
+    const t = readParam('tab', ['profit', 'costs'] as const);
+    if (t) setTab(t);
+  }, []);
+  return (
+    <>
+      <s-stack direction="inline" gap="small">
+        <s-button
+          variant={tab === 'profit' ? 'primary' : 'secondary'}
+          onClick={() => setTab('profit')}
+        >
+          Profit by product
+        </s-button>
+        <s-button
+          variant={tab === 'costs' ? 'primary' : 'secondary'}
+          onClick={() => setTab('costs')}
+        >
+          Set product costs
+        </s-button>
+      </s-stack>
+      {tab === 'profit' ? <ProfitView /> : <CostsTab onChanged={() => undefined} />}
+    </>
+  );
+}
+
+function ProfitView() {
   const [filters, setFilters] = useState<Filters>({
     preset: '30d' as PeriodPreset,
     from: today(),
@@ -357,7 +389,7 @@ function ProductDetail({
                 <s-paragraph>
                   {data.product.missingCostLines} sold lines of this product have no cost, so its
                   profit is overstated.{' '}
-                  <s-link href="/settings?tab=costs&filter=missing">Add the cost</s-link>.
+                  <s-link href="/products?tab=costs&filter=missing">Add the cost</s-link>.
                 </s-paragraph>
               </s-banner>
             )}

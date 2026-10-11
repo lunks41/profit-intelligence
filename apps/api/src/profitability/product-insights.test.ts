@@ -43,7 +43,7 @@ describe('what is missing from the products table', () => {
       amount: '700.0000',
     });
     expect(i!.examples.map((e) => e.title)).toEqual(['Big', 'Small']);
-    expect(i!.action!.href).toBe('/settings?tab=costs&filter=missing');
+    expect(i!.action!.href).toBe('/products?tab=costs&filter=missing');
     expect(i!.fix.length).toBeGreaterThan(20);
   });
 

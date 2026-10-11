@@ -58,7 +58,7 @@ export class SessionController {
         id: 'product_costs',
         label: 'Add product costs',
         status: done(products > 0 && costs.missing === 0),
-        href: '/settings',
+        href: '/products?tab=costs',
         optional: false,
         why:
           costs.missing > 0

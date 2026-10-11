@@ -256,14 +256,14 @@ function FeeBadge({ status }: { status: string | undefined }) {
   return <s-badge tone={s.tone}>{s.label}</s-badge>;
 }
 
-/** Fee, cost and shipping states that the merchant can fix in Settings, with the link to do it. */
+/** Fee, cost and shipping states that the merchant can fix (costs on Products, rules in Settings), with the link to do it. */
 function fixLinks(d: OrderDetailResponse): Array<{ text: string; href: string; label: string }> {
   const out: Array<{ text: string; href: string; label: string }> = [];
   const by = (c: string) => d.entries.filter((e) => e.component === c);
   if (by('cogs').some((e) => e.status === 'missing')) {
     out.push({
       text: 'Some items on this order have no product cost.',
-      href: '/settings?tab=costs&filter=missing',
+      href: '/products?tab=costs&filter=missing',
       label: 'Add product costs',
     });
   }

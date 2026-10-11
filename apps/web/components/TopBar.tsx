@@ -13,6 +13,40 @@ const TONE = {
   critical: 'critical',
 } as const;
 
+/** One of the two icons: a large square button so it is easy to see and to hit. */
+function IconButton({
+  icon,
+  label,
+  onClick,
+}: {
+  icon: 'notification' | 'external';
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+      style={{
+        width: '2.5rem',
+        height: '2.5rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: '0.5rem',
+        border: '1px solid #babfc3',
+        background: '#ffffff',
+        cursor: 'pointer',
+        padding: 0,
+      }}
+    >
+      <s-icon type={icon} size="base" />
+    </button>
+  );
+}
+
 /**
  * Two icons in the top right of every page: a bell with the number of unread notifications (click for the
  * latest ones, mark them read, or see them all), and one that opens this page again in a new browser tab.
@@ -83,18 +117,15 @@ export function TopBar() {
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '0.25rem',
-        padding: '0 0.75rem',
+        gap: '0.5rem',
+        padding: '0 1rem',
         flex: 'none',
       }}
     >
       <div ref={box} style={{ position: 'relative' }}>
-        <s-button
-          variant="tertiary"
+        <IconButton
           icon="notification"
-          accessibilityLabel={
-            unread > 0 ? `Notifications, ${unread} unread` : 'Notifications, none unread'
-          }
+          label={unread > 0 ? `Notifications, ${unread} unread` : 'Notifications, none unread'}
           onClick={() => setOpen((v) => !v)}
         />
         {unread > 0 && (
@@ -102,17 +133,17 @@ export function TopBar() {
             aria-hidden="true"
             style={{
               position: 'absolute',
-              top: '-0.3rem',
-              right: '-0.35rem',
-              minWidth: '1.1rem',
-              height: '1.1rem',
-              padding: '0 0.25rem',
-              borderRadius: '0.55rem',
+              top: '-0.4rem',
+              right: '-0.4rem',
+              minWidth: '1.3rem',
+              height: '1.3rem',
+              padding: '0 0.3rem',
+              borderRadius: '0.65rem',
               background: '#d72c0d',
               color: '#fff',
-              fontSize: '0.7rem',
+              fontSize: '0.8rem',
               fontWeight: 700,
-              lineHeight: '1.1rem',
+              lineHeight: '1.3rem',
               textAlign: 'center',
               pointerEvents: 'none',
             }}
@@ -187,10 +218,9 @@ export function TopBar() {
         )}
       </div>
       {shop && (
-        <s-button
-          variant="tertiary"
+        <IconButton
           icon="external"
-          accessibilityLabel="Open this page in a new tab"
+          label="Open this page in a new tab"
           onClick={() => {
             const url = newTabUrl(shop, process.env.NEXT_PUBLIC_SHOPIFY_API_KEY, window.location);
             if (url) window.open(url, '_blank');

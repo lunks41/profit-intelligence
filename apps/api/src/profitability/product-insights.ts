@@ -46,7 +46,7 @@ export function productInsights(
       share,
       amount: toStored(amount),
       examples: examples(noCost, net),
-      action: { label: 'Add the missing costs', href: '/settings?tab=costs&filter=missing' },
+      action: { label: 'Add the missing costs', href: '/products?tab=costs&filter=missing' },
     });
   }
 
@@ -66,7 +66,7 @@ export function productInsights(
       share,
       amount: toStored(amount),
       examples: examples(estimated, net),
-      action: { label: 'Confirm the costs', href: '/settings?tab=costs' },
+      action: { label: 'Confirm the costs', href: '/products?tab=costs' },
     });
   }
 

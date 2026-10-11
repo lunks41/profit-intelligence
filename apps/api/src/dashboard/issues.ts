@@ -89,7 +89,7 @@ export function buildIssues(i: IssueInput): Issue[] {
       title: `Product cost is missing for ${pct(q.cost.missing)} of sales value`,
       detail:
         'Profit leaves these costs out, so it is higher than it would be with them and cannot be called confirmed.',
-      action: { label: 'Add product costs', href: '/settings?tab=costs&filter=missing' },
+      action: { label: 'Add product costs', href: '/products?tab=costs&filter=missing' },
     });
   } else if (q.cost && Number(q.cost.estimated) > 0) {
     out.push({
@@ -98,7 +98,7 @@ export function buildIssues(i: IssueInput): Issue[] {
       title: `${pct(q.cost.estimated)} of sales value uses Shopify's cost estimate`,
       detail:
         "Shopify's current cost is applied to past orders. Enter your own costs to make these figures confirmed.",
-      action: { label: 'Review costs', href: '/settings?tab=costs&filter=estimated' },
+      action: { label: 'Review costs', href: '/products?tab=costs&filter=estimated' },
     });
   }
 

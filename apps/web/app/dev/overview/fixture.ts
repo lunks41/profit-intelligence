@@ -124,7 +124,7 @@ export const sampleOverview: OverviewResponse = {
       severity: 'warning',
       title: 'Product cost is missing for 12.0% of sales value',
       detail: 'Profit leaves these costs out, so it is higher than it would be with them.',
-      action: { label: 'Add product costs', href: '/settings?tab=costs&filter=missing' },
+      action: { label: 'Add product costs', href: '/products?tab=costs&filter=missing' },
     },
     {
       id: 'missing_shipping_cost',

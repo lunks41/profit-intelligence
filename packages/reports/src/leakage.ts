@@ -163,7 +163,7 @@ export function evaluateLeakage(input: LeakageInputs, limits: LeakageSettings): 
       action: { label: 'Review these orders', href: '/orders' },
       impact: {
         amount: input.loss.confirmedAmount,
-        note: 'Counts only orders where every cost is known. Costs taken from Shopify are estimates you can confirm in Settings.',
+        note: 'Counts only orders where every cost is known. Costs taken from Shopify are estimates you can confirm on the Products screen.',
       },
       items: input.loss.worst
         .filter((w) => !w.partial)

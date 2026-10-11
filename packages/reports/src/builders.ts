@@ -790,7 +790,7 @@ async function missingCosts(
     ],
     notes: [
       'Missing means no cost is known for the item, so the profit shown leaves its cost out and is higher than it really is. Estimated means Shopify’s current unit cost was used, which you have not confirmed.',
-      'To fix it, enter the cost in Settings, Costs (one by one, from a CSV file, or for a whole collection or vendor), then use "Apply to existing orders".',
+      'To fix it, enter the cost on the Products screen, Set product costs (one by one, from a CSV file, or for a whole collection or vendor), then use "Apply to existing orders".',
       ...(filtered || status
         ? ['Filtered: the totals cover the matching rows only.']
         : matches

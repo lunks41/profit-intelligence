@@ -24,8 +24,8 @@ export default function Support() {
         </dt>
         <dd>
           Shopify does not know what an item cost you unless you entered it. A missing cost is shown
-          as Missing, never as zero, so profit is not overstated silently. Add costs in Settings,
-          Costs, or import them from a CSV file.
+          as Missing, never as zero, so profit is not overstated silently. Add costs on the Products
+          screen (Set product costs), or import them from a CSV file.
         </dd>
         <dt>
           <strong>Are the payment fees real?</strong>

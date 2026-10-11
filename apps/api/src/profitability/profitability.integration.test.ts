@@ -602,7 +602,7 @@ describe('product rows show a trend, and the page says what is missing', () => {
     else {
       expect(found!.count).toBe(missing.length);
       expect(found!.fix.length).toBeGreaterThan(20);
-      expect(found!.action!.href).toContain('/settings');
+      expect(found!.action!.href).toContain('/products?tab=costs');
     }
     // the findings cover all products of the period, not only the first page
     const small = productListResponseSchema.parse(
