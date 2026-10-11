@@ -5,7 +5,13 @@ import {
   Logger,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { PLANS, PLAN_IDS, MAX_HISTORY_DAYS } from '@pi/contracts';
+import {
+  EXTRA_ORDER_CENTS,
+  EXTRA_ORDER_USD,
+  PLANS,
+  PLAN_IDS,
+  MAX_HISTORY_DAYS,
+} from '@pi/contracts';
 import type { BillingStatusResponse, PlanId } from '@pi/contracts';
 import { getShopOverview, getSubscription, loadShopCredential } from '@pi/db';
 import type { Db } from '@pi/db';
@@ -85,7 +91,11 @@ export class BillingService {
         ...entitlements,
         historyDays: Math.min(entitlements.historyDays, MAX_HISTORY_DAYS),
       },
-      usage,
+      usage: {
+        ...usage,
+        ...extraOrders(usage.ordersThisMonth, entitlements.ordersPerMonth, plan),
+      },
+      extraOrderUsd: EXTRA_ORDER_USD,
       subscription: sub
         ? {
             status: sub.status,
@@ -238,4 +248,21 @@ export class BillingService {
     await refreshSubscription(this.db, gql, scope, this.billingEnv);
     return this.status(scope);
   }
+}
+
+/**
+ * Orders beyond the plan's included orders, and what they cost at EXTRA_ORDER_USD each (whole cents, so no
+ * rounding error). The free plan has no charge: past its limit the merchant is asked to upgrade.
+ */
+export function extraOrders(
+  orders: number,
+  included: number,
+  plan: string,
+): { extraOrders: number; extraChargeUsd: string } {
+  const extra = Math.max(0, orders - included);
+  const cents = plan === 'free' ? 0 : extra * EXTRA_ORDER_CENTS;
+  return {
+    extraOrders: extra,
+    extraChargeUsd: `${Math.floor(cents / 100)}.${String(cents % 100).padStart(2, '0')}`,
+  };
 }

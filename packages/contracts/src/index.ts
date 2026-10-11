@@ -1494,6 +1494,7 @@ export const entitlementsSchema = z.object({
   scheduledReports: z.number(),
   adAccounts: z.number(),
   leakageFindings: z.boolean(),
+  ordersPerMonth: z.number(),
 });
 
 export const billingStatusSchema = z.object({
@@ -1504,9 +1505,15 @@ export const billingStatusSchema = z.object({
     exportsThisMonth: z.number(),
     activeSchedules: z.number(),
     adAccounts: z.number(),
-    /** orders placed this month, for information: no plan limits orders today */
+    /** orders placed this month */
     ordersThisMonth: z.number(),
+    /** orders beyond the plan's included orders this month */
+    extraOrders: z.number(),
+    /** extraOrders x the price per extra order, as dollars with two decimals; an estimate until paid plans open */
+    extraChargeUsd: z.string(),
   }),
+  /** the price of each order beyond the plan's included orders, in USD */
+  extraOrderUsd: z.string(),
   subscription: z
     .object({
       status: z.enum(['none', 'pending', 'active', 'frozen', 'cancelled', 'declined', 'expired']),

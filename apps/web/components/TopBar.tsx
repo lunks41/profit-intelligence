@@ -82,10 +82,10 @@ export function TopBar() {
     <div
       style={{
         display: 'flex',
-        justifyContent: 'flex-end',
         alignItems: 'center',
         gap: '0.25rem',
-        padding: '0.5rem 1rem 0',
+        padding: '0 0.75rem',
+        flex: 'none',
       }}
     >
       <div ref={box} style={{ position: 'relative' }}>

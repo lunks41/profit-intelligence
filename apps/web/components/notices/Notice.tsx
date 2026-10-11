@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { TopBar } from '../TopBar';
 
 const HOST_ID = 'pi-page-notices';
 /** The most the strip is ever pulled outward; a guard against a surprising page layout. */
@@ -15,13 +16,17 @@ const MAX_PULL = 64;
  */
 export function PageNotices() {
   const ref = useRef<HTMLDivElement>(null);
+  const host = useRef<HTMLDivElement>(null);
   const [pull, setPull] = useState({ top: 0, left: 0, right: 0 });
+  const [has, setHas] = useState(false);
 
   useLayoutEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    const inner = host.current;
+    if (!el || !inner) return;
     const measure = () => {
-      if (el.childElementCount === 0) {
+      setHas(inner.childElementCount > 0);
+      if (inner.childElementCount === 0) {
         setPull((p) =>
           p.top === 0 && p.left === 0 && p.right === 0 ? p : { top: 0, left: 0, right: 0 },
         );
@@ -45,7 +50,7 @@ export function PageNotices() {
     // the page may still be settling (fonts, Polaris upgrading its elements): measure again
     const timers = [setTimeout(measure, 300), setTimeout(measure, 1200)];
     const observer = new MutationObserver(measure);
-    observer.observe(el, { childList: true });
+    observer.observe(inner, { childList: true });
     window.addEventListener('resize', measure);
     return () => {
       timers.forEach(clearTimeout);
@@ -57,10 +62,20 @@ export function PageNotices() {
   return (
     <div
       ref={ref}
-      id={HOST_ID}
       slot="supplemental-start"
-      style={{ margin: `${-pull.top}px ${-pull.right}px 0 ${-pull.left}px` }}
-    />
+      style={{
+        margin: `${-pull.top}px ${-pull.right}px 0 ${-pull.left}px`,
+        display: 'flex',
+        alignItems: 'center',
+        minHeight: '3.25rem',
+        // the strip and the icons are one row: the blue runs under the icons too
+        background: has ? TONES.info.bg : 'transparent',
+        borderBottom: has ? `1px solid ${TONES.info.line}` : 'none',
+      }}
+    >
+      <div id={HOST_ID} ref={host} style={{ flex: '1 1 auto', minWidth: 0 }} />
+      <TopBar />
+    </div>
   );
 }
 
@@ -89,8 +104,7 @@ export function Notice({
       role={tone === 'critical' ? 'alert' : 'status'}
       style={{
         background: t.bg,
-        borderBottom: `1px solid ${t.line}`,
-        padding: '0.125rem 1rem',
+        padding: '0.5rem 1rem',
       }}
     >
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0 0.75rem' }}>

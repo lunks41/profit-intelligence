@@ -391,7 +391,11 @@ describe('billing on, no subscription: the free plan is enforced on the server',
       activeSchedules: 0,
       adAccounts: 1,
       ordersThisMonth: 0,
+      extraOrders: 0,
+      extraChargeUsd: '0.00',
     });
+    expect(s.extraOrderUsd).toBe('0.10');
+    expect(s.entitlements.ordersPerMonth).toBe(50);
   });
 });
 

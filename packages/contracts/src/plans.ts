@@ -23,7 +23,16 @@ export interface Entitlements {
   adAccounts: number;
   /** The profit leakage findings and their weekly notifications. */
   leakageFindings: boolean;
+  /**
+   * Orders included per calendar month. Nothing stops working past it: on a paid plan each extra order costs
+   * EXTRA_ORDER_USD, and on the free plan the merchant is asked to upgrade.
+   */
+  ordersPerMonth: number;
 }
+
+/** What each order beyond the plan's included orders costs, in USD (draft until the plans are approved). */
+export const EXTRA_ORDER_USD = '0.10';
+export const EXTRA_ORDER_CENTS = 10;
 
 export interface Plan {
   id: PlanId;
@@ -53,6 +62,7 @@ export const PLANS: Record<PlanId, Plan> = {
       scheduledReports: 0,
       adAccounts: 1,
       leakageFindings: false,
+      ordersPerMonth: 50,
     },
   },
   growth: {
@@ -68,6 +78,7 @@ export const PLANS: Record<PlanId, Plan> = {
       scheduledReports: 3,
       adAccounts: 3,
       leakageFindings: true,
+      ordersPerMonth: 500,
     },
   },
   pro: {
@@ -83,6 +94,7 @@ export const PLANS: Record<PlanId, Plan> = {
       scheduledReports: 10,
       adAccounts: 10,
       leakageFindings: true,
+      ordersPerMonth: 2000,
     },
   },
 };

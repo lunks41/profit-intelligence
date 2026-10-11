@@ -31,6 +31,74 @@ function Usage({ label, used, limit }: { label: string; used: number; limit: num
   );
 }
 
+/** Orders this month against the plan's included orders, and what the extra ones cost (a draft price). */
+function OrderMeter({
+  used,
+  included,
+  extra,
+  charge,
+  price,
+  free,
+}: {
+  used: number;
+  included: number;
+  extra: number;
+  charge: string;
+  price: string;
+  free: boolean;
+}) {
+  const pct = included > 0 ? Math.min(100, Math.round((used / included) * 100)) : 0;
+  const over = extra > 0;
+  return (
+    <s-stack gap="small-300">
+      <s-stack direction="inline" justifyContent="space-between" gap="base">
+        <s-text>Orders this month</s-text>
+        <s-text tone={over ? 'critical' : undefined}>
+          {used.toLocaleString()} of {included.toLocaleString()} included
+        </s-text>
+      </s-stack>
+      <div
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={included}
+        aria-valuenow={Math.min(used, included)}
+        aria-label="Orders this month against the orders included in your plan"
+        style={{
+          height: '0.5rem',
+          borderRadius: '0.25rem',
+          background: '#e3e3e3',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{ width: `${pct}%`, height: '100%', background: over ? '#d72c0d' : '#005bd3' }}
+        />
+      </div>
+      {over && !free && (
+        <s-text color="subdued">
+          {extra.toLocaleString()} extra {extra === 1 ? 'order' : 'orders'} at ${price} each is $
+          {charge} so far this month. Nothing stops working. This is an estimate: paid plans are not
+          open yet, so nothing is charged today.
+        </s-text>
+      )}
+      {over && free && (
+        <s-text color="subdued">
+          You are over the {included.toLocaleString()} orders in the Free plan. Nothing stops
+          working, but upgrade to include more orders (extra orders cost ${price} each on a paid
+          plan).
+        </s-text>
+      )}
+      {!over && (
+        <s-text color="subdued">
+          {free
+            ? 'Upgrade to include more orders.'
+            : `Orders beyond the included ones cost $${price} each. Nothing stops working.`}
+        </s-text>
+      )}
+    </s-stack>
+  );
+}
+
 export function PlanTab() {
   const [version, setVersion] = useState(0);
   const { data, error, loading, reload } = useApi<BillingStatusResponse>(
@@ -71,10 +139,14 @@ export function PlanTab() {
             </s-text>
           )}
           <s-stack gap="small-300">
-            <s-text>
-              Orders this month: <s-text type="strong">{data.usage.ordersThisMonth}</s-text>{' '}
-              <s-text color="subdued">(no plan limits orders)</s-text>
-            </s-text>
+            <OrderMeter
+              used={data.usage.ordersThisMonth}
+              included={e.ordersPerMonth}
+              extra={data.usage.extraOrders}
+              charge={data.usage.extraChargeUsd}
+              price={data.extraOrderUsd}
+              free={data.plan === 'free'}
+            />
             <Usage
               label="Reports prepared this month"
               used={data.usage.exportsThisMonth}
@@ -156,6 +228,10 @@ export function PlanTab() {
                   <s-heading>{p.priceUsd === 0 ? 'Free' : `$${p.priceUsd} / month`}</s-heading>
                   <s-text color="subdued">{p.summary}</s-text>
                   <ul style={{ margin: 0, paddingInlineStart: '1.25rem' }}>
+                    <li>
+                      {p.entitlements.ordersPerMonth.toLocaleString()} orders a month
+                      {p.id === 'free' ? '' : `, then $${data.extraOrderUsd} per extra order`}
+                    </li>
                     <li>Last {p.entitlements.historyDays} days of history</li>
                     <li>{p.entitlements.exportsPerMonth} reports a month</li>
                     <li>{p.entitlements.pdfExports ? 'CSV and PDF reports' : 'CSV reports'}</li>
