@@ -630,6 +630,7 @@ export interface AdAccountRow {
   name: string;
   currency: string;
   status: string;
+  connectedVia: string;
   lastSyncAt: string | null;
   lastError: string | null;
 }
@@ -638,7 +639,7 @@ export async function listAdAccounts(db: Db, scope: ShopScope): Promise<AdAccoun
   return withTenant(db, scope.tenantId, async (tx) =>
     rows(
       await tx.execute(sql`
-        select id::text as id, provider, name, currency, status, last_sync_at::text as last_sync_at, last_error
+        select id::text as id, provider, name, currency, status, connected_via, last_sync_at::text as last_sync_at, last_error
           from f_ad_account where shop_id = ${scope.shopId} and archived_at is null
          order by provider, lower(name)`),
     ).map((x) => ({
@@ -647,6 +648,7 @@ export async function listAdAccounts(db: Db, scope: ShopScope): Promise<AdAccoun
       name: String(x.name),
       currency: String(x.currency),
       status: String(x.status),
+      connectedVia: String(x.connected_via),
       lastSyncAt: str(x.last_sync_at),
       lastError: str(x.last_error),
     })),
@@ -723,7 +725,13 @@ export async function archiveAdAccount(
   return withTenant(db, scope.tenantId, async (tx) => {
     const [row] = await tx
       .update(fAdAccount)
-      .set({ archivedAt: sql`now()`, status: 'disconnected' })
+      .set({
+        archivedAt: sql`now()`,
+        status: 'disconnected',
+        encryptedAccessToken: null,
+        encryptedRefreshToken: null,
+        tokenExpiresAt: null,
+      })
       .where(
         and(
           eq(fAdAccount.id, id),

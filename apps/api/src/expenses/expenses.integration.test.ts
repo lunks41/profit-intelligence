@@ -923,21 +923,28 @@ describe('advertising', () => {
   const marketing = async (qs = SEP, token?: string) =>
     marketingResponseSchema.parse((await json('GET', `/marketing/overview${qs}`, token)).body);
 
-  it('lists providers and says plainly which cannot be connected yet', async () => {
+  it('lists providers and says plainly which are not set up on the server', async () => {
     const { body } = await json('GET', '/marketing/providers');
     const by = (id: string) => body.providers.find((p: { id: string }) => p.id === id);
-    for (const id of ['manual', 'meta', 'google']) expect(by(id).available).toBe(true);
-    expect(by('tiktok').available).toBe(false);
-    expect(by('tiktok').note.length).toBeGreaterThan(10);
+    for (const id of ['manual', 'meta', 'google', 'tiktok']) expect(by(id).available).toBe(true);
+    expect(by('manual')).toMatchObject({ connectVia: 'manual', configured: true });
+    // this test server has no ad platform app credentials, so signing in is not possible yet
+    for (const id of ['meta', 'google', 'tiktok']) {
+      expect(by(id)).toMatchObject({ connectVia: 'oauth', configured: false });
+      expect(by(id).note.length).toBeGreaterThan(10);
+    }
   });
 
-  it('refuses TikTok, asks Meta and Google for an account id and token, and does not duplicate an account', async () => {
+  it('asks every platform for an account id and token, refuses signing in when not set up, and does not duplicate an account', async () => {
     const tiktok = await json('POST', '/marketing/accounts', 'id-exp-a', {
       provider: 'tiktok',
       name: 'TikTok',
     });
     expect(tiktok.res.statusCode).toBe(400);
-    expect(tiktok.body.error.code).toBe('provider_not_available');
+    expect(tiktok.body.error.code).toBe('invalid_input');
+    const start = await json('POST', '/marketing/connect/meta/start', 'id-exp-a', {});
+    expect(start.res.statusCode).toBe(400);
+    expect(start.body.error.code).toBe('provider_not_configured');
     const meta = await json('POST', '/marketing/accounts', 'id-exp-a', {
       provider: 'meta',
       name: 'Meta',

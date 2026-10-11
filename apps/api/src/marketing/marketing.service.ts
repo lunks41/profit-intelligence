@@ -7,7 +7,11 @@ import type {
 } from '@pi/contracts';
 import {
   archiveAdAccount,
+  connectPendingAccounts,
   createAdAccount,
+  createPendingConnection,
+  deletePendingConnection,
+  listPendingConnections,
   getAdSpend,
   getProfitAggregate,
   getShopOverview,
@@ -30,11 +34,24 @@ import type { TenantContext } from '../auth/installation.service.js';
 import { buildFx } from '../dashboard/currency.js';
 import { InvalidRangeError, addDays, eachDay, resolveRange } from '../dashboard/range.js';
 import { EntitlementsService } from '../billing/entitlements.service.js';
-import { DB, TOKEN_CRYPTO } from '../tokens.js';
+import { randomBytes } from 'node:crypto';
+import { APP_ENV, AD_HTTP, DB, TOKEN_CRYPTO } from '../tokens.js';
+import type { AppEnv } from '../config/config.module.js';
+import {
+  OAuthError,
+  authorizeUrl,
+  exchangeCode,
+  isConfigured,
+  listAccounts,
+  oauthConfigFromEnv,
+} from './ad-oauth.js';
+import type { OAuthProviderId } from './ad-oauth.js';
 
 const actorOf = (t: TenantContext) => (t.userId ? `shopify-user:${t.userId}` : 'merchant');
 
-export const PROVIDERS: AdProvidersResponse['providers'] = [
+export const PROVIDERS: Array<
+  Omit<AdProvidersResponse['providers'][number], 'connectVia' | 'configured'>
+> = [
   {
     id: 'manual',
     name: 'Manual entry',
@@ -45,19 +62,19 @@ export const PROVIDERS: AdProvidersResponse['providers'] = [
     id: 'meta',
     name: 'Meta Ads',
     available: true,
-    note: 'Paste the ad account id and an access token. Spend imports every day at 06:00 UTC. Campaign-to-order matching comes later.',
+    note: 'Sign in to Meta and choose the ad accounts. Spend imports every day at 06:00 UTC. Campaign-to-order matching comes later.',
   },
   {
     id: 'google',
     name: 'Google Ads',
     available: true,
-    note: 'Paste the customer id and an access token. Spend imports every day at 06:00 UTC. The server also needs a Google Ads developer token.',
+    note: 'Sign in to Google and choose the Google Ads accounts. Spend imports every day at 06:00 UTC.',
   },
   {
     id: 'tiktok',
     name: 'TikTok Ads',
-    available: false,
-    note: 'Automatic import needs a TikTok for Business app. Not connected yet.',
+    available: true,
+    note: 'Sign in to TikTok and choose the advertiser accounts. Spend imports every day at 06:00 UTC. TikTok does not report sales here, so reported sales stay empty.',
   },
 ];
 
@@ -70,10 +87,154 @@ export class MarketingService {
     @Inject(DB) private readonly db: Db,
     @Inject(EntitlementsService) private readonly entitlements: EntitlementsService,
     @Inject(TOKEN_CRYPTO) private readonly crypto: TokenCrypto,
+    @Inject(APP_ENV) private readonly env: AppEnv,
+    @Inject(AD_HTTP) private readonly http: typeof fetch,
   ) {}
 
+  private get oauth() {
+    return oauthConfigFromEnv(this.env);
+  }
+
   providers(): AdProvidersResponse {
-    return { providers: PROVIDERS };
+    const cfg = this.oauth;
+    return {
+      providers: PROVIDERS.map((p) => ({
+        ...p,
+        connectVia: p.id === 'manual' ? ('manual' as const) : ('oauth' as const),
+        configured: p.id === 'manual' ? true : isConfigured(cfg, p.id as OAuthProviderId),
+      })),
+    };
+  }
+
+  /** The address to send the merchant to. The state proves, when they come back, who started it. */
+  async startConnect(scope: TenantContext, provider: OAuthProviderId) {
+    const cfg = this.oauth;
+    if (!isConfigured(cfg, provider)) {
+      throw new BadRequestException({
+        code: 'provider_not_configured',
+        message: `${PROVIDERS.find((p) => p.id === provider)?.name ?? provider} is not set up on this server yet. The owner adds the platform app credentials first.`,
+      });
+    }
+    await this.entitlements.assertAdAccount(scope);
+    const state = this.crypto.encrypt(
+      JSON.stringify({
+        t: scope.tenantId,
+        s: scope.shopId,
+        u: scope.userId ?? null,
+        p: provider,
+        e: Date.now() + 10 * 60_000,
+        n: randomBytes(8).toString('hex'),
+      }),
+    ).value;
+    return { url: authorizeUrl(cfg, provider, state) };
+  }
+
+  /**
+   * The platform sends the merchant back here (no session: this is a plain browser redirect). The state
+   * identifies the shop; tokens are exchanged, the ad accounts listed, and everything waits for the
+   * merchant to choose. Returns the page to send the merchant to, never a platform message.
+   */
+  async finishConnect(
+    provider: OAuthProviderId,
+    q: { code?: string; state?: string; error?: string },
+  ): Promise<string> {
+    const back = (params: Record<string, string>, shopDomain?: string) =>
+      this.returnUrl(shopDomain, params);
+    let ids: { t: string; s: string; u: string | null } | null = null;
+    try {
+      const s = JSON.parse(this.crypto.decrypt(q.state ?? '')) as {
+        t: string;
+        s: string;
+        u: string | null;
+        p: string;
+        e: number;
+      };
+      if (s.p === provider && s.e > Date.now()) ids = { t: s.t, s: s.s, u: s.u };
+    } catch {
+      ids = null;
+    }
+    if (!ids) return back({ connect_error: 'expired' });
+    const shop = await getShopOverview(this.db, { tenantId: ids.t, shopId: ids.s });
+    if (!shop) return back({ connect_error: 'expired' });
+    const domain = shop.shopifyDomain;
+    const scope: TenantContext = {
+      tenantId: ids.t,
+      shopId: ids.s,
+      shopDomain: domain,
+      userId: ids.u,
+    };
+    const code = q.code?.trim();
+    if (q.error || !code) return back({ connect: provider, connect_error: 'denied' }, domain);
+    try {
+      const cfg = this.oauth;
+      const tokens = await exchangeCode(cfg, provider, code, this.http, new Date());
+      const accounts = await listAccounts(cfg, provider, tokens, this.http);
+      if (accounts.length === 0) {
+        return back({ connect: provider, connect_error: 'no_accounts' }, domain);
+      }
+      await createPendingConnection(this.db, scope, {
+        provider,
+        encryptedAccessToken: this.crypto.encrypt(tokens.accessToken).value,
+        encryptedRefreshToken: tokens.refreshToken
+          ? this.crypto.encrypt(tokens.refreshToken).value
+          : null,
+        tokenExpiresAt: tokens.expiresAt,
+        accounts,
+      });
+      return back({ connect: provider }, domain);
+    } catch (e) {
+      if (!(e instanceof OAuthError)) throw e;
+      return back({ connect: provider, connect_error: 'failed' }, domain);
+    }
+  }
+
+  /** Back into the app inside the Shopify admin (the sign-in happened on a full page, outside the frame). */
+  private returnUrl(shopDomain: string | undefined, params: Record<string, string>): string {
+    const qs = new URLSearchParams(params).toString();
+    const handle = this.env.SHOPIFY_APP_HANDLE;
+    const store = shopDomain?.replace(/\.myshopify\.com$/, '');
+    if (store && handle) {
+      return `https://admin.shopify.com/store/${store}/apps/${handle}/marketing?${qs}`;
+    }
+    return `${this.env.APP_URL ?? ''}/marketing?${qs}`;
+  }
+
+  async pendingConnections(scope: TenantContext) {
+    return { connections: await listPendingConnections(this.db, scope) };
+  }
+
+  async connectChosen(scope: TenantContext, pendingId: string, accountIds: string[]) {
+    await this.entitlements.assertAdAccounts(scope, accountIds.length);
+    const shop = await getShopOverview(this.db, scope);
+    if (!shop) throw new BadRequestException({ code: 'shop_not_found', message: 'Shop not found' });
+    const r = await connectPendingAccounts(this.db, scope, {
+      pendingId,
+      accountIds,
+      actor: actorOf(scope),
+      shopCurrency: shop.currency,
+    });
+    if (!r.ok) {
+      throw r.reason === 'not_found'
+        ? new NotFoundException({
+            code: 'connection_expired',
+            message: 'The sign-in has expired. Connect the platform again.',
+          })
+        : new BadRequestException({
+            code: 'unknown_account',
+            message: 'One of the chosen accounts was not offered by the platform.',
+          });
+    }
+    return { connected: r.created + r.existing };
+  }
+
+  async cancelPending(scope: TenantContext, pendingId: string) {
+    if (!(await deletePendingConnection(this.db, scope, pendingId))) {
+      throw new NotFoundException({
+        code: 'not_found',
+        message: 'Nothing is waiting to be connected',
+      });
+    }
+    return { removed: true };
   }
 
   async overview(
@@ -176,7 +337,10 @@ export class MarketingService {
         timezone: shop.ianaTimezone,
       },
       currency: shop.currency,
-      accounts,
+      accounts: accounts.map((a) => ({
+        ...a,
+        connectedVia: a.connectedVia as 'manual' | 'token' | 'oauth',
+      })),
       totals: {
         spend: toStored(spend),
         platformReportedSales: toStored(reported),
@@ -234,7 +398,7 @@ export class MarketingService {
           `${provider?.name ?? body.provider} cannot be connected yet. ${provider?.note ?? ''}`.trim(),
       });
     }
-    const connected = body.provider === 'meta' || body.provider === 'google';
+    const connected = body.provider !== 'manual';
     if (connected && (!body.externalId || !body.accessToken)) {
       throw new BadRequestException({
         code: 'invalid_input',

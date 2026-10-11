@@ -9,6 +9,7 @@ import { formatMoney, longDate, periodLabel } from '../../lib/format';
 import { buildListQuery } from '../../lib/query';
 import { parseSpendLines } from '../../lib/spend';
 import { Notice } from '../notices/Notice';
+import { ConnectPlatforms } from './ConnectPlatforms';
 import { FilterBar, type Filters } from '../overview/OverviewView';
 import { SampleLines } from '../preview/ui';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
@@ -225,10 +226,6 @@ function Campaigns({ data }: { data: MarketingResponse }) {
 function Accounts({ data, onChanged }: { data: MarketingResponse; onChanged: () => void }) {
   const providers = useApi<AdProvidersResponse>('/marketing/providers');
   const [name, setName] = useState('');
-  const [platform, setPlatform] = useState<'meta' | 'google'>('meta');
-  const [externalId, setExternalId] = useState('');
-  const [token, setToken] = useState('');
-  const [connectName, setConnectName] = useState('');
   const add = useAction();
   const del = useAction();
 
@@ -250,7 +247,15 @@ function Accounts({ data, onChanged }: { data: MarketingResponse; onChanged: () 
                   <s-table-row key={a.id}>
                     <s-table-cell>{a.name}</s-table-cell>
                     <s-table-cell>
-                      {a.provider === 'manual' ? 'Manual entry' : a.provider}
+                      {a.provider === 'manual'
+                        ? 'Manual entry'
+                        : a.provider === 'meta'
+                          ? 'Meta Ads'
+                          : a.provider === 'google'
+                            ? 'Google Ads'
+                            : a.provider === 'tiktok'
+                              ? 'TikTok Ads'
+                              : a.provider}
                     </s-table-cell>
                     <s-table-cell>
                       <s-badge tone={a.status === 'active' ? 'success' : 'critical'}>
@@ -276,7 +281,7 @@ function Accounts({ data, onChanged }: { data: MarketingResponse; onChanged: () 
                             onChanged();
                         }}
                       >
-                        Remove
+                        {a.provider === 'manual' ? 'Remove' : 'Disconnect'}
                       </s-button>
                     </s-table-cell>
                   </s-table-row>
@@ -311,73 +316,7 @@ function Accounts({ data, onChanged }: { data: MarketingResponse; onChanged: () 
           </s-grid>
           <FormError message={add.error} />
           {providers.data && (
-            <s-stack gap="small">
-              <s-text type="strong">Connect Meta or Google</s-text>
-              <s-text color="subdued">
-                Spend imports every day at 06:00 UTC and is included in profit. Campaign-to-order
-                matching is not part of this version. TikTok stays manual until Meta and Google are
-                stable.
-              </s-text>
-              <s-grid gridTemplateColumns={GRID} gap="base" alignItems="end">
-                <Dropdown
-                  label="Platform"
-                  value={platform}
-                  options={[
-                    { value: 'meta', label: 'Meta Ads' },
-                    { value: 'google', label: 'Google Ads' },
-                  ]}
-                  onChange={(v) => setPlatform(v as 'meta' | 'google')}
-                />
-                <s-text-field
-                  label={platform === 'meta' ? 'Ad account id' : 'Customer id'}
-                  value={externalId}
-                  onInput={(e) => setExternalId(e.currentTarget.value)}
-                />
-                <s-text-field
-                  label="Access token"
-                  value={token}
-                  onInput={(e) => setToken(e.currentTarget.value)}
-                />
-                <s-text-field
-                  label="Name"
-                  value={connectName}
-                  onInput={(e) => setConnectName(e.currentTarget.value)}
-                />
-              </s-grid>
-              <div>
-                <s-button
-                  disabled={
-                    add.busy || !connectName.trim() || !externalId.trim() || token.trim().length < 8
-                  }
-                  onClick={async () => {
-                    if (
-                      await add.run(() =>
-                        apiPost('/marketing/accounts', {
-                          provider: platform,
-                          name: connectName.trim(),
-                          externalId: externalId.trim(),
-                          accessToken: token.trim(),
-                        }),
-                      )
-                    ) {
-                      setConnectName('');
-                      setExternalId('');
-                      setToken('');
-                      onChanged();
-                    }
-                  }}
-                >
-                  Connect and import daily
-                </s-button>
-              </div>
-              {providers.data.providers
-                .filter((p) => !p.available)
-                .map((p) => (
-                  <s-text key={p.id} color="subdued">
-                    {p.name}: {p.note}
-                  </s-text>
-                ))}
-            </s-stack>
+            <ConnectPlatforms data={data} providers={providers.data} onChanged={onChanged} />
           )}
         </s-stack>
       </s-section>

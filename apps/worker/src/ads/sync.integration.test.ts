@@ -188,3 +188,93 @@ describe('daily advertising sync', () => {
     expect(r.accounts).toBe(0);
   });
 });
+
+describe('renewing sign-in tokens before the import', () => {
+  const enc = (v: string) => `enc(${v})`;
+  const dec = (v: string) => v.replace(/^enc\(|\)$/g, '');
+  const connected = async (who: InstallResult, expiresAt: string | null) => {
+    const r = await createAdAccount(db, who, {
+      provider: 'fakeads',
+      name: 'Signed in',
+      currency: 'USD',
+      externalId: '1',
+      encryptedAccessToken: enc('OLD'),
+      actor: 't',
+    });
+    await admin.query(
+      `update f_ad_account set encrypted_refresh_token = $1, token_expires_at = $2, connected_via = 'oauth' where id = $3`,
+      [enc('REFRESH'), expiresAt, r.id],
+    );
+    return r.id;
+  };
+  const provider = (seen: string[]): AdProvider => ({
+    id: 'fakeads',
+    fetchDaily: vi.fn(async (acc) => {
+      seen.push(String(acc.accessToken));
+      return [];
+    }),
+  });
+  const google = (ok: boolean) =>
+    (async () =>
+      ok
+        ? new Response(JSON.stringify({ access_token: 'NEW', expires_in: 3599 }), { status: 200 })
+        : new Response('{"error":"invalid_grant"}', { status: 400 })) as typeof fetch;
+  const run = (seen: string[], ok: boolean, id = 'google') =>
+    syncAdAccounts({
+      db,
+      log: silent,
+      now: () => NOW,
+      decrypt: dec,
+      encrypt: enc,
+      env: { GOOGLE_OAUTH_CLIENT_ID: 'gid', GOOGLE_OAUTH_CLIENT_SECRET: 'gsecret' },
+      fetchImpl: google(ok),
+      providers: [{ ...provider(seen), id }],
+    });
+
+  it('a Google token about to end is renewed, saved encrypted, and used for the import', async () => {
+    const id = await connected(a, '2026-10-09T06:05:00Z');
+    await admin.query(`update f_ad_account set provider = 'google' where id = $1`, [id]);
+    const seen: string[] = [];
+    const r = await run(seen, true);
+    expect(r).toMatchObject({ synced: 1, failed: 0 });
+    expect(seen).toEqual(['NEW']);
+    const saved = (
+      await admin.query(
+        `select encrypted_access_token as t, encrypted_refresh_token as r, token_expires_at from f_ad_account where id = $1`,
+        [id],
+      )
+    ).rows[0];
+    expect(saved.t).toBe('enc(NEW)');
+    expect(saved.r).toBe('enc(REFRESH)');
+    expect(new Date(saved.token_expires_at).toISOString()).toBe('2026-10-09T06:59:59.000Z');
+  });
+
+  it('a token with plenty of time left is left alone', async () => {
+    const id = await connected(a, '2026-10-09T09:00:00Z');
+    await admin.query(`update f_ad_account set provider = 'google' where id = $1`, [id]);
+    const seen: string[] = [];
+    await run(seen, true);
+    expect(seen).toEqual(['OLD']);
+  });
+
+  it('when Google refuses and the token has ended, the merchant is told to sign in again', async () => {
+    const id = await connected(a, '2026-10-09T05:00:00Z');
+    await admin.query(`update f_ad_account set provider = 'google' where id = $1`, [id]);
+    const seen: string[] = [];
+    const r = await run(seen, false);
+    expect(r).toMatchObject({ synced: 0, failed: 1 });
+    expect(seen).toEqual([]);
+    const acc = (await listAdAccounts(db, a))[0]!;
+    expect(acc.status).toBe('error');
+    expect(acc.lastError).toBe('The platform sign-in has expired. Connect the account again.');
+  });
+
+  it('when Google refuses but the token still works, it is used one more time', async () => {
+    const id = await connected(a, '2026-10-09T06:05:00Z');
+    await admin.query(`update f_ad_account set provider = 'google' where id = $1`, [id]);
+    const seen: string[] = [];
+    const r = await run(seen, false);
+    expect(r).toMatchObject({ synced: 1, failed: 0 });
+    expect(seen).toEqual(['OLD']);
+  });
+});

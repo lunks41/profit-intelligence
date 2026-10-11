@@ -11,6 +11,9 @@ export interface AdAccountToSync extends ShopScope {
   externalId: string | null;
   /** encrypted platform token; the worker decrypts it and does not log it */
   encryptedAccessToken: string | null;
+  /** encrypted refresh token (Google), and when the access token stops working */
+  encryptedRefreshToken: string | null;
+  tokenExpiresAt: string | null;
   /** set by the sync after decryption; never stored */
   accessToken?: string;
 }
@@ -28,7 +31,8 @@ export async function listAdAccountsForSync(
   return withSystem(db, async (tx) => {
     const res = await tx.execute(sql`
       select a.tenant_id::text as tenant_id, a.shop_id::text as shop_id, a.id::text as id,
-             a.provider, a.name, a.external_id, a.encrypted_access_token
+             a.provider, a.name, a.external_id, a.encrypted_access_token,
+             a.encrypted_refresh_token, to_char(a.token_expires_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') as token_expires_at
         from f_ad_account a join m_shop s on s.id = a.shop_id
        where a.archived_at is null and s.status = 'active' and a.status <> 'disconnected'
          and a.provider in (${sql.join(
@@ -44,6 +48,9 @@ export async function listAdAccountsForSync(
       externalId: x.external_id === null ? null : String(x.external_id),
       encryptedAccessToken:
         x.encrypted_access_token === null ? null : String(x.encrypted_access_token),
+      encryptedRefreshToken:
+        x.encrypted_refresh_token === null ? null : String(x.encrypted_refresh_token),
+      tokenExpiresAt: x.token_expires_at === null ? null : String(x.token_expires_at),
     }));
   });
 }

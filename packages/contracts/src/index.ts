@@ -1086,6 +1086,10 @@ export const adProvidersResponseSchema = z.object({
       name: z.string(),
       available: z.boolean(),
       note: z.string(),
+      /** how the merchant connects it: by signing in to the platform, or typing spend by hand */
+      connectVia: z.enum(['oauth', 'manual']),
+      /** false when the server owner has not added this platform's app credentials yet */
+      configured: z.boolean(),
     }),
   ),
 });
@@ -1098,6 +1102,31 @@ export const createAdAccountBodySchema = z.object({
   externalId: z.string().trim().min(1).max(40).optional(),
   /** platform access token; stored encrypted and never returned */
   accessToken: z.string().trim().min(8).max(2000).optional(),
+});
+
+/** The address to send the merchant to so they can sign in to the platform. */
+export const adConnectStartResponseSchema = z.object({ url: z.string().url() });
+export type AdConnectStartResponse = z.infer<typeof adConnectStartResponseSchema>;
+
+/** Platforms the merchant signed in to and has not yet finished: the ad accounts they can choose from. */
+export const pendingAdConnectionsResponseSchema = z.object({
+  connections: z.array(
+    z.object({
+      id: z.string(),
+      provider: z.enum(['meta', 'google', 'tiktok']),
+      expiresAt: z.string(),
+      accounts: z.array(z.object({ id: z.string(), name: z.string(), currency: z.string() })),
+    }),
+  ),
+});
+export type PendingAdConnectionsResponse = z.infer<typeof pendingAdConnectionsResponseSchema>;
+
+export const connectAdAccountsBodySchema = z.object({
+  accountIds: z
+    .array(z.string().trim().min(1).max(40))
+    .min(1, 'Choose at least one account')
+    .max(20, 'Choose at most 20 accounts')
+    .transform((l) => [...new Set(l)]),
 });
 
 export const adSpendRowSchema = z.object({
@@ -1123,6 +1152,7 @@ export const marketingResponseSchema = z.object({
       name: z.string(),
       currency: z.string(),
       status: z.string(),
+      connectedVia: z.enum(['manual', 'token', 'oauth']),
       lastSyncAt: z.string().nullable(),
       lastError: z.string().nullable(),
     }),

@@ -255,6 +255,7 @@ export async function purgeShopData(
     await tx.execute(sql`delete from o_notification where shop_id = ${scope.shopId}`);
     await tx.execute(sql`delete from o_feedback where shop_id = ${scope.shopId}`);
     await tx.execute(sql`delete from s_subscription where shop_id = ${scope.shopId}`);
+    await tx.execute(sql`delete from f_ad_connection_pending where shop_id = ${scope.shopId}`);
     await tx.delete(fAdSpendDaily).where(eq(fAdSpendDaily.shopId, scope.shopId));
     await tx.delete(fAdAccount).where(eq(fAdAccount.shopId, scope.shopId));
     await tx.delete(fExpenseOverride).where(eq(fExpenseOverride.shopId, scope.shopId));

@@ -913,6 +913,12 @@ export const fAdAccount = pgTable(
     externalId: text('external_id'),
     /** Platform access token, encrypted the same way as the Shopify token. Null for manual entry. */
     encryptedAccessToken: text('encrypted_access_token'),
+    /** Refresh token (Google, encrypted) so the daily job can renew the access token. Null otherwise. */
+    encryptedRefreshToken: text('encrypted_refresh_token'),
+    /** When the access token stops working; null means it does not expire (or is unknown). */
+    tokenExpiresAt: tsz('token_expires_at'),
+    /** manual entry, a token the merchant pasted, or signing in to the platform (OAuth). */
+    connectedVia: text('connected_via').notNull().default('manual'),
     status: text('status').notNull().default('active'),
     lastSyncAt: tsz('last_sync_at'),
     lastError: text('last_error'),
@@ -929,6 +935,7 @@ export const fAdAccount = pgTable(
     unique('uq_f_ad_account_tenant_id_id').on(t.tenantId, t.id),
     check('ck_f_ad_account_name', sql`length(btrim(${t.name})) between 1 and 80`),
     check('ck_f_ad_account_status', sql`${t.status} in ('active', 'error', 'disconnected')`),
+    check('ck_f_ad_account_connected_via', sql`${t.connectedVia} in ('manual', 'token', 'oauth')`),
     uniqueIndex('uq_f_ad_account_name')
       .on(t.shopId, t.provider, sql`lower(${t.name})`)
       .where(sql`${t.archivedAt} is null`),
@@ -1225,5 +1232,40 @@ export const oExchangeRate = pgTable(
     primaryKey({ name: 'pk_o_exchange_rate', columns: [t.quote, t.rateDate] }),
     check('ck_o_exchange_rate_quote', sql`${t.quote} ~ '^[A-Z]{3}$'`),
     check('ck_o_exchange_rate_positive', sql`${t.rate} > 0`),
+  ],
+);
+
+/**
+ * Tokens and visible ad accounts after a merchant signed in to an ad platform, waiting for them to
+ * choose which accounts to use. Lives 30 minutes and is deleted once used.
+ */
+export const fAdConnectionPending = pgTable(
+  'f_ad_connection_pending',
+  {
+    id: uuid('id').notNull().defaultRandom(),
+    tenantId: uuid('tenant_id').notNull(),
+    shopId: uuid('shop_id').notNull(),
+    provider: text('provider').notNull(),
+    encryptedAccessToken: text('encrypted_access_token').notNull(),
+    encryptedRefreshToken: text('encrypted_refresh_token'),
+    tokenExpiresAt: tsz('token_expires_at'),
+    accounts: jsonb('accounts')
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    createdAt: createdAt(),
+    expiresAt: tsz('expires_at').notNull(),
+  },
+  (t) => [
+    primaryKey({ name: 'pk_f_ad_connection_pending', columns: [t.id] }),
+    foreignKey({
+      name: 'fk_f_ad_connection_pending_shop',
+      columns: [t.tenantId, t.shopId],
+      foreignColumns: [mShop.tenantId, mShop.id],
+    }),
+    index('ix_f_ad_connection_pending_shop').on(t.shopId, t.createdAt),
+    check(
+      'ck_f_ad_connection_pending_provider',
+      sql`${t.provider} in ('meta', 'google', 'tiktok')`,
+    ),
   ],
 );

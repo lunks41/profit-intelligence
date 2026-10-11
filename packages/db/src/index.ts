@@ -61,4 +61,5 @@ export * from './monitoring.js';
 export * from './fx.js';
 export * from './alert-emails.js';
 export * from './expense-defaults.js';
+export * from './ad-connections.js';
 export * from './report-data.js';

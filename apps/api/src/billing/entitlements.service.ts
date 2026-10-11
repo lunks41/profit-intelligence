@@ -118,6 +118,18 @@ export class EntitlementsService {
     }
   }
 
+  /** Like assertAdAccount, for connecting several accounts at once. */
+  async assertAdAccounts(scope: Scope, adding: number): Promise<void> {
+    const { entitlements } = await this.plan(scope);
+    const used = await countAdAccounts(this.db, scope);
+    if (used + adding > entitlements.adAccounts) {
+      throw planLimit(
+        `Your plan allows ${entitlements.adAccounts} advertising ${entitlements.adAccounts === 1 ? 'account' : 'accounts'}; you have ${used}.`,
+        planFor((e) => e.adAccounts > entitlements.adAccounts)?.id ?? null,
+      );
+    }
+  }
+
   async assertLeakage(scope: Scope): Promise<void> {
     const { entitlements } = await this.plan(scope);
     if (!entitlements.leakageFindings) {

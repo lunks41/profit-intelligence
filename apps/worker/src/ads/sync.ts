@@ -1,7 +1,15 @@
-import { listAdAccountsForSync, markAdAccountError, upsertAdSpend } from '@pi/db';
+import {
+  listAdAccountsForSync,
+  markAdAccountError,
+  updateAdAccountTokens,
+  upsertAdSpend,
+} from '@pi/db';
 import type { AdAccountToSync, Db, SpendInput } from '@pi/db';
 import { fetchGoogleDaily } from './google.js';
 import { fetchMetaDaily } from './meta.js';
+import { needsRefresh, refreshAccessToken } from './refresh.js';
+import type { RefreshEnv } from './refresh.js';
+import { fetchTikTokDaily } from './tiktok.js';
 
 /**
  * One advertising platform. Providers are added one at a time: implement `fetchDaily`, register it
@@ -43,6 +51,17 @@ export const PROVIDERS: AdProvider[] = [
       );
     },
   },
+  {
+    id: 'tiktok',
+    fetchDaily: (account, range) => {
+      if (!account.accessToken || !account.externalId) {
+        const err = new Error('TikTok account has no token');
+        err.name = 'MissingToken';
+        throw err;
+      }
+      return fetchTikTokDaily(account.externalId, account.accessToken, range);
+    },
+  },
 ];
 
 function safeAdError(providerId: string, e: unknown): string {
@@ -52,6 +71,9 @@ function safeAdError(providerId: string, e: unknown): string {
     GoogleNotConfigured: 'Google Ads is not configured on the server yet.',
     MetaRejected: 'Meta rejected the request. Check the ad account id and token.',
     GoogleRejected: 'Google Ads rejected the request. Check the customer id and token.',
+    TikTokRejected: 'TikTok rejected the request. Connect the account again.',
+    TikTokAccountId: 'The TikTok advertiser id should be numeric.',
+    TokenRefreshFailed: 'The platform sign-in has expired. Connect the account again.',
     MetaAccountId: 'The Meta ad account id should be the numeric id.',
     GoogleAccountId: 'The Google Ads customer id should be numeric.',
   };
@@ -69,8 +91,14 @@ interface Deps {
   providers?: AdProvider[];
   log: { info(msg: string): void; warn(msg: string): void };
   now?: () => Date;
-  /** Decrypts the token stored on the account. Required for Meta and Google. */
+  /** Decrypts the token stored on the account. Required for Meta, Google and TikTok. */
   decrypt?: (value: string) => string;
+  /** Encrypts a renewed token before it is saved. Needed to renew tokens. */
+  encrypt?: (value: string) => string;
+  /** The platform app credentials used to renew tokens (the server environment by default). */
+  env?: RefreshEnv;
+  /** HTTP client for renewing tokens (replaced in tests). */
+  fetchImpl?: typeof fetch;
 }
 
 const DAY = 86_400_000;
@@ -118,6 +146,45 @@ export async function syncAdAccounts(
           'The saved access token could not be read. Connect the account again.',
         );
         continue;
+      }
+    }
+    // Renew a token that is about to end, so the import below does not fail on an hour-old token.
+    if (ready.accessToken && deps.encrypt && deps.decrypt && needsRefresh(account, new Date(now))) {
+      try {
+        const renewed = await refreshAccessToken(
+          account.provider,
+          {
+            accessToken: ready.accessToken,
+            refreshToken: account.encryptedRefreshToken
+              ? deps.decrypt(account.encryptedRefreshToken)
+              : null,
+          },
+          deps.env ?? process.env,
+          deps.fetchImpl ?? fetch,
+          new Date(now),
+        );
+        if (renewed) {
+          await updateAdAccountTokens(deps.db, account, account.accountId, {
+            encryptedAccessToken: deps.encrypt(renewed.accessToken),
+            tokenExpiresAt: renewed.expiresAt,
+          });
+          ready = { ...ready, accessToken: renewed.accessToken };
+        }
+      } catch (e) {
+        const expired =
+          account.tokenExpiresAt !== null && new Date(account.tokenExpiresAt).getTime() <= now;
+        // A token that still works is used one more day; one that has ended needs the merchant to sign in again.
+        if (expired) {
+          failed++;
+          await markAdAccountError(
+            deps.db,
+            account,
+            account.accountId,
+            safeAdError(provider.id, e),
+          );
+          deps.log.warn(`ads: account ${account.accountId} token could not be renewed`);
+          continue;
+        }
       }
     }
     try {

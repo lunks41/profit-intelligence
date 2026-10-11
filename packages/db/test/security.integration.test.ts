@@ -252,6 +252,10 @@ describe('data deletion', () => {
       `insert into f_ad_spend_daily (tenant_id, shop_id, account_id, spend_date, spend, currency, source) values ($1,$2,$3,'2026-09-01',1,'USD','manual')`,
       [t, sh, acct],
     );
+    await exec(
+      `insert into f_ad_connection_pending (tenant_id, shop_id, provider, encrypted_access_token, accounts, expires_at) values ($1,$2,'meta','enc','[]'::jsonb, now() + interval '30 minutes')`,
+      [t, sh],
+    );
     const ex = (
       await exec(
         `insert into o_report_export (tenant_id, shop_id, kind, format, period_from, period_to) values ($1,$2,'products','csv','2026-09-01','2026-09-30') returning id`,

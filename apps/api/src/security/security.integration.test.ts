@@ -145,8 +145,9 @@ function routes(): Route[] {
   return out;
 }
 
-// Controllers that are public on purpose: health, and the webhook endpoint (signed instead).
-const PUBLIC = new Set(['HealthController', 'WebhooksController']);
+// Controllers that are public on purpose: health, the webhook endpoint (signed instead), and the address
+// the ad platforms send the merchant back to (identified by an encrypted, expiring state instead).
+const PUBLIC = new Set(['HealthController', 'WebhooksController', 'MarketingOauthController']);
 
 describe('route inventory', () => {
   it('finds the whole API, so the checks below are not vacuous', () => {

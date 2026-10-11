@@ -143,7 +143,12 @@ await boss.work(MONITOR_QUEUE, { batchSize: 1 }, async () => {
 });
 await boss.schedule(MONITOR_QUEUE, '*/15 * * * *');
 await boss.work(ADS_QUEUE, { batchSize: 1 }, async () => {
-  await syncAdAccounts({ db, log, decrypt: (value) => crypto.decrypt(value) });
+  await syncAdAccounts({
+    db,
+    log,
+    decrypt: (value) => crypto.decrypt(value),
+    encrypt: (value) => crypto.encrypt(value).value,
+  });
 });
 await boss.schedule(ADS_QUEUE, '0 6 * * *');
 // Exchange rates: the ECB publishes around 16:00 CET on working days; check again in the evening.
