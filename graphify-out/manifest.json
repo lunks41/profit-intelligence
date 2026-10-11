@@ -340,16 +340,16 @@
     "hash": "29faa14ff0610db4c12851763efa3d49"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\next-env.d.ts": {
-    "mtime": 1791742821.8472366,
-    "hash": "0e4a65e8b2b9aa3ed0f8957b9406bd41"
+    "mtime": 1791744825.602587,
+    "hash": "c7b887684e81cfa5830eeeb7286485f6"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\next.config.mjs": {
     "mtime": 1791549067.8026998,
     "hash": "f1e84d9d5178cb1b7e3057a208f2f93e"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\app\\layout.tsx": {
-    "mtime": 1791568956.9025774,
-    "hash": "768b6a19b91d1b1d154f42439089a158"
+    "mtime": 1791745179.926904,
+    "hash": "8a4c675314dd8add52a48d8dfb460a24"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\app\\page.tsx": {
     "mtime": 1791573839.9521348,
@@ -555,6 +555,10 @@
     "mtime": 1791568956.9212139,
     "hash": "02bdf94575160ee8bc737b4d32e7f14e"
   },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\ExpensesSummaryCard.tsx": {
+    "mtime": 1791745152.6593413,
+    "hash": "653e2bf32b46f4cf42f5dee190d6df21"
+  },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\KpiCards.tsx": {
     "mtime": 1791663863.2454917,
     "hash": "411859ea2047eac9afa47880d0dca788"
@@ -572,8 +576,8 @@
     "hash": "449cf3502c95af2b9292cfea8ae8c38a"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\OverviewView.tsx": {
-    "mtime": 1791742671.440262,
-    "hash": "a4e76c069dded16542d84274a8dce71e"
+    "mtime": 1791745153.1270602,
+    "hash": "0bad767a702f835febb47d35858e281d"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\ProfitBreakdown.tsx": {
     "mtime": 1791663860.2673156,
@@ -1636,8 +1640,8 @@
     "hash": "b77e287a1f70ba45f37818e567a623d7"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\roadmap.md": {
-    "mtime": 1791744618.2755759,
-    "hash": "bdcdfdfa8f5cbeeeb16247f333cb0ffb"
+    "mtime": 1791745240.002023,
+    "hash": "6e3715b045bcccee7639592bf019de79"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\architecture\\billing.md": {
     "mtime": 1791549276.7097468,

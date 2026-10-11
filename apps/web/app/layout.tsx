@@ -14,6 +14,9 @@ const NAV = [
   ['/settings', 'Settings'],
 ] as const;
 
+// the first link is the app's home: the app name in Shopify's sidebar opens it, and it is not listed twice
+const HOME = { rel: 'home' } as Record<string, string>;
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
@@ -26,7 +29,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         <s-app-nav>
           {NAV.map(([href, label]) => (
-            <s-link key={href} href={href}>
+            <s-link key={href} href={href} {...(href === '/' ? HOME : {})}>
               {label}
             </s-link>
           ))}
