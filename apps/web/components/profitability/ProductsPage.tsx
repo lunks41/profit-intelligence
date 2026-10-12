@@ -1,22 +1,22 @@
 'use client';
 
-import { QualifiersBanner } from '../common';
+import { QualifiersBanner, StatCard, StatGrid } from '../common';
+import { Modal } from '../common/Modal';
 import { Sparkline } from '../common/sparkline';
 import { ProductInsights } from './ProductInsights';
+import { BulkCostTools } from './BulkCostDialog';
 import { RankCard } from './RankCard';
 import { FilterSearch, ShowDropdown } from '../dropdown';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import type { PeriodPreset, ProductDetailResponse, ProductListResponse } from '@pi/contracts';
-import { formatMoney, formatPercent, longDate, periodLabel } from '../../lib/format';
+import { formatMoney, formatPercent, longDate, periodLabel, spent } from '../../lib/format';
 import { buildListQuery } from '../../lib/query';
 import { FilterBar, type Filters } from '../overview/OverviewView';
 import { ErrorBanner, Loading, QualityBadge, RuleNote, SortControls, useApi } from './shared';
 import { readParam } from '../../lib/url-params';
 import { CostsTab } from '../settings/CostsTab';
-import { FormError, useAction } from '../settings/shared';
-import { downloadText } from '../../lib/import-summary';
-import { apiGet } from '../../lib/api';
 
 type Sort = 'profit' | 'revenue' | 'margin' | 'units' | 'cogs' | 'refunds' | 'title';
 const SORTS: Array<{ value: Sort; label: string }> = [
@@ -29,41 +29,47 @@ const SORTS: Array<{ value: Sort; label: string }> = [
   { value: 'title', label: 'Name' },
 ];
 
+const STATUS_FILTERS = ['all', 'missing_cost', 'estimated_cost', 'loss', 'high_refunds'] as const;
+
 const today = () => new Date().toISOString().slice(0, 10);
 
 /**
- * The Products screen, in one view: the table first. Product costs are set from here too, without leaving
- * the page: a row's Set cost button, Import costs (CSV), Download template and Set product costs all open the
- * cost tools in a panel above the table, and closing it returns to the table.
+ * The Products screen. The product table is the page: figures first, then the table. Below it the top-selling
+ * and top-returned products, what needs attention, and (collapsed) how the numbers add up. Product costs are set
+ * in two dialogs opened from here: a row's Set cost (one product) and Bulk Product Cost (import, bulk edit, export).
  */
 export function ProductsPage() {
   const [filters, setFilters] = useState<Filters>({
     preset: '30d' as PeriodPreset,
     from: today(),
     to: today(),
-    currency: null,
   });
   const [sort, setSort] = useState<Sort>('profit');
   const [dir, setDir] = useState<'asc' | 'desc'>('desc');
   const [filter, setFilter] = useState('all');
   const [view, setView] = useState<'products' | 'variants'>('products');
   useEffect(() => {
-    const f = readParam('filter', ['all', 'missing_cost', 'loss'] as const);
+    const f = readParam('filter', STATUS_FILTERS);
     if (f) setFilter(f);
   }, []);
   const [search, setSearch] = useState('');
   const [applied, setApplied] = useState('');
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<string | null>(null);
-  // the cost tools: closed until asked for. `n` makes the panel start afresh for each request.
-  const [costs, setCosts] = useState<{ search: string; n: number } | null>(null);
+  // the cost dialogs: closed until asked for. `n` makes the single-product dialog start afresh for each request.
+  const [dialog, setDialog] = useState<
+    { kind: 'single'; search: string; n: number } | { kind: 'bulk' } | null
+  >(null);
   const [saved, setSaved] = useState(0);
-  const template = useAction();
   useEffect(() => {
-    // old links (/products?tab=costs...) open the cost tools straight away
-    if (readParam('tab', ['profit', 'costs'] as const) === 'costs') setCosts({ search: '', n: 1 });
+    // old links (/products?tab=costs...) open the cost dialog straight away
+    if (readParam('tab', ['profit', 'costs'] as const) === 'costs') {
+      setDialog({ kind: 'single', search: '', n: 1 });
+    }
   }, []);
-  const openCosts = (search = '') => setCosts((c) => ({ search, n: (c?.n ?? 0) + 1 }));
+  const closeDialog = useCallback(() => setDialog(null), []);
+  const setCost = (search = '') =>
+    setDialog((d) => ({ kind: 'single', search, n: (d?.kind === 'single' ? d.n : 0) + 1 }));
 
   // Wait for the typing to pause before searching.
   useEffect(() => {
@@ -85,10 +91,10 @@ export function ProductsPage() {
 
   return (
     <>
+      {data && <SummaryCards data={data} />}
       <FilterBar
         chip
         filters={filters}
-        currencies={[]}
         onChange={(f) => {
           setFilters(f);
           setPage(1);
@@ -115,12 +121,14 @@ export function ProductsPage() {
         />
         <ShowDropdown
           chip
-          label="Show"
+          label="Status"
           value={filter}
           options={[
             { value: 'all', label: 'All products' },
             { value: 'missing_cost', label: 'Cost missing' },
+            { value: 'estimated_cost', label: 'Cost estimated' },
             { value: 'loss', label: 'Losing money' },
+            { value: 'high_refunds', label: 'High refund rate' },
           ]}
           onChange={(v) => {
             setFilter(v);
@@ -138,62 +146,10 @@ export function ProductsPage() {
             setPage(1);
           }}
         />
-        <s-button onClick={() => openCosts()}>Set product costs</s-button>
-        <s-button onClick={() => openCosts()}>Import costs (CSV)</s-button>
-        <s-button
-          variant="tertiary"
-          disabled={template.busy}
-          onClick={async () => {
-            const file = await template.run(() =>
-              apiGet<{ csv: string }>('/settings/costs/export'),
-            );
-            if (file) downloadText('product-costs-template.csv', file.csv);
-          }}
-        >
-          Download template
+        <s-button variant="primary" onClick={() => setDialog({ kind: 'bulk' })}>
+          Bulk Product Cost
         </s-button>
       </FilterBar>
-      <FormError message={template.error} />
-
-      {costs && (
-        <s-stack gap="small">
-          <s-stack direction="inline" gap="base" alignItems="center" justifyContent="space-between">
-            <s-text type="strong">Set product costs</s-text>
-            <s-button variant="tertiary" onClick={() => setCosts(null)}>
-              Close
-            </s-button>
-          </s-stack>
-          <CostsTab
-            key={costs.n}
-            initialSearch={costs.search}
-            onChanged={() => setSaved((v) => v + 1)}
-          />
-        </s-stack>
-      )}
-
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 21.25rem), 1fr))',
-          gap: '1rem',
-          alignItems: 'stretch',
-        }}
-      >
-        <RankCard
-          title="Top selling products"
-          mode="selling"
-          query={buildListQuery(filters, {})}
-          onOpen={setSelected}
-          headerRight={<s-text color="subdued">By units sold</s-text>}
-        />
-        <RankCard
-          title="Top returned products"
-          mode="returned"
-          query={buildListQuery(filters, {})}
-          onOpen={setSelected}
-          headerRight={<s-text color="subdued">By amount refunded</s-text>}
-        />
-      </div>
 
       {error && <ErrorBanner message={error} onRetry={() => void reload()} />}
       {loading && !data && <Loading what="products" />}
@@ -204,23 +160,95 @@ export function ProductsPage() {
         >
           <ProductsTable
             data={data}
+            filters={filters}
             onOpen={setSelected}
             onPage={setPage}
-            onSetCost={(title) => openCosts(title)}
+            onSetCost={setCost}
           />
         </div>
+      )}
+
+      {dialog?.kind === 'single' && (
+        <Modal heading="Set product cost" onClose={closeDialog}>
+          <CostsTab
+            key={dialog.n}
+            initialSearch={dialog.search}
+            onChanged={() => setSaved((v) => v + 1)}
+          />
+        </Modal>
+      )}
+      {dialog?.kind === 'bulk' && (
+        <Modal heading="Bulk Product Cost" onClose={closeDialog}>
+          <BulkCostTools onSaved={() => setSaved((v) => v + 1)} />
+        </Modal>
       )}
     </>
   );
 }
 
+/** The four figures that say how the products are doing: sales, profit, and what is missing or losing money. */
+function SummaryCards({ data }: { data: ProductListResponse }) {
+  const s = data.summary;
+  const cur = data.currency;
+  return (
+    <StatGrid>
+      <StatCard
+        label="Net sales"
+        value={formatMoney(s.netSales, cur)}
+        note={`${s.products} products, ${periodLabel(data.period.from, data.period.to)}`}
+      />
+      <StatCard
+        label="Contribution profit"
+        value={formatMoney(s.contributionProfit, cur)}
+        note="Of the products below"
+      />
+      <StatCard
+        label="Missing costs"
+        value={`${s.productsMissingCost} ${s.productsMissingCost === 1 ? 'product' : 'products'}`}
+        note={
+          s.productsMissingCost > 0 ? 'Profit is overstated for these' : 'Every product has a cost'
+        }
+      />
+      <StatCard
+        label="Loss-making products"
+        value={`${s.productsLosingMoney} ${s.productsLosingMoney === 1 ? 'product' : 'products'}`}
+        note={s.productsLosingMoney > 0 ? 'They earned less than they cost' : 'None lost money'}
+      />
+    </StatGrid>
+  );
+}
+
+/** A section that stays closed until it is wanted. */
+function Expandable({ title, children }: { title: string; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <s-section>
+      <s-stack gap="base">
+        <s-stack direction="inline" justifyContent="space-between" alignItems="center" gap="base">
+          <s-heading>{title}</s-heading>
+          <s-button
+            variant="tertiary"
+            accessibilityLabel={`${open ? 'Hide' : 'Show'} ${title}`}
+            onClick={() => setOpen((v) => !v)}
+          >
+            {open ? 'Hide' : 'Show'}
+          </s-button>
+        </s-stack>
+        {open && children}
+      </s-stack>
+    </s-section>
+  );
+}
+
 function ProductsTable({
   data,
+  filters,
   onOpen,
   onPage,
   onSetCost,
 }: {
   data: ProductListResponse;
+  filters: Filters;
   onOpen: (key: string) => void;
   onPage: (p: number) => void;
   onSetCost: (title: string) => void;
@@ -228,17 +256,10 @@ function ProductsTable({
   const cur = data.currency;
   const rec = data.reconciliation;
   const un = rec.unallocated;
+  const query = buildListQuery(filters, {});
   return (
     <>
       <QualifiersBanner qualifiers={rec.qualifiers} />
-      {data.insights.length > 0 && (
-        <s-text>
-          <s-link href="#product-insights">
-            {data.insights.length} {data.insights.length === 1 ? 'thing' : 'things'} to improve
-          </s-link>{' '}
-          <s-text color="subdued">({data.insights.map((i) => i.title).join('; ')})</s-text>
-        </s-text>
-      )}
       <s-section
         padding="none"
         heading={`Products, ${periodLabel(data.period.from, data.period.to)}`}
@@ -260,14 +281,14 @@ function ProductsTable({
                 <s-table-header listSlot="primary">Product</s-table-header>
                 <s-table-header>Variant</s-table-header>
                 <s-table-header>SKU</s-table-header>
-                <s-table-header format="numeric">Units</s-table-header>
+                <s-table-header format="numeric">Units sold</s-table-header>
                 <s-table-header format="numeric">Net sales</s-table-header>
                 <s-table-header format="numeric">Product cost</s-table-header>
-                <s-table-header format="numeric">Profit</s-table-header>
+                <s-table-header format="numeric">Contribution profit</s-table-header>
                 <s-table-header format="numeric">Margin</s-table-header>
                 <s-table-header>Profit trend</s-table-header>
-                <s-table-header>Cost data</s-table-header>
-                <s-table-header>Details</s-table-header>
+                <s-table-header>Cost status</s-table-header>
+                <s-table-header>Actions</s-table-header>
               </s-table-header-row>
               <s-table-body>
                 {data.rows.map((r) => (
@@ -278,7 +299,7 @@ function ProductsTable({
                     <s-table-cell>{r.units}</s-table-cell>
                     <s-table-cell>{formatMoney(r.netSales, cur)}</s-table-cell>
                     <s-table-cell>
-                      {r.costQuality === 'missing' ? 'Missing' : formatMoney(r.cogs, cur)}
+                      {r.costQuality === 'missing' ? 'Missing' : formatMoney(spent(r.cogs), cur)}
                     </s-table-cell>
                     <s-table-cell>{formatMoney(r.profit, cur)}</s-table-cell>
                     <s-table-cell>
@@ -294,34 +315,71 @@ function ProductsTable({
                       </div>
                     </s-table-cell>
                     <s-table-cell>
-                      <s-stack direction="inline" gap="small" alignItems="center">
-                        <QualityBadge quality={r.costQuality} />
-                        {(r.costQuality === 'missing' || r.costQuality === 'estimated') && (
-                          <s-button variant="tertiary" onClick={() => onSetCost(r.title)}>
-                            Set cost
-                          </s-button>
-                        )}
-                      </s-stack>
+                      <QualityBadge quality={r.costQuality} />
                     </s-table-cell>
                     <s-table-cell>
-                      <s-button
-                        variant="tertiary"
-                        accessibilityLabel={`Show orders for ${r.title}`}
-                        onClick={() => onOpen(r.productKey)}
-                      >
-                        Orders
-                      </s-button>
+                      <s-stack direction="inline" gap="small-300" alignItems="center">
+                        <s-button
+                          variant="tertiary"
+                          accessibilityLabel={`Set cost for ${r.title}`}
+                          onClick={() => onSetCost(r.title)}
+                        >
+                          Set cost
+                        </s-button>
+                        <s-button
+                          variant="tertiary"
+                          accessibilityLabel={`Show orders for ${r.title}`}
+                          onClick={() => onOpen(r.productKey)}
+                        >
+                          Orders
+                        </s-button>
+                      </s-stack>
                     </s-table-cell>
                   </s-table-row>
                 ))}
               </s-table-body>
             </s-table>
+            <s-box paddingInline="base" paddingBlockEnd="base">
+              <s-text color="subdued">
+                Product cost is money spent, shown as a positive amount and subtracted from net
+                sales to give contribution profit.
+              </s-text>
+            </s-box>
           </s-stack>
         )}
       </s-section>
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 21.25rem), 1fr))',
+          gap: '1rem',
+          alignItems: 'stretch',
+        }}
+      >
+        <RankCard
+          title="Top selling products"
+          mode="selling"
+          query={query}
+          onOpen={onOpen}
+          headerRight={
+            <s-text color="subdued">{periodLabel(data.period.from, data.period.to)}</s-text>
+          }
+        />
+        <RankCard
+          title="Top returned products"
+          mode="returned"
+          query={query}
+          onOpen={onOpen}
+          headerRight={
+            <s-text color="subdued">{periodLabel(data.period.from, data.period.to)}</s-text>
+          }
+        />
+      </div>
+
       <ProductInsights insights={data.insights} currency={cur} />
 
-      <s-section heading="How products add up to your profit">
+      <Expandable title="Financial reconciliation and calculation rules">
         <s-stack gap="small-300">
           <s-text color="subdued">
             Sales, discounts and refunds are split over an order&apos;s products, and each product
@@ -332,19 +390,39 @@ function ProductsTable({
           <Line label="All products" value={formatMoney(rec.productProfit, cur)} />
           <Line label="Shipping charged" value={formatMoney(un.shippingRevenue, cur)} />
           <Line label="Shipping refunded" value={formatMoney(un.shippingRefund, cur)} />
-          <Line label="Payment fees" value={formatMoney(un.paymentFees, cur)} />
-          <Line label="Shipping cost" value={formatMoney(un.shippingCost, cur)} />
+          <Line
+            label="Payment fees"
+            value={
+              isUnknown(rec.qualifiers, 'Payment fees')
+                ? 'Missing'
+                : formatMoney(spent(un.paymentFees), cur)
+            }
+          />
+          <Line
+            label="Shipping cost"
+            value={
+              isUnknown(rec.qualifiers, 'Shipping cost')
+                ? 'Missing'
+                : formatMoney(spent(un.shippingCost), cur)
+            }
+          />
           <Line label="Contribution profit" value={formatMoney(rec.total, cur)} strong />
           <s-text color="subdued">
             {rec.matches
               ? `Matches the Overview figure (${formatMoney(rec.dashboardContributionProfit, cur)}).`
               : `Does not match the Overview figure (${formatMoney(rec.dashboardContributionProfit, cur)}). Please report this.`}
           </s-text>
+          <s-text type="strong">How this is calculated</s-text>
+          <s-text color="subdued">{data.rule}</s-text>
         </s-stack>
-      </s-section>
-      <RuleNote text={data.rule} />
+      </Expandable>
     </>
   );
+}
+
+/** A cost line the profit leaves out ("Payment fees are missing for ...") is Missing, never $0.00. */
+function isUnknown(qualifiers: string[], word: string): boolean {
+  return qualifiers.some((q) => q.startsWith(word) && /missing/i.test(q));
 }
 
 function Line({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
@@ -388,7 +466,10 @@ function ProductDetail({
               />
               <Line label="Discounts" value={formatMoney(data.product.discounts, data.currency)} />
               <Line label="Refunds" value={formatMoney(data.product.refunds, data.currency)} />
-              <Line label="Product cost" value={formatMoney(data.product.cogs, data.currency)} />
+              <Line
+                label="Product cost"
+                value={formatMoney(spent(data.product.cogs), data.currency)}
+              />
               <Line label="Profit" value={formatMoney(data.product.profit, data.currency)} strong />
               <QualityBadge quality={data.product.costQuality} />
             </s-stack>
@@ -412,7 +493,7 @@ function ProductDetail({
                       <s-table-cell>{v.sku ?? '—'}</s-table-cell>
                       <s-table-cell>{v.units}</s-table-cell>
                       <s-table-cell>{formatMoney(v.netSales, data.currency)}</s-table-cell>
-                      <s-table-cell>{formatMoney(v.cogs, data.currency)}</s-table-cell>
+                      <s-table-cell>{formatMoney(spent(v.cogs), data.currency)}</s-table-cell>
                       <s-table-cell>{formatMoney(v.profit, data.currency)}</s-table-cell>
                       <s-table-cell>
                         <QualityBadge quality={v.costQuality} />

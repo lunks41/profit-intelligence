@@ -24,7 +24,6 @@ export function MarketingPage() {
     preset: '30d' as PeriodPreset,
     from: today(),
     to: today(),
-    currency: null,
   });
   const providers = useApi<AdProvidersResponse>('/marketing/providers');
   const [version, setVersion] = useState(0);
@@ -34,7 +33,7 @@ export function MarketingPage() {
 
   return (
     <>
-      <FilterBar chip filters={filters} currencies={[]} onChange={setFilters} />
+      <FilterBar chip filters={filters} onChange={setFilters} />
       {error && <ErrorBanner message={error} onRetry={() => void reload()} />}
       {loading && !data && <Loading what="marketing" />}
       {data && (

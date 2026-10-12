@@ -629,6 +629,43 @@ describe('product rows show a trend, and the page says what is missing', () => {
     expect((await api(`/products?${PERIOD}&sort=nonsense`)).res.statusCode).toBe(400);
   });
 
+  it('the four headline figures are worked out from every product, whatever the page or the filter', async () => {
+    await calculateAll(a);
+    const all = await allPages(`/products?${PERIOD}`, parseProducts);
+    const s = all.last.summary;
+    expect(s.products).toBe(all.rows.length);
+    expect(cents(s.netSales)).toBe(all.rows.reduce((t, r) => t + cents(r.netSales), 0));
+    expect(cents(s.contributionProfit)).toBe(cents(all.last.reconciliation.productProfit));
+    expect(s.productsMissingCost).toBe(all.rows.filter((r) => r.missingCostLines > 0).length);
+    expect(s.productsLosingMoney).toBe(
+      all.rows.filter((r) => cents(r.profit) < 0 && r.missingCostLines === 0).length,
+    );
+    // a filter or a small page never changes them
+    const small = productListResponseSchema.parse(
+      (await api(`/products?${PERIOD}&pageSize=1&filter=loss`)).body,
+    );
+    expect(small.summary).toEqual(s);
+  });
+
+  it('can be filtered by estimated cost and by a high refund rate', async () => {
+    await calculateAll(a);
+    const list = async (filter: string) =>
+      productListResponseSchema.parse(
+        (await api(`/products?${PERIOD}&filter=${filter}&pageSize=100`)).body,
+      ).rows;
+    const estimated = await list('estimated_cost');
+    for (const r of estimated) {
+      expect(r.costQuality).toBe('estimated');
+      expect(r.missingCostLines).toBe(0);
+    }
+    const refunded = await list('high_refunds');
+    for (const r of refunded) {
+      expect(r.orders).toBeGreaterThanOrEqual(3);
+      expect(-cents(r.refunds) / cents(r.grossSales)).toBeGreaterThanOrEqual(0.15);
+    }
+    expect((await api(`/products?${PERIOD}&filter=nonsense`)).res.statusCode).toBe(400);
+  });
+
   it('another shop gets findings of its own, none when it sold nothing', async () => {
     await calculateAll(a);
     const theirs = productListResponseSchema.parse(

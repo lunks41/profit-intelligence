@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { OverviewResponse, SessionResponse } from '@pi/contracts';
 import { apiGet, ApiRequestError } from '../../lib/api';
-import { buildListQuery, buildQuery, readSavedCurrency, saveCurrency } from '../../lib/query';
+import { buildListQuery, buildQuery } from '../../lib/query';
 import { useApi } from '../profitability/shared';
 import { SyncNotice } from '../sync/SyncNotice';
 import { SyncSection } from '../sync/SyncSection';
@@ -21,17 +21,13 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 /** The period of the figures on screen, for the lists loaded beside them (never the filter being typed). */
 const detailQuery = (d: OverviewResponse) =>
-  buildListQuery(
-    { preset: d.period.preset, from: d.period.from, to: d.period.to, currency: null },
-    {},
-  );
+  buildListQuery({ preset: d.period.preset, from: d.period.from, to: d.period.to }, {});
 
 export function OverviewPage() {
   const [filters, setFilters] = useState<Filters>({
     preset: '30d',
     from: today(),
     to: today(),
-    currency: null,
   });
   const [data, setData] = useState<OverviewResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -40,11 +36,6 @@ export function OverviewPage() {
   const latest = useRef(0);
   const session = useApi<SessionResponse>('/session');
   const sync = useSyncStatus();
-
-  useEffect(() => {
-    const saved = readSavedCurrency();
-    if (saved) setFilters((f) => ({ ...f, currency: saved }));
-  }, []);
 
   const load = useCallback(async (f: Filters) => {
     const ticket = ++latest.current;
@@ -74,7 +65,6 @@ export function OverviewPage() {
   }, [filters, load]);
 
   function change(next: Filters) {
-    if (next.currency && next.currency !== filters.currency) saveCurrency(next.currency);
     setFilters(next);
   }
 
@@ -84,13 +74,11 @@ export function OverviewPage() {
         storeName={session.data?.shop.name ?? null}
         period={data ? data.period : null}
         currency={data ? data.currency.code : null}
-        currencies={data?.currency.available ?? []}
         updatedAt={updatedAt}
         freshness={data ? describeFreshness(data.freshness, data.period, new Date()) : null}
         loading={loading}
         preset={filters.preset}
         onPreset={(preset) => change({ ...filters, preset })}
-        onCurrency={(currency) => change({ ...filters, currency })}
         onRefresh={() => void load(filters)}
       />
       {error && (

@@ -69,7 +69,6 @@ function Preview({ onQueued }: { onQueued: () => void }) {
     preset: '30d' as PeriodPreset,
     from: today(),
     to: today(),
-    currency: null,
   });
   const [kind, setKind] = useState<(typeof REPORTS)[number]['id']>('profit_loss');
   const download = useAction();
@@ -114,7 +113,7 @@ function Preview({ onQueued }: { onQueued: () => void }) {
 
   return (
     <>
-      <FilterBar chip filters={filters} currencies={[]} onChange={setFilters}>
+      <FilterBar chip filters={filters} onChange={setFilters}>
         <ReportDropdown chip value={kind} onChange={(v) => setKind(v as typeof kind)} />
         {lists && (
           <FilterSearch

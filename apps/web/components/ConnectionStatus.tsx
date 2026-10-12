@@ -55,6 +55,23 @@ export function ConnectionStatus({ setup = false }: { setup?: boolean }) {
 
   // The store name, period and currency are in the dashboard header; there is no "connected"
   // banner. The setup checklist is only on Overview, while a required step is still open.
-  if (!setup) return null;
-  return <GetStarted steps={state.session.onboarding.steps} />;
+  // Everything is reported in USD. A store that sells in another currency is told how that is handled: its
+  // amounts are converted before profit is worked out, so costs, rules and expenses are entered in USD.
+  const store = state.session.shop.currency;
+  return (
+    <>
+      {store !== 'USD' && (
+        <Notice>
+          <s-text type="strong">This store sells in {store}.</s-text>
+          <s-text>
+            Every amount is shown in USD: Shopify&apos;s {store} amounts are converted with the rate
+            of each day, and an order on a day with no rate is left out. Enter costs, rules and
+            expenses in USD.
+          </s-text>
+          <s-link href="/settings?tab=currency">How the conversion works</s-link>
+        </Notice>
+      )}
+      {setup && <GetStarted steps={state.session.onboarding.steps} />}
+    </>
+  );
 }

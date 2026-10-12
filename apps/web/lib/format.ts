@@ -14,6 +14,15 @@ export function formatMoney(amount: string | null | undefined, currency: string)
   }).format(Object.is(n, -0) ? 0 : n);
 }
 
+/**
+ * The ledger keeps a cost as a negative amount (it reduces profit). A merchant reads a cost as money spent, so a
+ * cost is shown as a positive amount and the screen says it is subtracted.
+ */
+export function spent(amount: string | null | undefined): string | null {
+  if (amount === null || amount === undefined) return null;
+  return amount.startsWith('-') ? amount.slice(1) : amount;
+}
+
 /** Whole-unit money for tight spaces (axis labels): 12.3K, 1.2M. */
 export function formatMoneyCompact(amount: string | number, currency: string): string {
   const n = Number(amount);

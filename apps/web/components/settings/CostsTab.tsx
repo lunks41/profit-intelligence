@@ -5,7 +5,7 @@ import { Dropdown, ShowDropdown } from '../dropdown';
 import { useEffect, useState } from 'react';
 import type { CostHistoryResponse, CostListResponse, CostRow } from '@pi/contracts';
 import { apiDelete, apiGet, apiPost, apiPut } from '../../lib/api';
-import { downloadText, importSummaryCsv } from '../../lib/import-summary';
+
 import { formatMoney, longDate } from '../../lib/format';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormError, Saved, isAmount, todayLocal, useAction } from './shared';
@@ -194,8 +194,6 @@ export function CostsTab({
         </s-stack>
       </s-section>
 
-      <CostFileTools onSaved={saved} />
-
       {selected && data && (
         <CostEditor
           row={selected}
@@ -205,196 +203,6 @@ export function CostsTab({
         />
       )}
     </>
-  );
-}
-
-function CostFileTools({ onSaved }: { onSaved: () => void }) {
-  const [csv, setCsv] = useState('');
-  const [preview, setPreview] = useState<{
-    matched: number;
-    skipped: number;
-    invalid: number;
-    messages: string[];
-  } | null>(null);
-  const [by, setBy] = useState<'vendor' | 'product' | 'collection' | 'variants'>('vendor');
-  const [value, setValue] = useState('');
-  const [amount, setAmount] = useState('');
-  const [from, setFrom] = useState(todayLocal());
-  const [touched, setTouched] = useState(false);
-  const { busy, error, run } = useAction();
-  const amountOk = isAmount(amount);
-  const dateOk = /^\d{4}-\d{2}-\d{2}$/.test(from) && from <= todayLocal();
-
-  async function previewCsv() {
-    if (!csv.trim()) return;
-    const result = await run(() =>
-      apiPost<{ matched: number; skipped: number; invalid: number; messages: string[] }>(
-        '/settings/costs/import',
-        { csv, preview: true },
-      ),
-    );
-    if (result) setPreview(result);
-  }
-
-  async function importCsv() {
-    if (!csv.trim()) return;
-    if (await run(() => apiPost('/settings/costs/import', { csv }))) {
-      setCsv('');
-      setPreview(null);
-      onSaved();
-    }
-  }
-
-  async function exportCsv() {
-    const file = await run(() => apiGet<{ csv: string }>('/settings/costs/export'));
-    if (!file) return;
-    const url = URL.createObjectURL(new Blob([file.csv], { type: 'text/csv' }));
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'product-costs.csv';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 10_000);
-  }
-
-  async function bulk() {
-    setTouched(true);
-    if (!amountOk || !dateOk || !value.trim()) return;
-    if (
-      await run(() =>
-        apiPost('/settings/costs/bulk', {
-          amount: amount.trim(),
-          effectiveFrom: from,
-          by,
-          value: value.trim(),
-        }),
-      )
-    ) {
-      setAmount('');
-      setValue('');
-      setTouched(false);
-      onSaved();
-    }
-  }
-
-  const valueLabel =
-    by === 'vendor'
-      ? 'Vendor'
-      : by === 'product'
-        ? 'Product name or id'
-        : by === 'collection'
-          ? 'Collection'
-          : 'SKUs or variant ids';
-
-  return (
-    <s-section heading="Import, export and bulk edit">
-      <s-stack gap="base">
-        <s-text color="subdued">
-          Export the catalogue, fill in the cost column, and import it. A row with no cost is left
-          alone. Import matches a variant id first, then a SKU. Bulk edit sets one cost on every
-          variant of a vendor, a product, a collection, or a list of SKUs.
-        </s-text>
-        <s-text-area
-          label="CSV"
-          value={csv}
-          rows={4}
-          onInput={(e) => {
-            setCsv(e.currentTarget.value);
-            setPreview(null);
-          }}
-        />
-        <FormError message={error} />
-        {preview && (
-          <s-banner tone={preview.invalid > 0 ? 'warning' : 'info'} heading="Import preview">
-            <s-stack gap="small-300">
-              <s-text>
-                {preview.matched} matched, {preview.skipped} skipped, {preview.invalid} with a
-                problem.
-              </s-text>
-              {preview.messages.map((m) => (
-                <s-text key={m} color="subdued">
-                  {m}
-                </s-text>
-              ))}
-              <div>
-                <s-button
-                  variant="tertiary"
-                  onClick={() =>
-                    downloadText(
-                      'import-summary.csv',
-                      importSummaryCsv('Product costs', preview, new Date()),
-                    )
-                  }
-                >
-                  Download summary
-                </s-button>
-              </div>
-            </s-stack>
-          </s-banner>
-        )}
-        <s-stack direction="inline" gap="base">
-          <s-button disabled={busy || !csv.trim()} onClick={() => void previewCsv()}>
-            Preview
-          </s-button>
-          <s-button
-            variant="primary"
-            disabled={
-              busy || !csv.trim() || !preview || preview.invalid > 0 || preview.matched === 0
-            }
-            onClick={() => void importCsv()}
-          >
-            Import CSV
-          </s-button>
-          <s-button variant="tertiary" disabled={busy} onClick={() => void exportCsv()}>
-            Export CSV
-          </s-button>
-        </s-stack>
-        <s-text type="strong">Set one cost on many products</s-text>
-        <s-grid
-          gridTemplateColumns="repeat(auto-fit, minmax(10.625rem, 1fr))"
-          gap="base"
-          alignItems="end"
-        >
-          <Dropdown
-            label="Apply to"
-            value={by}
-            options={[
-              { value: 'vendor', label: 'A vendor' },
-              { value: 'product', label: 'One product' },
-              { value: 'collection', label: 'A collection' },
-              { value: 'variants', label: 'SKUs or variant ids' },
-            ]}
-            onChange={(v) => setBy(v as typeof by)}
-          />
-          <s-text-field
-            label={valueLabel}
-            value={value}
-            placeholder={by === 'variants' ? 'TEE-1, HAT-2' : ''}
-            error={touched && !value.trim() ? 'Enter a value' : undefined}
-            onInput={(e) => setValue(e.currentTarget.value)}
-          />
-          <s-text-field
-            label="Cost"
-            value={amount}
-            placeholder="4.50"
-            error={touched && !amountOk ? 'Enter a number' : undefined}
-            onInput={(e) => setAmount(e.currentTarget.value)}
-          />
-          <s-date-field
-            label="Applies from"
-            value={from}
-            error={touched && !dateOk ? 'Choose a date that is not in the future' : undefined}
-            onChange={(e) => setFrom(e.currentTarget.value)}
-          />
-        </s-grid>
-        <div>
-          <s-button variant="primary" disabled={busy} onClick={() => void bulk()}>
-            Apply cost
-          </s-button>
-        </div>
-      </s-stack>
-    </s-section>
   );
 }
 
@@ -487,13 +295,29 @@ function CostEditor({
             ? ` · Shopify cost ${formatMoney(row.shopifyCost, currency)}`
             : ''}
         </s-text>
+        <s-banner
+          tone={row.merchantCost ? 'info' : row.quality === 'estimated' ? 'warning' : 'critical'}
+          heading={
+            row.merchantCost
+              ? `Current cost ${formatMoney(row.merchantCost.amount, currency)} (entered by you)`
+              : row.quality === 'estimated'
+                ? 'No cost entered: Shopify\u2019s cost is used as an estimate'
+                : 'No cost yet: profit for this product is overstated'
+          }
+        >
+          <s-paragraph>
+            {row.merchantCost
+              ? `Applies from ${longDate(row.merchantCost.effectiveFrom)}. Saving a new cost adds it to the history from the date you choose; it never rewrites earlier orders.`
+              : 'A missing cost is never treated as zero. Enter the cost per unit in US dollars (USD).'}
+          </s-paragraph>
+        </s-banner>
         <s-grid
           gridTemplateColumns="repeat(auto-fit, minmax(10.625rem, 1fr))"
           gap="base"
           alignItems="end"
         >
           <s-text-field
-            label={`Cost per unit (${currency})`}
+            label="Cost per unit (USD)"
             value={amount}
             error={touched && !amountOk ? 'Enter a number such as 12.50' : undefined}
             onInput={(e) => setAmount(e.currentTarget.value)}

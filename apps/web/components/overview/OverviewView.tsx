@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import type { OverviewResponse, PeriodPreset } from '@pi/contracts';
 import { describeFreshness } from '../../lib/freshness';
 import { periodLabel } from '../../lib/format';
-import { CurrencyDropdown, PeriodDropdown } from '../dropdown';
+import { PeriodDropdown } from '../dropdown';
 import { CostBreakdownCard } from './CostBreakdownCard';
 import { DataQualityCard } from './DataQualityCard';
 import { MarketingSummaryCard } from '../marketing/MarketingSummaryCard';
@@ -18,18 +18,15 @@ export interface Filters {
   preset: PeriodPreset;
   from: string;
   to: string;
-  currency: string | null;
 }
 
 export function FilterBar({
   filters,
-  currencies,
   onChange,
   children,
   chip,
 }: {
   filters: Filters;
-  currencies: string[];
   onChange: (next: Filters) => void;
   /** more controls that belong in the same row (search, show, sort) */
   children?: ReactNode;
@@ -61,16 +58,6 @@ export function FilterBar({
       </div>
     </>
   );
-  const currency =
-    currencies.length > 1 ? (
-      <CurrencyDropdown
-        chip={chip}
-        value={filters.currency ?? currencies[0]!}
-        currencies={currencies}
-        onChange={(currency) => onChange({ ...filters, currency })}
-      />
-    ) : null;
-
   if (chip) {
     return (
       <div
@@ -84,7 +71,6 @@ export function FilterBar({
       >
         {period}
         {dates}
-        {currency}
         {children}
       </div>
     );
@@ -112,7 +98,6 @@ export function FilterBar({
             />
           </>
         )}
-        {currency}
         {children}
       </s-grid>
     </s-section>

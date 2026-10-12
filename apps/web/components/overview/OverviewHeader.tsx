@@ -3,7 +3,6 @@
 import type { PeriodPreset } from '@pi/contracts';
 import type { FreshnessView } from '../../lib/freshness';
 import { periodLabel } from '../../lib/format';
-import { CurrencyDropdown } from '../dropdown';
 
 const clock = (d: Date) =>
   d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
@@ -19,33 +18,29 @@ export const QUICK_PERIODS: Array<{ value: PeriodPreset; label: string }> = [
 
 /**
  * The top of the page: a line saying whose figures these are and for which dates, the period
- * buttons (the only period filter on this page), a refresh, and a currency choice when the shop has
+ * buttons (the only period filter on this page) and a refresh. Amounts are always in USD, so there is no
  * more than one. Refresh reloads the figures; it does not start an import from Shopify.
  */
 export function OverviewHeader({
   storeName,
   period,
   currency,
-  currencies,
   updatedAt,
   freshness,
   loading,
   preset,
   onPreset,
-  onCurrency,
   onRefresh,
 }: {
   storeName: string | null;
   period: { from: string; to: string } | null;
   currency: string | null;
-  currencies: string[];
   updatedAt: Date | null;
   /** when the last import from Shopify finished, and what that means for the figures */
   freshness: FreshnessView | null;
   loading: boolean;
   preset: PeriodPreset;
   onPreset: (preset: PeriodPreset) => void;
-  onCurrency: (code: string) => void;
   onRefresh: () => void;
 }) {
   const facts = [
@@ -99,14 +94,6 @@ export function OverviewHeader({
         >
           Refresh
         </s-button>
-        {currencies.length > 1 && currency && (
-          <CurrencyDropdown
-            compact
-            value={currency}
-            currencies={currencies}
-            onChange={onCurrency}
-          />
-        )}
         <div
           role="group"
           aria-label="Period"

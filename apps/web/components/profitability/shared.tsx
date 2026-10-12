@@ -51,7 +51,7 @@ const QUALITY: Record<
   actual: { label: 'Cost confirmed', tone: 'success' },
   estimated: { label: 'Cost estimated', tone: 'caution' },
   missing: { label: 'Cost missing', tone: 'critical' },
-  none: { label: 'No cost data', tone: 'neutral' },
+  none: { label: 'Not configured', tone: 'neutral' },
 };
 
 export function QualityBadge({ quality }: { quality: string }) {

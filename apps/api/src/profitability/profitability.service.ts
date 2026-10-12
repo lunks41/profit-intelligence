@@ -1,4 +1,9 @@
-import { productInsights, profitTrend } from './product-insights.js';
+import {
+  isHighRefund,
+  productInsights,
+  profitTrend,
+  usesEstimatedCost,
+} from './product-insights.js';
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type {
   PeriodPreset,
@@ -113,6 +118,8 @@ export class ProfitabilityService {
     );
     if (q.filter === 'loss') list = list.filter((r) => dec(r.profit).lt(0));
     if (q.filter === 'missing_cost') list = list.filter((r) => r.missingCostLines > 0);
+    if (q.filter === 'estimated_cost') list = list.filter(usesEstimatedCost);
+    if (q.filter === 'high_refunds') list = list.filter(isHighRefund);
 
     const value = (r: ProductRow): number | string => {
       switch (q.sort) {
@@ -178,6 +185,15 @@ export class ProfitabilityService {
       currency: REPORTING_CURRENCY,
       rows: list.slice(start, start + q.pageSize).map((r) => ({ ...r, trend: trendOf(r) })),
       insights: productInsights(productList, variantRows),
+      summary: {
+        products: productList.length,
+        netSales: toStored(productList.reduce((a, r) => a.plus(dec(r.netSales)), new D(0))),
+        contributionProfit: toStored(productProfit),
+        productsMissingCost: productList.filter((r) => r.missingCostLines > 0).length,
+        productsLosingMoney: productList.filter(
+          (r) => dec(r.profit).lt(0) && r.missingCostLines === 0,
+        ).length,
+      },
       paging: {
         page: q.page,
         pageSize: q.pageSize,

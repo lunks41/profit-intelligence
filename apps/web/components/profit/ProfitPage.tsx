@@ -30,7 +30,6 @@ export function ProfitPage() {
     preset: '30d' as PeriodPreset,
     from: today(),
     to: today(),
-    currency: null,
   });
   const [tab, setTab] = useState<Tab>('statement');
   useEffect(() => {
@@ -49,12 +48,7 @@ export function ProfitPage() {
 
   return (
     <>
-      <FilterBar
-        chip
-        filters={filters}
-        currencies={overview.data?.currency.available ?? []}
-        onChange={setFilters}
-      />
+      <FilterBar chip filters={filters} onChange={setFilters} />
       {overview.data && <Freshness data={overview.data} />}
       {overview.data && <Kpis data={overview.data} />}
       {overview.data && (

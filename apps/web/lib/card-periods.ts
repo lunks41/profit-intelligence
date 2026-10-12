@@ -19,7 +19,6 @@ export function pageQuery(d: OverviewResponse): string {
     preset: d.period.preset,
     from: d.period.from,
     to: d.period.to,
-    currency: d.currency.converted ? d.currency.code : null,
   });
 }
 
@@ -40,20 +39,16 @@ export function cardRequest(
           preset: period as PeriodPreset,
           from: '',
           to: '',
-          currency: page.currency.converted ? page.currency.code : null,
         });
   return `/dashboard/overview?${base}${interval ? `&interval=${interval}` : ''}`;
 }
 
 /**
  * The query string for the paged lists (products, orders) of a card: the period on screen, or the
- * card's own period. The lists are always in the shop currency, so no currency is sent.
+ * card's own period. Everything is in USD, so no currency is sent.
  */
 export function listQuery(page: OverviewResponse, period: CardPeriod): string {
   return period === 'page'
-    ? buildListQuery(
-        { preset: page.period.preset, from: page.period.from, to: page.period.to, currency: null },
-        {},
-      )
-    : buildListQuery({ preset: period, from: '', to: '', currency: null }, {});
+    ? buildListQuery({ preset: page.period.preset, from: page.period.from, to: page.period.to }, {})
+    : buildListQuery({ preset: period, from: '', to: '' }, {});
 }

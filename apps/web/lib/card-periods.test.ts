@@ -7,13 +7,13 @@ describe('the period of a card', () => {
     expect(cardRequest(sampleOverview, 'page')).toBeNull();
   });
 
-  it('asks for its own period, keeping the display currency of the page', () => {
+  it('asks for its own period, and never sends a currency: amounts are always USD', () => {
     expect(cardRequest(sampleOverview, '7d')).toBe('/dashboard/overview?preset=7d');
     const converted = {
       ...sampleOverview,
-      currency: { ...sampleOverview.currency, code: 'AED', converted: true },
+      currency: { ...sampleOverview.currency, shopCode: 'AED', converted: true },
     };
-    expect(cardRequest(converted, '90d')).toBe('/dashboard/overview?preset=90d&currency=AED');
+    expect(cardRequest(converted, '90d')).toBe('/dashboard/overview?preset=90d');
   });
 
   it('a chart interval repeats the period on screen with the interval added', () => {

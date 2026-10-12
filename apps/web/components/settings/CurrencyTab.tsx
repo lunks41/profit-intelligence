@@ -20,7 +20,7 @@ const RATE_STATUS: Record<CurrencySettingsResponse['rateStatus'], string> = {
   current: 'The latest rate is within 7 days.',
 };
 
-/** Store currency, ECB rates, shop time zone, and expense categories. Nothing here changes Shopify. */
+/** The reporting currency (USD), how another store currency is converted, the time zone, and expense categories. Nothing here changes Shopify. */
 export function CurrencyTab() {
   const view = useApi<CurrencySettingsResponse>('/settings/currency');
   const [version, setVersion] = useState(0);
@@ -32,26 +32,53 @@ export function CurrencyTab() {
       {view.loading && !view.data && <Loading what="currency settings" />}
       {view.data && (
         <>
-          <s-section heading="Store currency">
+          <s-section heading="Currency">
             <s-stack gap="small">
               <s-text>
-                Store currency <s-text type="strong">{view.data.currency}</s-text>
+                Reporting currency <s-text type="strong">US dollars (USD)</s-text>
               </s-text>
-              <s-text>
-                Decimal places <s-text type="strong">{view.data.decimals}</s-text>
-                {' · '}
-                Rounding <s-text type="strong">half up</s-text>
+              <s-text color="subdued">
+                Every amount in the app is in USD: the figures, product costs, payment fee and
+                shipping rules, expenses, reports, charts and CSV files. There is nothing to choose
+                or switch.
               </s-text>
+              {view.data.converted ? (
+                <s-banner tone="info" heading={`Your store sells in ${view.data.storeCurrency}`}>
+                  <s-stack gap="small-300">
+                    <s-paragraph>
+                      Its amounts are converted to USD before profit is worked out, with the
+                      exchange rate of each order&apos;s own day and of each refund&apos;s day. The
+                      original amounts are kept on the order. Enter product costs, rules and
+                      expenses in USD.
+                    </s-paragraph>
+                    <s-text>
+                      Rate source <s-text type="strong">European Central Bank (ECB)</s-text>
+                      {' · '}
+                      Latest rate{' '}
+                      <s-text type="strong">
+                        {view.data.latestRateDate
+                          ? longDate(view.data.latestRateDate)
+                          : 'None stored'}
+                      </s-text>
+                    </s-text>
+                    <s-text>{RATE_STATUS[view.data.rateStatus]}</s-text>
+                    {view.data.rateStatus === 'missing' && (
+                      <s-text tone="critical">
+                        No exchange rates are stored, so orders in {view.data.storeCurrency} cannot
+                        be converted yet and are left out of profit until the rates arrive.
+                      </s-text>
+                    )}
+                  </s-stack>
+                </s-banner>
+              ) : (
+                <s-text>Your store sells in US dollars, so nothing needs converting.</s-text>
+              )}
               <s-text>
-                Rate source <s-text type="strong">European Central Bank (ECB)</s-text>
-              </s-text>
-              <s-text>
-                Latest rate date{' '}
+                Rounding{' '}
                 <s-text type="strong">
-                  {view.data.latestRateDate ? longDate(view.data.latestRateDate) : 'None stored'}
+                  half up, to cents ({view.data.decimals} decimal places)
                 </s-text>
               </s-text>
-              <s-text>{RATE_STATUS[view.data.rateStatus]}</s-text>
               {view.data.explanation.map((line) => (
                 <s-text key={line} color="subdued">
                   {line}
@@ -67,7 +94,7 @@ export function CurrencyTab() {
               </s-text>
               <s-text color="subdued">
                 Business dates, including which day an order or refund counts on, use this time
-                zone. Shopify sets the time zone and the store currency.
+                zone. Shopify sets the time zone.
               </s-text>
               <s-text color="subdued">Alert emails are set on the Alerts tab.</s-text>
             </s-stack>

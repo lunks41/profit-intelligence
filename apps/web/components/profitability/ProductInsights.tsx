@@ -5,6 +5,8 @@ import type { ProductInsight } from '@pi/contracts';
 import { formatMoney, formatPercent } from '../../lib/format';
 
 const TONE = { critical: 'critical', warning: 'caution', info: 'info' } as const;
+/** The findings shown at first; the rest open on request. */
+const TOP = 3;
 const LABEL = { critical: 'Fix first', warning: 'Needs attention', info: 'Improve' } as const;
 
 /**
@@ -20,6 +22,7 @@ export function ProductInsights({
   currency: string;
 }) {
   const [open, setOpen] = useState<string | null>(null);
+  const [all, setAll] = useState(false);
   if (insights.length === 0) {
     return (
       <s-text color="subdued">
@@ -29,9 +32,9 @@ export function ProductInsights({
     );
   }
   return (
-    <s-section heading="What is missing, and how to improve it">
+    <s-section heading="What needs attention?">
       <div id="product-insights" style={{ display: 'flex', flexDirection: 'column' }}>
-        {insights.map((i, n) => {
+        {(all ? insights : insights.slice(0, TOP)).map((i, n) => {
           const impact =
             i.id === 'missing_cost' || i.id === 'estimated_cost'
               ? `Net sales affected: ${formatMoney(i.amount ?? '0', currency)}${i.share ? ` (${formatPercent(i.share)})` : ''}`
@@ -77,6 +80,13 @@ export function ProductInsights({
           );
         })}
       </div>
+      {insights.length > TOP && (
+        <div>
+          <s-button variant="tertiary" onClick={() => setAll((v) => !v)}>
+            {all ? 'Show fewer' : `Show all ${insights.length}`}
+          </s-button>
+        </div>
+      )}
     </s-section>
   );
 }

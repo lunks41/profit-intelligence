@@ -8,6 +8,21 @@ const MIN_REFUND_RATE = '0.15';
 const MIN_ORDERS_FOR_RATE = 3;
 const SEVERITY_ORDER = { critical: 0, warning: 1, info: 2 } as const;
 
+/** A product with enough orders to judge, of whose sales a big share was refunded. */
+export function isHighRefund(r: ProductRowData): boolean {
+  const gross = dec(r.grossSales);
+  return (
+    r.orders >= MIN_ORDERS_FOR_RATE &&
+    gross.gt(0) &&
+    dec(r.refunds).neg().div(gross).gte(MIN_REFUND_RATE)
+  );
+}
+
+/** A product whose cost is only Shopify's estimate (and none of whose sales lack a cost). */
+export function usesEstimatedCost(r: ProductRowData): boolean {
+  return r.costQuality === 'estimated' && r.missingCostLines === 0;
+}
+
 const ratio = (part: Dec, whole: Dec): string | null =>
   whole.lte(0) ? null : part.div(whole).toDecimalPlaces(4).toFixed(4);
 const percent = (r: string | null) => (r === null ? null : `${(Number(r) * 100).toFixed(1)}%`);
@@ -50,9 +65,7 @@ export function productInsights(
     });
   }
 
-  const estimated = products.filter(
-    (r) => r.costQuality === 'estimated' && r.missingCostLines === 0,
-  );
+  const estimated = products.filter(usesEstimatedCost);
   if (estimated.length > 0) {
     const amount = estimated.reduce((a, r) => a.plus(net(r)), new D(0));
     const share = ratio(amount, totalNet);
@@ -88,14 +101,7 @@ export function productInsights(
     });
   }
 
-  const refunded = products.filter((r) => {
-    const gross = dec(r.grossSales);
-    return (
-      r.orders >= MIN_ORDERS_FOR_RATE &&
-      gross.gt(0) &&
-      dec(r.refunds).neg().div(gross).gte(MIN_REFUND_RATE)
-    );
-  });
+  const refunded = products.filter(isHighRefund);
   if (refunded.length > 0) {
     out.push({
       id: 'high_refunds',

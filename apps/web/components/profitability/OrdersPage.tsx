@@ -4,7 +4,7 @@ import { FilterSearch, ShowDropdown } from '../dropdown';
 
 import { useEffect, useState } from 'react';
 import type { OrderDetailResponse, OrderListResponse, PeriodPreset } from '@pi/contracts';
-import { formatMoney, formatPercent, longDate, periodLabel } from '../../lib/format';
+import { formatMoney, formatPercent, longDate, periodLabel, spent } from '../../lib/format';
 import { buildListQuery } from '../../lib/query';
 import { FilterBar, type Filters } from '../overview/OverviewView';
 import { ErrorBanner, Loading, QualityBadge, RuleNote, SortControls, useApi } from './shared';
@@ -29,7 +29,6 @@ export function OrdersPage() {
     preset: '30d' as PeriodPreset,
     from: today(),
     to: today(),
-    currency: null,
   });
   const [sort, setSort] = useState<Sort>('date');
   const [dir, setDir] = useState<'asc' | 'desc'>('desc');
@@ -72,7 +71,7 @@ export function OrdersPage() {
       <FilterBar
         chip
         filters={filters}
-        currencies={[]}
+
         onChange={(f) => {
           setFilters(f);
           setPage(1);
@@ -208,7 +207,7 @@ export function OrdersPage() {
                           ) : r.statuses?.cogs === 'missing' ? (
                             <s-badge tone="caution">Missing</s-badge>
                           ) : (
-                            formatMoney(r.cogs, data.currency)
+                            formatMoney(spent(r.cogs), data.currency)
                           )}
                         </s-table-cell>
                         <s-table-cell>

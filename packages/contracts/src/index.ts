@@ -346,8 +346,8 @@ export const productListQuerySchema = z.object({
   sort: productSortSchema.default('profit'),
   dir: z.enum(['asc', 'desc']).default('desc'),
   search: z.string().trim().max(100).optional(),
-  /** only products whose cost is missing / estimated, or that lose money */
-  filter: z.enum(['all', 'loss', 'missing_cost']).default('all'),
+  /** only products with a cost problem, that lose money, or that are refunded a lot */
+  filter: z.enum(['all', 'loss', 'missing_cost', 'estimated_cost', 'high_refunds']).default('all'),
   /** one row per product, or one per variant (the variants of a product add up to it) */
   view: z.enum(['products', 'variants']).default('products'),
 });
@@ -418,6 +418,15 @@ export const productListResponseSchema = z.object({
   rows: z.array(productListRowSchema),
   /** what to fix, from all products of the period (not only this page) */
   insights: z.array(productInsightSchema),
+  /** the headline figures of all products of the period (not only this page or the filter) */
+  summary: z.object({
+    products: z.number(),
+    netSales: money,
+    /** the products' own contribution profit; the Overview figure also holds shipping, fees and other unallocated items */
+    contributionProfit: money,
+    productsMissingCost: z.number(),
+    productsLosingMoney: z.number(),
+  }),
   paging: pagingOut,
   /** how the products add up to the dashboard figure */
   reconciliation: z.object({
