@@ -13,6 +13,9 @@ import { FilterBar, type Filters } from '../overview/OverviewView';
 import { ErrorBanner, Loading, QualityBadge, RuleNote, SortControls, useApi } from './shared';
 import { readParam } from '../../lib/url-params';
 import { CostsTab } from '../settings/CostsTab';
+import { FormError, useAction } from '../settings/shared';
+import { downloadText } from '../../lib/import-summary';
+import { apiGet } from '../../lib/api';
 
 type Sort = 'profit' | 'revenue' | 'margin' | 'units' | 'cogs' | 'title';
 const SORTS: Array<{ value: Sort; label: string }> = [
@@ -27,37 +30,11 @@ const SORTS: Array<{ value: Sort; label: string }> = [
 const today = () => new Date().toISOString().slice(0, 10);
 
 /**
- * The Products screen: profit by product, and (the second view) where product costs are set: one by one, in
- * bulk for a collection or vendor, or imported from a CSV file. Product costs are managed here and nowhere else.
+ * The Products screen, in one view: the table first. Product costs are set from here too, without leaving
+ * the page: a row's Set cost button, Import costs (CSV), Download template and Set product costs all open the
+ * cost tools in a panel above the table, and closing it returns to the table.
  */
 export function ProductsPage() {
-  const [tab, setTab] = useState<'profit' | 'costs'>('profit');
-  useEffect(() => {
-    const t = readParam('tab', ['profit', 'costs'] as const);
-    if (t) setTab(t);
-  }, []);
-  return (
-    <>
-      <s-stack direction="inline" gap="small">
-        <s-button
-          variant={tab === 'profit' ? 'primary' : 'secondary'}
-          onClick={() => setTab('profit')}
-        >
-          Profit by product
-        </s-button>
-        <s-button
-          variant={tab === 'costs' ? 'primary' : 'secondary'}
-          onClick={() => setTab('costs')}
-        >
-          Set product costs
-        </s-button>
-      </s-stack>
-      {tab === 'profit' ? <ProfitView /> : <CostsTab onChanged={() => undefined} />}
-    </>
-  );
-}
-
-function ProfitView() {
   const [filters, setFilters] = useState<Filters>({
     preset: '30d' as PeriodPreset,
     from: today(),
@@ -76,6 +53,15 @@ function ProfitView() {
   const [applied, setApplied] = useState('');
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<string | null>(null);
+  // the cost tools: closed until asked for. `n` makes the panel start afresh for each request.
+  const [costs, setCosts] = useState<{ search: string; n: number } | null>(null);
+  const [saved, setSaved] = useState(0);
+  const template = useAction();
+  useEffect(() => {
+    // old links (/products?tab=costs...) open the cost tools straight away
+    if (readParam('tab', ['profit', 'costs'] as const) === 'costs') setCosts({ search: '', n: 1 });
+  }, []);
+  const openCosts = (search = '') => setCosts((c) => ({ search, n: (c?.n ?? 0) + 1 }));
 
   // Wait for the typing to pause before searching.
   useEffect(() => {
@@ -86,7 +72,7 @@ function ProfitView() {
     return () => clearTimeout(t);
   }, [search]);
 
-  const path = `/profitability/products?${buildListQuery(filters, { sort, dir, filter, search: applied, page, view })}`;
+  const path = `/profitability/products?${buildListQuery(filters, { sort, dir, filter, search: applied, page, view })}&_=${saved}`;
   const { data, error, loading, reload } = useApi<ProductListResponse>(selected ? null : path);
 
   if (selected) {
@@ -150,7 +136,38 @@ function ProfitView() {
             setPage(1);
           }}
         />
+        <s-button onClick={() => openCosts()}>Set product costs</s-button>
+        <s-button onClick={() => openCosts()}>Import costs (CSV)</s-button>
+        <s-button
+          variant="tertiary"
+          disabled={template.busy}
+          onClick={async () => {
+            const file = await template.run(() =>
+              apiGet<{ csv: string }>('/settings/costs/export'),
+            );
+            if (file) downloadText('product-costs-template.csv', file.csv);
+          }}
+        >
+          Download template
+        </s-button>
       </FilterBar>
+      <FormError message={template.error} />
+
+      {costs && (
+        <s-stack gap="small">
+          <s-stack direction="inline" gap="base" alignItems="center" justifyContent="space-between">
+            <s-text type="strong">Set product costs</s-text>
+            <s-button variant="tertiary" onClick={() => setCosts(null)}>
+              Close
+            </s-button>
+          </s-stack>
+          <CostsTab
+            key={costs.n}
+            initialSearch={costs.search}
+            onChanged={() => setSaved((v) => v + 1)}
+          />
+        </s-stack>
+      )}
 
       {error && <ErrorBanner message={error} onRetry={() => void reload()} />}
       {loading && !data && <Loading what="products" />}
@@ -159,7 +176,12 @@ function ProfitView() {
           aria-busy={loading}
           style={{ opacity: loading ? 0.6 : 1, display: 'flex', flexDirection: 'column', gap: 16 }}
         >
-          <ProductsTable data={data} onOpen={setSelected} onPage={setPage} />
+          <ProductsTable
+            data={data}
+            onOpen={setSelected}
+            onPage={setPage}
+            onSetCost={(title) => openCosts(title)}
+          />
         </div>
       )}
     </>
@@ -170,10 +192,12 @@ function ProductsTable({
   data,
   onOpen,
   onPage,
+  onSetCost,
 }: {
   data: ProductListResponse;
   onOpen: (key: string) => void;
   onPage: (p: number) => void;
+  onSetCost: (title: string) => void;
 }) {
   const cur = data.currency;
   const rec = data.reconciliation;
@@ -181,7 +205,14 @@ function ProductsTable({
   return (
     <>
       <QualifiersBanner qualifiers={rec.qualifiers} />
-      <ProductInsights insights={data.insights} currency={cur} />
+      {data.insights.length > 0 && (
+        <s-text>
+          <s-link href="#product-insights">
+            {data.insights.length} {data.insights.length === 1 ? 'thing' : 'things'} to improve
+          </s-link>{' '}
+          <s-text color="subdued">({data.insights.map((i) => i.title).join('; ')})</s-text>
+        </s-text>
+      )}
       <s-section
         padding="none"
         heading={`Products, ${periodLabel(data.period.from, data.period.to)}`}
@@ -237,7 +268,14 @@ function ProductsTable({
                       </div>
                     </s-table-cell>
                     <s-table-cell>
-                      <QualityBadge quality={r.costQuality} />
+                      <s-stack direction="inline" gap="small" alignItems="center">
+                        <QualityBadge quality={r.costQuality} />
+                        {(r.costQuality === 'missing' || r.costQuality === 'estimated') && (
+                          <s-button variant="tertiary" onClick={() => onSetCost(r.title)}>
+                            Set cost
+                          </s-button>
+                        )}
+                      </s-stack>
                     </s-table-cell>
                     <s-table-cell>
                       <s-button
@@ -255,6 +293,7 @@ function ProductsTable({
           </s-stack>
         )}
       </s-section>
+      <ProductInsights insights={data.insights} currency={cur} />
 
       <s-section heading="How products add up to your profit">
         <s-stack gap="small-300">

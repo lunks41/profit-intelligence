@@ -17,15 +17,22 @@ const QUALITY = {
   missing: { label: 'Missing', tone: 'critical' },
 } as const;
 
-export function CostsTab({ onChanged }: { onChanged: () => void }) {
+export function CostsTab({
+  onChanged,
+  initialSearch = '',
+}: {
+  onChanged: () => void;
+  /** open already searching for this product (the row's Set cost button) */
+  initialSearch?: string;
+}) {
   const [filter, setFilter] = useState('all');
   useEffect(() => {
     const f = readParam('filter', ['all', 'missing', 'estimated', 'entered'] as const);
     if (f) setFilter(f);
   }, []);
   const [sort, setSort] = useState('attention');
-  const [search, setSearch] = useState('');
-  const [applied, setApplied] = useState('');
+  const [search, setSearch] = useState(initialSearch);
+  const [applied, setApplied] = useState(initialSearch);
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<CostRow | null>(null);
   const [reloadKey, setReloadKey] = useState(0);

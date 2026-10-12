@@ -26,12 +26,7 @@ export function PageNotices() {
     if (!el || !inner) return;
     const measure = () => {
       setHas(inner.childElementCount > 0);
-      if (inner.childElementCount === 0) {
-        setPull((p) =>
-          p.top === 0 && p.left === 0 && p.right === 0 ? p : { top: 0, left: 0, right: 0 },
-        );
-        return;
-      }
+      // measured with or without a notice, so the icons stay where they are when a notice comes or goes
       const applied = el.style.margin;
       el.style.margin = '0';
       const r = el.getBoundingClientRect();
