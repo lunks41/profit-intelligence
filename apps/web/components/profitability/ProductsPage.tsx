@@ -115,7 +115,7 @@ export function ProductsPage() {
       <div
         style={{
           display: 'flex',
-          alignItems: 'flex-end',
+          alignItems: 'center',
           flexWrap: 'wrap',
           gap: '0.75rem',
         }}

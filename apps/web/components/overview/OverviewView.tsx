@@ -70,7 +70,7 @@ export function FilterBar({
         style={{
           display: 'flex',
           justifyContent: 'flex-start',
-          alignItems: 'flex-end',
+          alignItems: 'center',
           flexWrap: 'wrap',
           gap: '0.75rem',
         }}
