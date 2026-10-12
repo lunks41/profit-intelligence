@@ -19,6 +19,7 @@ import { QualifiersBanner } from '../common';
 import { SampleBars } from '../preview/ui';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { ReportTable } from '../reports/ReportTable';
+import { InfoTip } from '../common/info-tip';
 import { Change, Kpi } from '../common/kpi';
 import { readParam } from '../../lib/url-params';
 import { todayInShop, prettyDates } from '../../lib/shop-time';
@@ -126,15 +127,14 @@ export function ProfitPage() {
 
 function Freshness({ data }: { data: OverviewResponse }) {
   const view = describeFreshness(data.freshness, data.period, new Date());
-  // one line, level with the period dropdown
+  // a capsule level with the period dropdown: when the last import was and how old it is; the rest is in the tip
+  const when = data.freshness.lastSuccessAt
+    ? formatDateTime(data.freshness.lastSuccessAt)
+    : 'never';
   return (
-    <div style={{ display: 'flex', alignItems: 'center', minHeight: '28px' }}>
-      <s-text color="subdued">
-        Last successful import:{' '}
-        {data.freshness.lastSuccessAt ? formatDateTime(data.freshness.lastSuccessAt) : 'never'}.{' '}
-        {view.badge}
-        {view.detail ? `. ${prettyDates(view.detail)}` : ''}
-      </s-text>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', minHeight: '28px' }}>
+      <s-badge tone={view.tone}>{`Last import: ${when} · ${view.badge}`}</s-badge>
+      {view.detail && <InfoTip label="About the last import" text={prettyDates(view.detail)} />}
     </div>
   );
 }
