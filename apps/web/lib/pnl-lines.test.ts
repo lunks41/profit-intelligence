@@ -20,3 +20,26 @@ describe('lines of the profit and loss', () => {
     expect(lineKind('Something else')).toBeNull();
   });
 });
+
+import { lineHelp } from './pnl-help';
+
+describe('help for every line of the profit and loss', () => {
+  it('has a sentence for each line the report writes', () => {
+    for (const l of [
+      'Sales before discounts',
+      'Shipping charged (net of refunds)',
+      'Discounts',
+      'Refunds',
+      'Product cost',
+      'Payment fees',
+      'Shipping cost',
+      'Operating expenses: advertising',
+      'Operating expenses: other',
+      'Revenue',
+      'Contribution profit',
+      'Estimated operating profit',
+    ])
+      expect(lineHelp(l), l).not.toBeNull();
+    expect(lineHelp('Unknown line')).toBeNull();
+  });
+});
