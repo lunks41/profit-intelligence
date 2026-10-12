@@ -123,7 +123,12 @@ export async function getShippingOverview(
         return {
           orderName: String(r.order_name),
           orderDate: String(r.d),
-          kind: status === 'missing' ? ('missing' as const) : status === 'actual' && carrier ? ('invoice' as const) : ('rules' as const),
+          kind:
+            status === 'missing'
+              ? ('missing' as const)
+              : status === 'actual' && carrier
+                ? ('invoice' as const)
+                : ('rules' as const),
           carrier,
           cost: String(r.cost),
           charged: String(r.charged),
