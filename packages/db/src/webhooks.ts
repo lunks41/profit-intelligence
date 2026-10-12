@@ -245,6 +245,9 @@ export async function purgeShopData(
         shop.uninstalledAt?.getTime() === opts.onlyIfUninstalledAt.getTime();
       if (!same) return { purged: false };
     }
+    // carrier charges point at orders, so they go first
+    await tx.execute(sql`delete from f_carrier_charge where shop_id = ${scope.shopId}`);
+    await tx.execute(sql`delete from f_carrier_invoice where shop_id = ${scope.shopId}`);
     // Children first; cascades remove line items, refunds, transactions and variants.
     await tx.delete(tOrder).where(eq(tOrder.shopId, scope.shopId));
     await tx.delete(tProduct).where(eq(tProduct.shopId, scope.shopId));

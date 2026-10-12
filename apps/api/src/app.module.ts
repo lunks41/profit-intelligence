@@ -10,6 +10,7 @@ import { DbModule } from './db/db.module.js';
 import { HealthController } from './health/health.controller.js';
 import { ProfitabilityModule } from './profitability/profitability.module.js';
 import { SettingsModule } from './settings/settings.module.js';
+import { ShippingModule } from './shipping/shipping.module.js';
 import { ExpensesModule } from './expenses/expenses.module.js';
 import { MarketingModule } from './marketing/marketing.module.js';
 import { ReportsModule } from './reports/reports.module.js';
@@ -41,6 +42,7 @@ import { WebhooksModule } from './webhooks/webhooks.module.js';
     BillingModule,
     SupportModule,
     ActivityModule,
+    ShippingModule,
   ],
   controllers: [HealthController, SessionController],
   providers: [

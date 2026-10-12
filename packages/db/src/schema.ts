@@ -1269,3 +1269,77 @@ export const fAdConnectionPending = pgTable(
     ),
   ],
 );
+
+/**
+ * One imported carrier invoice file (DHL, UPS, FedEx, Amazon Shipping or another). Taking an invoice back keeps the
+ * row (revoked_at) so history stays; the same file cannot be imported twice while the first import stands.
+ */
+export const fCarrierInvoice = pgTable(
+  'f_carrier_invoice',
+  {
+    id: uuid('id').notNull().defaultRandom(),
+    tenantId: uuid('tenant_id').notNull(),
+    shopId: uuid('shop_id').notNull(),
+    carrier: text('carrier').notNull(),
+    fileName: text('file_name'),
+    fileHash: text('file_hash').notNull(),
+    rowCount: integer('row_count').notNull(),
+    matchedOrders: integer('matched_orders').notNull(),
+    unmatchedRows: integer('unmatched_rows').notNull(),
+    totalAmount: money('total_amount').notNull(),
+    currency: char('currency', { length: 3 }).notNull().default('USD'),
+    createdBy: text('created_by'),
+    createdAt: createdAt(),
+    revokedAt: tsz('revoked_at'),
+    revokedBy: text('revoked_by'),
+  },
+  (t) => [
+    primaryKey({ name: 'pk_f_carrier_invoice', columns: [t.id] }),
+    unique('uq_f_carrier_invoice_tenant_id_id').on(t.tenantId, t.id),
+    foreignKey({
+      name: 'fk_f_carrier_invoice_shop',
+      columns: [t.tenantId, t.shopId],
+      foreignColumns: [mShop.tenantId, mShop.id],
+    }),
+    check(
+      'ck_f_carrier_invoice_carrier',
+      sql`${t.carrier} in ('dhl', 'ups', 'fedex', 'amazon', 'other')`,
+    ),
+    index('ix_f_carrier_invoice_shop').on(t.shopId, t.createdAt),
+    uniqueIndex('uq_f_carrier_invoice_file')
+      .on(t.shopId, t.fileHash)
+      .where(sql`${t.revokedAt} is null`),
+  ],
+);
+
+/** What a carrier charged for the shipping of one order, from an invoice. It replaces the estimate from the rules. */
+export const fCarrierCharge = pgTable(
+  'f_carrier_charge',
+  {
+    id: uuid('id').notNull().defaultRandom(),
+    tenantId: uuid('tenant_id').notNull(),
+    shopId: uuid('shop_id').notNull(),
+    invoiceId: uuid('invoice_id').notNull(),
+    orderId: uuid('order_id').notNull(),
+    carrier: text('carrier').notNull(),
+    reference: text('reference').notNull(),
+    amount: money('amount').notNull(),
+    chargeDate: dateOnly('charge_date'),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    primaryKey({ name: 'pk_f_carrier_charge', columns: [t.id] }),
+    foreignKey({
+      name: 'fk_f_carrier_charge_invoice',
+      columns: [t.tenantId, t.invoiceId],
+      foreignColumns: [fCarrierInvoice.tenantId, fCarrierInvoice.id],
+    }),
+    foreignKey({
+      name: 'fk_f_carrier_charge_order',
+      columns: [t.tenantId, t.orderId],
+      foreignColumns: [tOrder.tenantId, tOrder.id],
+    }),
+    index('ix_f_carrier_charge_order').on(t.shopId, t.orderId),
+    index('ix_f_carrier_charge_invoice').on(t.invoiceId),
+  ],
+);

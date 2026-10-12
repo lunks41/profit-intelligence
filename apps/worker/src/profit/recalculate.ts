@@ -1,5 +1,6 @@
 import {
   loadExchangeRates,
+  loadCarrierCosts,
   loadFrozenCosts,
   loadProfitSnapshots,
   logAudit,
@@ -93,6 +94,17 @@ export async function recalculateProfit(
             scope,
             loaded.map((l) => l.orderId),
           );
+      // what carriers really charged to ship these orders (from their invoices) replaces the estimate of a rule
+      const carrierByOrder = await loadCarrierCosts(
+        tx,
+        scope,
+        loaded.map((l) => l.orderId),
+      );
+      const carrierCosts = new Map<number, { amount: string; carriers: string[] }>();
+      for (const l of loaded) {
+        const c = carrierByOrder.get(l.orderId);
+        if (c) carrierCosts.set((l.order as EngineOrder).shopifyId, c);
+      }
       const cfg: EngineConfig = {
         timezone: rules.timezone,
         merchantCosts: rules.merchantCosts,
@@ -101,6 +113,7 @@ export async function recalculateProfit(
         feeRules: rules.feeRules,
         shippingRules: rules.shippingRules,
         variantWeights: rules.variantWeights,
+        carrierCosts,
       };
 
       const snapshots = await loadProfitSnapshots(

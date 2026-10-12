@@ -139,6 +139,20 @@ const ACTIVITIES: Record<string, Maker> = {
     'That month uses the regular amount again.',
     '/expenses',
   ),
+  // carrier invoices
+  'POST /shipping/carrier-invoices/import': (body) =>
+    asRecord(body).preview === true
+      ? null
+      : {
+          title: 'Carrier invoice imported',
+          body: 'What the carrier charged is now the shipping cost of the orders it covers. Profit for them is being worked out again.',
+          link: '/shipping',
+        },
+  'DELETE /shipping/carrier-invoices/:id': a(
+    'Carrier invoice taken back',
+    'Its orders go back to the estimate of the shipping rules. Profit for them is being worked out again.',
+    '/shipping',
+  ),
   // marketing
   'POST /marketing/connections/:id/accounts': a(
     'Ad accounts connected',

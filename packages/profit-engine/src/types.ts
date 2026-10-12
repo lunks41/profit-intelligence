@@ -148,6 +148,11 @@ export interface EngineConfig {
   shippingRules: readonly ShippingRule[];
   /** Current variant weight in grams. Used only to pick a shipping rule. */
   variantWeights?: ReadonlyMap<number, number>;
+  /**
+   * What carriers really charged to ship an order, from their invoices, in the reporting currency, keyed by the
+   * Shopify order id. When an order has one, it is the shipping cost (actual) and no rule is used for it.
+   */
+  carrierCosts?: ReadonlyMap<number, { amount: string; carriers: readonly string[] }>;
 }
 
 // ---- output ---------------------------------------------------------------------------------

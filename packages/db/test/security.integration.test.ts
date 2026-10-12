@@ -213,6 +213,16 @@ describe('data deletion', () => {
       `insert into f_product_cost (tenant_id, shop_id, variant_shopify_id, amount, currency, effective_from) values ($1,$2,1,5,'USD','2026-01-01')`,
       [t, sh],
     );
+    const inv = (
+      await exec(
+        `insert into f_carrier_invoice (tenant_id, shop_id, carrier, file_hash, row_count, matched_orders, unmatched_rows, total_amount) values ($1,$2,'dhl','h',1,1,0,5) returning id`,
+        [t, sh],
+      )
+    ).rows[0].id;
+    await exec(
+      `insert into f_carrier_charge (tenant_id, shop_id, invoice_id, order_id, carrier, reference, amount) values ($1,$2,$3,$4,'dhl','#1',5)`,
+      [t, sh, inv, order],
+    );
     await exec(
       `insert into s_payment_fee_rule (tenant_id, shop_id, percent, fixed_amount, currency, effective_from) values ($1,$2,2.9,0.3,'USD','2026-01-01')`,
       [t, sh],

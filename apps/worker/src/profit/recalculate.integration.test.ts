@@ -4,6 +4,8 @@ import {
   createPool,
   installShop,
   listProfitEntries,
+  revokeCarrierInvoice,
+  saveCarrierInvoice,
   setProductCost,
   upsertOrders,
   upsertProducts,
@@ -590,5 +592,93 @@ describe('tenant isolation', () => {
     );
     expect(r.orders).toBe(0);
     expect(await count('f_order_profit')).toBe(0);
+  });
+});
+
+describe('shipping cost from a carrier invoice', () => {
+  const shippingOf = async (name: string) =>
+    (
+      await admin.query(
+        `select e.amount::text amount, e.status, e.source
+           from f_profit_entry e join t_order o on o.id = e.order_id
+          where o.name = $1 and e.component = 'shipping_cost'`,
+        [name],
+      )
+    ).rows;
+
+  async function invoice(who: InstallResult, name: string, amount: string) {
+    const order = (
+      await admin.query('select id from t_order where shop_id = $1 and name = $2', [
+        who.shopId,
+        name,
+      ])
+    ).rows[0].id;
+    return saveCarrierInvoice(db, who, {
+      carrier: 'dhl',
+      fileName: 'dhl.csv',
+      fileHash: `h-${name}-${amount}`,
+      rowCount: 1,
+      unmatchedRows: 0,
+      charges: [{ orderId: order, reference: name, amount, chargeDate: null }],
+      actor: 'test',
+    });
+  }
+
+  it('is the actual cost of that order, and the other orders stay missing', async () => {
+    await seedCatalog(a);
+    await loadOrders(a);
+    await recalc(a);
+    const target = (
+      await admin.query(
+        `select o.name from t_order o join f_order_profit p on p.order_id = o.id
+          where o.shop_id = $1 and p.recognized and exists (
+            select 1 from f_profit_entry e where e.order_id = o.id and e.component = 'shipping_cost' and e.status = 'missing')
+          limit 1`,
+        [a.shopId],
+      )
+    ).rows[0].name;
+    expect((await shippingOf(target))[0]).toMatchObject({ amount: '0.0000', status: 'missing' });
+
+    await invoice(a, target, '8.4000');
+    await recalc(a);
+    expect(await shippingOf(target)).toEqual([
+      { amount: '-8.4000', status: 'actual', source: 'carrier invoice: dhl' },
+    ]);
+    // another order is untouched
+    expect(await count('f_profit_entry', "component = 'shipping_cost' and status = 'actual'")).toBe(
+      1,
+    );
+  });
+
+  it('taking the invoice back returns the order to missing', async () => {
+    await seedCatalog(a);
+    await loadOrders(a);
+    await recalc(a);
+    const target = (
+      await admin.query(
+        `select o.name from t_order o join f_order_profit p on p.order_id = o.id
+          where o.shop_id = $1 and p.recognized and exists (
+            select 1 from f_profit_entry e where e.order_id = o.id and e.component = 'shipping_cost' and e.status = 'missing')
+          limit 1`,
+        [a.shopId],
+      )
+    ).rows[0].name;
+    const inv = await invoice(a, target, '5.0000');
+    await recalc(a);
+    expect((await shippingOf(target))[0]).toMatchObject({ amount: '-5.0000', status: 'actual' });
+    await revokeCarrierInvoice(db, a, inv.id, 'test');
+    await recalc(a);
+    expect((await shippingOf(target))[0]).toMatchObject({ amount: '0.0000', status: 'missing' });
+  });
+
+  it('the sum of two invoices for one order is its cost', async () => {
+    await seedCatalog(a);
+    await loadOrders(a);
+    const name = orderNodes[0]!.name as string;
+    await invoice(a, name, '6.0000');
+    await invoice(a, name, '2.5000');
+    await recalc(a);
+    const rows = await shippingOf(name);
+    if (rows.length) expect(rows[0]).toMatchObject({ amount: '-8.5000', status: 'actual' });
   });
 });

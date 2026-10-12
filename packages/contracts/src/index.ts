@@ -1602,3 +1602,70 @@ export const supportListResponseSchema = z.object({
   ),
 });
 export type SupportListResponse = z.infer<typeof supportListResponseSchema>;
+
+// ---- carrier invoices ----
+
+export const carrierIdSchema = z.enum(['dhl', 'ups', 'fedex', 'amazon', 'other']);
+export type CarrierId = z.infer<typeof carrierIdSchema>;
+
+export const carrierInvoiceImportBodySchema = z.object({
+  carrier: carrierIdSchema,
+  csv: z.string().trim().min(1).max(5_000_000),
+  fileName: z.string().trim().max(200).optional(),
+  /** when true, count what would be matched and do not save */
+  preview: z.boolean().optional(),
+  /** the column of the file to use for each field; left out, the columns are found from their names */
+  mapping: z
+    .object({
+      order: z.string().max(200).optional(),
+      amount: z.string().max(200).optional(),
+      date: z.string().max(200).optional(),
+    })
+    .optional(),
+});
+export type CarrierInvoiceImportBody = z.infer<typeof carrierInvoiceImportBodySchema>;
+
+export const carrierInvoiceResultSchema = z.object({
+  preview: z.boolean(),
+  /** the invoice that was saved; none for a preview */
+  invoiceId: z.string().nullable(),
+  /** the same file is already imported and still stands */
+  alreadyImported: z.boolean(),
+  /** orders that get the carrier's cost */
+  matchedOrders: z.number(),
+  /** rows whose order number is not an order of this shop, or that have none */
+  unmatchedRows: z.number(),
+  /** rows with a problem (an amount that is not a number, another currency) */
+  invalid: z.number(),
+  rows: z.number(),
+  /** what the matched rows add up to, in US dollars */
+  totalAmount: money,
+  /** problems, then a few unmatched order numbers, for the merchant to read */
+  messages: z.array(z.string()),
+  columns: z.object({
+    headers: z.array(z.string()),
+    order: z.string().nullable(),
+    amount: z.string().nullable(),
+    date: z.string().nullable(),
+  }),
+});
+export type CarrierInvoiceResult = z.infer<typeof carrierInvoiceResultSchema>;
+
+export const carrierInvoiceListResponseSchema = z.object({
+  rows: z.array(
+    z.object({
+      id: z.string(),
+      carrier: carrierIdSchema,
+      fileName: z.string().nullable(),
+      rowCount: z.number(),
+      matchedOrders: z.number(),
+      unmatchedRows: z.number(),
+      totalAmount: money,
+      createdAt: z.string(),
+      revoked: z.boolean(),
+    }),
+  ),
+  /** orders whose shipping cost now comes from a carrier invoice */
+  coveredOrders: z.number(),
+});
+export type CarrierInvoiceListResponse = z.infer<typeof carrierInvoiceListResponseSchema>;

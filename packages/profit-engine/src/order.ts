@@ -288,7 +288,17 @@ export function calculateOrder(order: EngineOrder, cfg: EngineConfig): OrderResu
   }
 
   // ---- carrier shipping cost (spec section 8) -----------------------------------------------
-  if (!nonGift.some((l) => l.requiresShipping)) {
+  const carrier = cfg.carrierCosts?.get(order.shopifyId);
+  if (carrier) {
+    // the carrier's own invoice: the real cost, whatever a rule would have estimated
+    push(
+      'shipping_cost',
+      order.processedAt,
+      dec(carrier.amount).neg(),
+      'actual',
+      `carrier invoice: ${carrier.carriers.join(', ')}`,
+    );
+  } else if (!nonGift.some((l) => l.requiresShipping)) {
     push('shipping_cost', order.processedAt, ZERO, 'not_applicable', 'nothing to ship');
   } else {
     const shipment = shipmentOf(order, cfg, nonGift);

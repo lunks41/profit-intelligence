@@ -32,7 +32,7 @@ const MAX_ROWS = 500;
 const AMOUNT_RE = /^\d{1,12}(\.\d{1,4})?$/;
 const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
 
-function parseCsv(text: string): string[][] {
+export function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
   let row: string[] = [];
   let cell = '';
