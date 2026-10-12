@@ -16,6 +16,13 @@ import { DateField } from '../common/DateField';
 
 const ALL = 'all-variants';
 
+/** The calendar date `days` before a YYYY-MM-DD date. */
+function daysBefore(date: string, days: number): string {
+  const d = new Date(`${date}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - days);
+  return d.toISOString().slice(0, 10);
+}
+
 const QUALITY = {
   actual: { label: 'Entered by you', tone: 'success' },
   estimated: { label: 'Shopify cost (estimate)', tone: 'caution' },
@@ -386,7 +393,12 @@ function CostEditor({
   const [amount, setAmount] = useState(
     allIds ? '' : (row.merchantCost?.amount.replace(/\.?0+$/, '') ?? ''),
   );
-  const [from, setFrom] = useState(todayLocal());
+  // A cost counts only for orders on or after its date. A product with no cost yet has orders from before today,
+  // so the date starts well back (the 90 days of the Sold column) to fill those in; a cost that is only changing
+  // starts today.
+  const [from, setFrom] = useState(
+    !row.merchantCost || allIds ? daysBefore(todayLocal(), 90) : todayLocal(),
+  );
   const [reason, setReason] = useState('');
   const [touched, setTouched] = useState(false);
   const { busy, error, run } = useAction();
@@ -494,8 +506,8 @@ function CostEditor({
           />
         </s-grid>
         <s-text color="subdued">
-          Orders from this date on use this cost. Earlier orders keep the cost that applied on their
-          day.
+          Orders from this date on use this cost, so choose an earlier date to fill in older orders
+          too. Orders before the date keep the cost that applied on their day, or stay without one.
         </s-text>
         <FormError message={error} />
         <FormActions>
