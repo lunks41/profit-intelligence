@@ -118,3 +118,13 @@ html {
   gap: 0.35rem;
   padding: 0 0.5rem 0 0.75rem;
 }
+
+/*
+ * Buttons as high as the inputs and the dropdowns (28px). The app runs at 80 percent, which shrinks a Polaris button
+ * (rem) to about 22px while an input is a fixed 28px. The vertical padding of a button (not a link-style one) is
+ * raised so that padding plus the line height of the label is 28px. The name of the variable carries the build id of
+ * Polaris; if Polaris is updated and the id changes, buttons simply return to their own height.
+ */
+s-button {
+  --p-space-150-f4125: 0.59375rem;
+}

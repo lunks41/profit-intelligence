@@ -104,7 +104,7 @@ export function Dropdown({
             top: at.top,
             left: at.left,
             minWidth: short ? Math.max(at.width, 192) : at.width,
-            maxHeight: '16rem',
+            maxHeight: '24rem',
             overflowY: 'auto',
             zIndex: 2147483000,
             background: '#fff',
