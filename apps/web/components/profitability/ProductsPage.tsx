@@ -3,6 +3,7 @@
 import { QualifiersBanner } from '../common';
 import { Sparkline } from '../common/sparkline';
 import { ProductInsights } from './ProductInsights';
+import { RankCard } from './RankCard';
 import { FilterSearch, ShowDropdown } from '../dropdown';
 
 import { useEffect, useState } from 'react';
@@ -17,13 +18,14 @@ import { FormError, useAction } from '../settings/shared';
 import { downloadText } from '../../lib/import-summary';
 import { apiGet } from '../../lib/api';
 
-type Sort = 'profit' | 'revenue' | 'margin' | 'units' | 'cogs' | 'title';
+type Sort = 'profit' | 'revenue' | 'margin' | 'units' | 'cogs' | 'refunds' | 'title';
 const SORTS: Array<{ value: Sort; label: string }> = [
   { value: 'profit', label: 'Profit' },
   { value: 'revenue', label: 'Net sales' },
   { value: 'margin', label: 'Margin' },
   { value: 'units', label: 'Units sold' },
   { value: 'cogs', label: 'Product cost' },
+  { value: 'refunds', label: 'Refunds' },
   { value: 'title', label: 'Name' },
 ];
 
@@ -168,6 +170,30 @@ export function ProductsPage() {
           />
         </s-stack>
       )}
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 21.25rem), 1fr))',
+          gap: '1rem',
+          alignItems: 'stretch',
+        }}
+      >
+        <RankCard
+          title="Top selling products"
+          mode="selling"
+          query={buildListQuery(filters, {})}
+          onOpen={setSelected}
+          headerRight={<s-text color="subdued">By units sold</s-text>}
+        />
+        <RankCard
+          title="Top returned products"
+          mode="returned"
+          query={buildListQuery(filters, {})}
+          onOpen={setSelected}
+          headerRight={<s-text color="subdued">By amount refunded</s-text>}
+        />
+      </div>
 
       {error && <ErrorBanner message={error} onRetry={() => void reload()} />}
       {loading && !data && <Loading what="products" />}

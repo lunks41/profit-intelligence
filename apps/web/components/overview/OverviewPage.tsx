@@ -13,6 +13,7 @@ import { describeFreshness } from '../../lib/freshness';
 import { OverviewHeader } from './OverviewHeader';
 import { RecentOrders } from './RecentOrders';
 import { SecondaryInsights } from './SecondaryInsights';
+import { TopReturned } from './TopReturned';
 import { TopSelling } from './TopSelling';
 import { OverviewSkeleton, OverviewView, type Filters } from './OverviewView';
 
@@ -108,6 +109,7 @@ export function OverviewPage() {
           <OverviewView
             data={data}
             topSelling={<TopSelling page={data} />}
+            topReturned={<TopReturned page={data} />}
             recentOrders={<RecentOrders page={data} />}
             after={
               <>

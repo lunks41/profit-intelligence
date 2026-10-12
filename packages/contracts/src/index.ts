@@ -333,7 +333,15 @@ const periodQuery = {
     .optional(),
 };
 
-export const productSortSchema = z.enum(['profit', 'revenue', 'margin', 'units', 'cogs', 'title']);
+export const productSortSchema = z.enum([
+  'profit',
+  'revenue',
+  'margin',
+  'units',
+  'cogs',
+  'refunds',
+  'title',
+]);
 export const productListQuerySchema = z.object({
   ...periodQuery,
   ...listPaging,

@@ -123,12 +123,14 @@ export function OverviewView({
   data,
   topSelling,
   recentOrders,
+  topReturned,
   after,
 }: {
   data: OverviewResponse;
   /** lists loaded beside the overview (kept out of this component so it needs only `data`) */
   topSelling?: ReactNode;
   recentOrders?: ReactNode;
+  topReturned?: ReactNode;
   /** what follows the breakdown: opportunities, secondary figures */
   after?: ReactNode;
 }) {
@@ -192,6 +194,7 @@ export function OverviewView({
             }}
           >
             {topSelling}
+            {topReturned}
             {recentOrders}
             <CostBreakdownCard page={data} />
           </div>

@@ -123,6 +123,9 @@ export class ProfitabilityService {
           return Number(r.netSales);
         case 'cogs':
           return Number(r.cogs);
+        case 'refunds':
+          // refunds are stored negative: the biggest refund sorts first when descending
+          return -Number(r.refunds);
         case 'margin':
           return r.margin === null ? Number.NEGATIVE_INFINITY : Number(r.margin);
         default:

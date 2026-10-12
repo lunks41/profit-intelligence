@@ -611,6 +611,24 @@ describe('product rows show a trend, and the page says what is missing', () => {
     expect(small.insights).toEqual(last.insights);
   });
 
+  it('can be sorted by how much was refunded, biggest first, and by units sold', async () => {
+    await calculateAll(a);
+    const list = async (sort: string) =>
+      productListResponseSchema.parse(
+        (await api(`/products?${PERIOD}&sort=${sort}&dir=desc&pageSize=100`)).body,
+      ).rows;
+    const byRefund = (await list('refunds')).map((r) => Math.abs(cents(r.refunds)));
+    expect(byRefund.length).toBeGreaterThan(0);
+    for (let i = 1; i < byRefund.length; i++)
+      expect(byRefund[i]).toBeLessThanOrEqual(byRefund[i - 1]!);
+    expect(byRefund[0]).toBeGreaterThan(0);
+    const byUnits = (await list('units')).map((r) => r.units);
+    for (let i = 1; i < byUnits.length; i++)
+      expect(byUnits[i]).toBeLessThanOrEqual(byUnits[i - 1]!);
+    // an unknown sort is refused
+    expect((await api(`/products?${PERIOD}&sort=nonsense`)).res.statusCode).toBe(400);
+  });
+
   it('another shop gets findings of its own, none when it sold nothing', async () => {
     await calculateAll(a);
     const theirs = productListResponseSchema.parse(
