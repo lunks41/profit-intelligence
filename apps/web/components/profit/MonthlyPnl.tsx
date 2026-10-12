@@ -1,5 +1,6 @@
 'use client';
 
+import { ScrollTable } from '../common/ScrollTable';
 import { useState } from 'react';
 import type { ExpenseSummaryResponse } from '@pi/contracts';
 import { formatMoney } from '../../lib/format';
@@ -69,7 +70,7 @@ function Table({ data, filter }: { data: ExpenseSummaryResponse; filter: React.R
           <s-heading>Monthly profit and loss</s-heading>
           {filter}
         </div>
-        <div style={{ overflowX: 'auto' }}>
+        <ScrollTable>
           <s-table>
             <s-table-header-row>
               <s-table-header listSlot="primary">Month</s-table-header>
@@ -106,7 +107,7 @@ function Table({ data, filter }: { data: ExpenseSummaryResponse; filter: React.R
               ))}
             </s-table-body>
           </s-table>
-        </div>
+        </ScrollTable>
         <s-box padding="base">
           <s-text color="subdued">
             Operating profit is contribution profit less advertising and the month&apos;s expenses.

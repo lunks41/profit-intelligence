@@ -20,6 +20,7 @@ import { StatCard, StatGrid } from '../common';
 import { formatDate, formatDayMonth, todayInShop } from '../../lib/shop-time';
 import { ChannelChart } from './ChannelChart';
 import { DateField } from '../common/DateField';
+import { ScrollTable } from '../common/ScrollTable';
 
 const GRID = 'repeat(auto-fit, minmax(10.625rem, 1fr))';
 const today = todayInShop;
@@ -209,54 +210,56 @@ function Campaigns({ data, onChanged }: { data: MarketingResponse; onChanged: ()
   return (
     <s-section>
       {header}
-      <s-table>
-        <s-table-header-row>
-          <s-table-header listSlot="primary">Campaign</s-table-header>
-          <s-table-header>Account</s-table-header>
-          <s-table-header format="numeric">Spend</s-table-header>
-          <s-table-header format="numeric">Platform-reported sales</s-table-header>
-          <s-table-header format="numeric">Platform return</s-table-header>
-          {anyEditable && <s-table-header>Action</s-table-header>}
-        </s-table-header-row>
-        <s-table-body>
-          {data.campaigns.map((c, i) => (
-            <s-table-row key={`${c.accountId}-${c.campaign}-${i}`}>
-              <s-table-cell>{c.campaign || 'No campaign name'}</s-table-cell>
-              <s-table-cell>{c.account}</s-table-cell>
-              <s-table-cell>{formatMoney(c.spend, data.currency)}</s-table-cell>
-              <s-table-cell>{formatMoney(c.platformReportedSales, data.currency)}</s-table-cell>
-              <s-table-cell>
-                {c.platformReturn === null ? '—' : `${c.platformReturn}x`}
-              </s-table-cell>
-              {anyEditable && (
+      <ScrollTable>
+        <s-table>
+          <s-table-header-row>
+            <s-table-header listSlot="primary">Campaign</s-table-header>
+            <s-table-header>Account</s-table-header>
+            <s-table-header format="numeric">Spend</s-table-header>
+            <s-table-header format="numeric">Platform-reported sales</s-table-header>
+            <s-table-header format="numeric">Platform return</s-table-header>
+            {anyEditable && <s-table-header>Action</s-table-header>}
+          </s-table-header-row>
+          <s-table-body>
+            {data.campaigns.map((c, i) => (
+              <s-table-row key={`${c.accountId}-${c.campaign}-${i}`}>
+                <s-table-cell>{c.campaign || 'No campaign name'}</s-table-cell>
+                <s-table-cell>{c.account}</s-table-cell>
+                <s-table-cell>{formatMoney(c.spend, data.currency)}</s-table-cell>
+                <s-table-cell>{formatMoney(c.platformReportedSales, data.currency)}</s-table-cell>
                 <s-table-cell>
-                  {manual.has(c.accountId) ? (
-                    <s-stack direction="inline" gap="small-300">
-                      <s-button
-                        variant="tertiary"
-                        accessibilityLabel={`Edit the spend of ${c.campaign || 'this campaign'}`}
-                        onClick={() => setEditing(c)}
-                      >
-                        Edit
-                      </s-button>
-                      <s-button
-                        variant="tertiary"
-                        tone="critical"
-                        accessibilityLabel={`Remove the spend of ${c.campaign || 'this campaign'}`}
-                        onClick={() => setRemoving(c)}
-                      >
-                        Remove
-                      </s-button>
-                    </s-stack>
-                  ) : (
-                    <s-text color="subdued">From the platform</s-text>
-                  )}
+                  {c.platformReturn === null ? '—' : `${c.platformReturn}x`}
                 </s-table-cell>
-              )}
-            </s-table-row>
-          ))}
-        </s-table-body>
-      </s-table>
+                {anyEditable && (
+                  <s-table-cell>
+                    {manual.has(c.accountId) ? (
+                      <s-stack direction="inline" gap="small-300">
+                        <s-button
+                          variant="tertiary"
+                          accessibilityLabel={`Edit the spend of ${c.campaign || 'this campaign'}`}
+                          onClick={() => setEditing(c)}
+                        >
+                          Edit
+                        </s-button>
+                        <s-button
+                          variant="tertiary"
+                          tone="critical"
+                          accessibilityLabel={`Remove the spend of ${c.campaign || 'this campaign'}`}
+                          onClick={() => setRemoving(c)}
+                        >
+                          Remove
+                        </s-button>
+                      </s-stack>
+                    ) : (
+                      <s-text color="subdued">From the platform</s-text>
+                    )}
+                  </s-table-cell>
+                )}
+              </s-table-row>
+            ))}
+          </s-table-body>
+        </s-table>
+      </ScrollTable>
       {enterDialog}
       {editing && (
         <Modal
@@ -538,66 +541,68 @@ function Accounts({ data, onChanged }: { data: MarketingResponse; onChanged: () 
             }
           />
           {data.accounts.length > 0 && (
-            <s-table>
-              <s-table-header-row>
-                <s-table-header listSlot="primary">Account</s-table-header>
-                <s-table-header>Source</s-table-header>
-                <s-table-header>Status</s-table-header>
-                <s-table-header>Last import</s-table-header>
-                <s-table-header>Action</s-table-header>
-              </s-table-header-row>
-              <s-table-body>
-                {data.accounts.map((a) => (
-                  <s-table-row key={a.id}>
-                    <s-table-cell>{a.name}</s-table-cell>
-                    <s-table-cell>
-                      {a.provider === 'manual'
-                        ? 'Manual entry'
-                        : a.provider === 'meta'
-                          ? 'Meta Ads'
-                          : a.provider === 'google'
-                            ? 'Google Ads'
-                            : a.provider === 'tiktok'
-                              ? 'TikTok Ads'
-                              : a.provider}
-                    </s-table-cell>
-                    <s-table-cell>
-                      <s-badge tone={a.status === 'active' ? 'success' : 'critical'}>
-                        {a.status === 'active'
-                          ? 'Active'
-                          : a.status === 'error'
-                            ? 'Needs attention'
-                            : 'Disconnected'}
-                      </s-badge>
-                      {a.lastError ? ` ${a.lastError}` : ''}
-                    </s-table-cell>
-                    <s-table-cell>
-                      {a.lastSyncAt ? longDate(a.lastSyncAt.slice(0, 10)) : '—'}
-                    </s-table-cell>
-                    <s-table-cell>
-                      <s-stack direction="inline" gap="small-300">
-                        <s-button
-                          variant="tertiary"
-                          accessibilityLabel={`Edit ${a.name}`}
-                          onClick={() => setEditing(a)}
-                        >
-                          Edit
-                        </s-button>
-                        <s-button
-                          variant="tertiary"
-                          tone="critical"
-                          disabled={del.busy}
-                          accessibilityLabel={`${a.provider === 'manual' ? 'Remove' : 'Disconnect'} ${a.name}`}
-                          onClick={() => setRemoving(a)}
-                        >
-                          {a.provider === 'manual' ? 'Remove' : 'Disconnect'}
-                        </s-button>
-                      </s-stack>
-                    </s-table-cell>
-                  </s-table-row>
-                ))}
-              </s-table-body>
-            </s-table>
+            <ScrollTable>
+              <s-table>
+                <s-table-header-row>
+                  <s-table-header listSlot="primary">Account</s-table-header>
+                  <s-table-header>Source</s-table-header>
+                  <s-table-header>Status</s-table-header>
+                  <s-table-header>Last import</s-table-header>
+                  <s-table-header>Action</s-table-header>
+                </s-table-header-row>
+                <s-table-body>
+                  {data.accounts.map((a) => (
+                    <s-table-row key={a.id}>
+                      <s-table-cell>{a.name}</s-table-cell>
+                      <s-table-cell>
+                        {a.provider === 'manual'
+                          ? 'Manual entry'
+                          : a.provider === 'meta'
+                            ? 'Meta Ads'
+                            : a.provider === 'google'
+                              ? 'Google Ads'
+                              : a.provider === 'tiktok'
+                                ? 'TikTok Ads'
+                                : a.provider}
+                      </s-table-cell>
+                      <s-table-cell>
+                        <s-badge tone={a.status === 'active' ? 'success' : 'critical'}>
+                          {a.status === 'active'
+                            ? 'Active'
+                            : a.status === 'error'
+                              ? 'Needs attention'
+                              : 'Disconnected'}
+                        </s-badge>
+                        {a.lastError ? ` ${a.lastError}` : ''}
+                      </s-table-cell>
+                      <s-table-cell>
+                        {a.lastSyncAt ? longDate(a.lastSyncAt.slice(0, 10)) : '—'}
+                      </s-table-cell>
+                      <s-table-cell>
+                        <s-stack direction="inline" gap="small-300">
+                          <s-button
+                            variant="tertiary"
+                            accessibilityLabel={`Edit ${a.name}`}
+                            onClick={() => setEditing(a)}
+                          >
+                            Edit
+                          </s-button>
+                          <s-button
+                            variant="tertiary"
+                            tone="critical"
+                            disabled={del.busy}
+                            accessibilityLabel={`${a.provider === 'manual' ? 'Remove' : 'Disconnect'} ${a.name}`}
+                            onClick={() => setRemoving(a)}
+                          >
+                            {a.provider === 'manual' ? 'Remove' : 'Disconnect'}
+                          </s-button>
+                        </s-stack>
+                      </s-table-cell>
+                    </s-table-row>
+                  ))}
+                </s-table-body>
+              </s-table>
+            </ScrollTable>
           )}
           <FormError message={del.error} />
         </s-stack>

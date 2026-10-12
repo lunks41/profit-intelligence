@@ -9,6 +9,7 @@ import { longDate } from '../../lib/format';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormError, useAction, FormActions } from '../settings/shared';
 import { REPORTS } from './catalog';
+import { ScrollTable } from '../common/ScrollTable';
 
 const GRID = 'repeat(auto-fit, minmax(10.625rem, 1fr))';
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -234,50 +235,52 @@ function DeliveryTable({ rows, onChanged }: { rows: DeliveryRow[]; onChanged: ()
   return (
     <>
       <FormError message={act.error} />
-      <s-table>
-        <s-table-header-row>
-          <s-table-header listSlot="primary">Report</s-table-header>
-          <s-table-header>Period</s-table-header>
-          <s-table-header>To</s-table-header>
-          <s-table-header>Status</s-table-header>
-          <s-table-header>Action</s-table-header>
-        </s-table-header-row>
-        <s-table-body>
-          {rows.map((d) => (
-            <s-table-row key={d.id}>
-              <s-table-cell>{REPORTS.find((r) => r.id === d.kind)?.label ?? d.kind}</s-table-cell>
-              <s-table-cell>
-                {longDate(d.periodFrom)} to {longDate(d.periodTo)}
-              </s-table-cell>
-              <s-table-cell>{d.recipient}</s-table-cell>
-              <s-table-cell>
-                <s-badge
-                  tone={
-                    d.status === 'sent' ? 'success' : d.status === 'failed' ? 'critical' : 'info'
-                  }
-                >
-                  {d.status === 'sent' ? 'Sent' : d.status === 'failed' ? 'Failed' : 'Waiting'}
-                </s-badge>
-                {d.status === 'failed' && d.error ? ` ${d.error}` : ''}
-              </s-table-cell>
-              <s-table-cell>
-                {d.status === 'failed' && (
-                  <s-button
-                    variant="tertiary"
-                    disabled={act.busy}
-                    onClick={async () => {
-                      if (await act.run(() => apiPost(`/reports/deliveries/${d.id}/retry`)))
-                        onChanged();
-                    }}
+      <ScrollTable>
+        <s-table>
+          <s-table-header-row>
+            <s-table-header listSlot="primary">Report</s-table-header>
+            <s-table-header>Period</s-table-header>
+            <s-table-header>To</s-table-header>
+            <s-table-header>Status</s-table-header>
+            <s-table-header>Action</s-table-header>
+          </s-table-header-row>
+          <s-table-body>
+            {rows.map((d) => (
+              <s-table-row key={d.id}>
+                <s-table-cell>{REPORTS.find((r) => r.id === d.kind)?.label ?? d.kind}</s-table-cell>
+                <s-table-cell>
+                  {longDate(d.periodFrom)} to {longDate(d.periodTo)}
+                </s-table-cell>
+                <s-table-cell>{d.recipient}</s-table-cell>
+                <s-table-cell>
+                  <s-badge
+                    tone={
+                      d.status === 'sent' ? 'success' : d.status === 'failed' ? 'critical' : 'info'
+                    }
                   >
-                    Retry
-                  </s-button>
-                )}
-              </s-table-cell>
-            </s-table-row>
-          ))}
-        </s-table-body>
-      </s-table>
+                    {d.status === 'sent' ? 'Sent' : d.status === 'failed' ? 'Failed' : 'Waiting'}
+                  </s-badge>
+                  {d.status === 'failed' && d.error ? ` ${d.error}` : ''}
+                </s-table-cell>
+                <s-table-cell>
+                  {d.status === 'failed' && (
+                    <s-button
+                      variant="tertiary"
+                      disabled={act.busy}
+                      onClick={async () => {
+                        if (await act.run(() => apiPost(`/reports/deliveries/${d.id}/retry`)))
+                          onChanged();
+                      }}
+                    >
+                      Retry
+                    </s-button>
+                  )}
+                </s-table-cell>
+              </s-table-row>
+            ))}
+          </s-table-body>
+        </s-table>
+      </ScrollTable>
     </>
   );
 }

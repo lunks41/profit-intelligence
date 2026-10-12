@@ -7,6 +7,7 @@ import { formatDate } from '../../lib/shop-time';
 import { lineHelp } from '../../lib/pnl-help';
 import { sumFigures } from '../../lib/pnl-lines';
 import { InfoTip } from '../common/info-tip';
+import { ScrollTable } from '../common/ScrollTable';
 
 /**
  * The profit and loss laid out the way an accountant reads it: revenue, the cost of goods sold, gross profit, then the
@@ -98,126 +99,128 @@ export function AccountingView({
           {headerExtra}
         </div>
       )}
-      <s-table>
-        <s-table-header-row>
-          <s-table-header listSlot="primary">Line</s-table-header>
-          {figureCols.map((i) => (
-            <s-table-header key={i} format="numeric">
-              {report.columns[i]!.label}
-            </s-table-header>
-          ))}
-          <s-table-header format="numeric">Share of revenue</s-table-header>
-          <s-table-header>Data status</s-table-header>
-        </s-table-header-row>
-        <s-table-body>
-          {GROUPS.map((g) => {
-            const isClosed = closed[g.title] === true;
-            const sub = g.total.from ? computed(g.total.from) : null;
-            const totalRow = g.total.from ? undefined : find(g.total.label);
-            const subCells = sub ? sub.cells : figureCols.map((i) => totalRow?.[i] ?? '');
-            const subStatus = sub ? sub.status : (totalRow?.[statusAt] ?? '');
-            const subShare = sub
-              ? (() => {
-                  const v = num(sub.cells[sub.cells.length - 1]);
-                  const rev = num(revenueRow?.[totalCol]);
-                  return v === null || !rev ? '—' : formatPercent(v / rev);
-                })()
-              : share(totalRow);
-            return (
-              <Fragment key={g.title}>
-                <s-table-row>
-                  <s-table-cell>
-                    <button
-                      type="button"
-                      aria-expanded={!isClosed}
-                      onClick={() => setClosed((c) => ({ ...c, [g.title]: !isClosed }))}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.35rem',
-                        border: 0,
-                        background: 'transparent',
-                        padding: 0,
-                        font: 'inherit',
-                        color: 'inherit',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <s-icon type={isClosed ? 'chevron-right' : 'chevron-down'} size="small" />
-                      <strong>{g.title}</strong>
-                    </button>
-                  </s-table-cell>
-                  {figureCols.map((i) => (
-                    <s-table-cell key={i} />
-                  ))}
-                  <s-table-cell />
-                  <s-table-cell />
-                </s-table-row>
-                {!isClosed &&
-                  g.lines.map((label) => {
-                    const row = find(label);
-                    if (!row) return null;
-                    const help = lineHelp(label);
-                    return (
-                      <s-table-row key={label}>
-                        <s-table-cell>
-                          <span
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.15rem',
-                              paddingLeft: '1.5rem',
-                            }}
-                          >
-                            {label}
-                            {help && <InfoTip label={label} text={help} />}
-                          </span>
-                        </s-table-cell>
-                        {figureCols.map((i) => (
-                          <s-table-cell key={i}>{money(row[i])}</s-table-cell>
-                        ))}
-                        <s-table-cell>{share(row)}</s-table-cell>
-                        <s-table-cell>{row[statusAt]}</s-table-cell>
-                      </s-table-row>
-                    );
-                  })}
-                <s-table-row>
-                  <s-table-cell>
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.15rem',
-                        padding: '0.1rem 0.4rem',
-                        borderRadius: '0.35rem',
-                        background: '#eaf4ff',
-                      }}
-                    >
-                      <s-text type="strong">{g.total.label}</s-text>
-                      <InfoTip
-                        label={g.total.label}
-                        text={
-                          lineHelp(g.total.label) ??
-                          'Revenue less the cost of the products sold. What is left before fees, shipping, advertising and expenses.'
-                        }
-                      />
-                    </span>
-                  </s-table-cell>
-                  {subCells.map((v, k) => (
-                    <s-table-cell key={k}>
-                      <s-text type="strong">{money(v)}</s-text>
+      <ScrollTable>
+        <s-table>
+          <s-table-header-row>
+            <s-table-header listSlot="primary">Line</s-table-header>
+            {figureCols.map((i) => (
+              <s-table-header key={i} format="numeric">
+                {report.columns[i]!.label}
+              </s-table-header>
+            ))}
+            <s-table-header format="numeric">Share of revenue</s-table-header>
+            <s-table-header>Data status</s-table-header>
+          </s-table-header-row>
+          <s-table-body>
+            {GROUPS.map((g) => {
+              const isClosed = closed[g.title] === true;
+              const sub = g.total.from ? computed(g.total.from) : null;
+              const totalRow = g.total.from ? undefined : find(g.total.label);
+              const subCells = sub ? sub.cells : figureCols.map((i) => totalRow?.[i] ?? '');
+              const subStatus = sub ? sub.status : (totalRow?.[statusAt] ?? '');
+              const subShare = sub
+                ? (() => {
+                    const v = num(sub.cells[sub.cells.length - 1]);
+                    const rev = num(revenueRow?.[totalCol]);
+                    return v === null || !rev ? '—' : formatPercent(v / rev);
+                  })()
+                : share(totalRow);
+              return (
+                <Fragment key={g.title}>
+                  <s-table-row>
+                    <s-table-cell>
+                      <button
+                        type="button"
+                        aria-expanded={!isClosed}
+                        onClick={() => setClosed((c) => ({ ...c, [g.title]: !isClosed }))}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          border: 0,
+                          background: 'transparent',
+                          padding: 0,
+                          font: 'inherit',
+                          color: 'inherit',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <s-icon type={isClosed ? 'chevron-right' : 'chevron-down'} size="small" />
+                        <strong>{g.title}</strong>
+                      </button>
                     </s-table-cell>
-                  ))}
-                  <s-table-cell>
-                    <s-text type="strong">{subShare}</s-text>
-                  </s-table-cell>
-                  <s-table-cell>{subStatus}</s-table-cell>
-                </s-table-row>
-              </Fragment>
-            );
-          })}
-        </s-table-body>
-      </s-table>
+                    {figureCols.map((i) => (
+                      <s-table-cell key={i} />
+                    ))}
+                    <s-table-cell />
+                    <s-table-cell />
+                  </s-table-row>
+                  {!isClosed &&
+                    g.lines.map((label) => {
+                      const row = find(label);
+                      if (!row) return null;
+                      const help = lineHelp(label);
+                      return (
+                        <s-table-row key={label}>
+                          <s-table-cell>
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.15rem',
+                                paddingLeft: '1.5rem',
+                              }}
+                            >
+                              {label}
+                              {help && <InfoTip label={label} text={help} />}
+                            </span>
+                          </s-table-cell>
+                          {figureCols.map((i) => (
+                            <s-table-cell key={i}>{money(row[i])}</s-table-cell>
+                          ))}
+                          <s-table-cell>{share(row)}</s-table-cell>
+                          <s-table-cell>{row[statusAt]}</s-table-cell>
+                        </s-table-row>
+                      );
+                    })}
+                  <s-table-row>
+                    <s-table-cell>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.15rem',
+                          padding: '0.1rem 0.4rem',
+                          borderRadius: '0.35rem',
+                          background: '#eaf4ff',
+                        }}
+                      >
+                        <s-text type="strong">{g.total.label}</s-text>
+                        <InfoTip
+                          label={g.total.label}
+                          text={
+                            lineHelp(g.total.label) ??
+                            'Revenue less the cost of the products sold. What is left before fees, shipping, advertising and expenses.'
+                          }
+                        />
+                      </span>
+                    </s-table-cell>
+                    {subCells.map((v, k) => (
+                      <s-table-cell key={k}>
+                        <s-text type="strong">{money(v)}</s-text>
+                      </s-table-cell>
+                    ))}
+                    <s-table-cell>
+                      <s-text type="strong">{subShare}</s-text>
+                    </s-table-cell>
+                    <s-table-cell>{subStatus}</s-table-cell>
+                  </s-table-row>
+                </Fragment>
+              );
+            })}
+          </s-table-body>
+        </s-table>
+      </ScrollTable>
     </s-section>
   );
 }

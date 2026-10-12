@@ -7,6 +7,7 @@ import { formatDate, prettyDates } from '../../lib/shop-time';
 import { lineHelp } from '../../lib/pnl-help';
 import { InfoTip } from '../common/info-tip';
 import { Sparkline } from '../common/sparkline';
+import { ScrollTable } from '../common/ScrollTable';
 
 function cell(
   value: string,
@@ -46,74 +47,78 @@ export function ReportTable({
             <s-text color="subdued">Nothing to show for this period.</s-text>
           </s-box>
         ) : (
-          <s-table>
-            <s-table-header-row>
-              {report.columns
-                .map((c, i) => (
-                  <s-table-header
-                    key={c.key}
-                    listSlot={i === 0 ? 'primary' : undefined}
-                    format={c.type === 'text' ? undefined : 'numeric'}
-                  >
-                    {c.label}
+          <ScrollTable>
+            <s-table>
+              <s-table-header-row>
+                {report.columns
+                  .map((c, i) => (
+                    <s-table-header
+                      key={c.key}
+                      listSlot={i === 0 ? 'primary' : undefined}
+                      format={c.type === 'text' ? undefined : 'numeric'}
+                    >
+                      {c.label}
+                    </s-table-header>
+                  ))
+                  .flatMap((h, i) =>
+                    i === 0 && showType
+                      ? [h, <s-table-header key="kind">Type</s-table-header>]
+                      : [h],
+                  )}
+                {showType && (
+                  <s-table-header>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                      Trend
+                      <InfoTip
+                        label="Trend"
+                        text="The last month against the month before. The first and the last month of a period can be partial, so a month that is only partly over can look lower."
+                      />
+                    </span>
                   </s-table-header>
-                ))
-                .flatMap((h, i) =>
-                  i === 0 && showType ? [h, <s-table-header key="kind">Type</s-table-header>] : [h],
                 )}
-              {showType && (
-                <s-table-header>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                    Trend
-                    <InfoTip
-                      label="Trend"
-                      text="The last month against the month before. The first and the last month of a period can be partial, so a month that is only partly over can look lower."
-                    />
-                  </span>
-                </s-table-header>
-              )}
-            </s-table-header-row>
-            <s-table-body>
-              {(showType ? groupedByKind(report.rows) : report.rows).map((r, i) => (
-                <s-table-row key={`r${i}`}>
-                  {r.flatMap((v, j) => {
-                    const c = (
-                      <s-table-cell key={j}>
-                        {j === 0 && showType ? (
-                          <LineName label={v} />
-                        ) : (
-                          cell(v, report.columns[j]!.type, report.currency)
-                        )}
-                      </s-table-cell>
-                    );
-                    return j === 0 && showType ? [c, <KindCell key="kind" label={v} />] : [c];
-                  })}
-                  {showType && <TrendCell report={report} row={r} />}
-                </s-table-row>
-              ))}
-              {report.totalRows.map((r, i) => (
-                <s-table-row key={`t${i}`}>
-                  {r.flatMap((v, j) => {
-                    const c = (
-                      <s-table-cell key={j}>
-                        <span style={showType ? HIGHLIGHT : undefined}>
+              </s-table-header-row>
+              <s-table-body>
+                {(showType ? groupedByKind(report.rows) : report.rows).map((r, i) => (
+                  <s-table-row key={`r${i}`}>
+                    {r.flatMap((v, j) => {
+                      const c = (
+                        <s-table-cell key={j}>
                           {j === 0 && showType ? (
-                            <LineName label={v} strong />
+                            <LineName label={v} />
                           ) : (
-                            <s-text type="strong">
-                              {cell(v, report.columns[j]!.type, report.currency)}
-                            </s-text>
+                            cell(v, report.columns[j]!.type, report.currency)
                           )}
-                        </span>
-                      </s-table-cell>
-                    );
-                    return j === 0 && showType ? [c, <KindCell key="kind" label={v} />] : [c];
-                  })}
-                  {showType && <TrendCell report={report} row={r} />}
-                </s-table-row>
-              ))}
-            </s-table-body>
-          </s-table>
+                        </s-table-cell>
+                      );
+                      return j === 0 && showType ? [c, <KindCell key="kind" label={v} />] : [c];
+                    })}
+                    {showType && <TrendCell report={report} row={r} />}
+                  </s-table-row>
+                ))}
+                {report.totalRows.map((r, i) => (
+                  <s-table-row key={`t${i}`}>
+                    {r.flatMap((v, j) => {
+                      const c = (
+                        <s-table-cell key={j}>
+                          <span style={showType ? HIGHLIGHT : undefined}>
+                            {j === 0 && showType ? (
+                              <LineName label={v} strong />
+                            ) : (
+                              <s-text type="strong">
+                                {cell(v, report.columns[j]!.type, report.currency)}
+                              </s-text>
+                            )}
+                          </span>
+                        </s-table-cell>
+                      );
+                      return j === 0 && showType ? [c, <KindCell key="kind" label={v} />] : [c];
+                    })}
+                    {showType && <TrendCell report={report} row={r} />}
+                  </s-table-row>
+                ))}
+              </s-table-body>
+            </s-table>
+          </ScrollTable>
         )}
         {(report.truncated ||
           report.notes.length > 0 ||

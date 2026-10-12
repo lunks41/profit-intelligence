@@ -10,6 +10,7 @@ import { formatMoney, longDate } from '../../lib/format';
 import { CoverageSummary, RuleCheck } from './RuleCoverage';
 import { FormError, isAmount, isPercent, todayLocal, useAction, FormActions } from './shared';
 import { DateField } from '../common/DateField';
+import { ScrollTable } from '../common/ScrollTable';
 
 type Reload = () => void;
 
@@ -82,32 +83,34 @@ export function FeesTab({ rules, onChanged }: { rules: RulesResponse; onChanged:
       <s-section heading="Payment fee rules">
         <s-stack gap="base">
           {rules.feeRules.length > 0 && (
-            <s-table>
-              <s-table-header-row>
-                <s-table-header listSlot="primary">Gateway</s-table-header>
-                <s-table-header format="numeric">Percent</s-table-header>
-                <s-table-header format="numeric">Fixed amount</s-table-header>
-                <s-table-header>Applies from</s-table-header>
-                <s-table-header>Action</s-table-header>
-              </s-table-header-row>
-              <s-table-body>
-                {rules.feeRules.map((r) => (
-                  <s-table-row key={r.id}>
-                    <s-table-cell>{r.gateway ?? 'All gateways'}</s-table-cell>
-                    <s-table-cell>{r.percent}%</s-table-cell>
-                    <s-table-cell>{formatMoney(r.fixedAmount, cur)}</s-table-cell>
-                    <s-table-cell>{longDate(r.effectiveFrom)}</s-table-cell>
-                    <s-table-cell>
-                      <RemoveRule
-                        path={`/settings/fee-rules/${r.id}`}
-                        onDone={onChanged}
-                        label={`Remove fee rule for ${r.gateway ?? 'all gateways'}`}
-                      />
-                    </s-table-cell>
-                  </s-table-row>
-                ))}
-              </s-table-body>
-            </s-table>
+            <ScrollTable>
+              <s-table>
+                <s-table-header-row>
+                  <s-table-header listSlot="primary">Gateway</s-table-header>
+                  <s-table-header format="numeric">Percent</s-table-header>
+                  <s-table-header format="numeric">Fixed amount</s-table-header>
+                  <s-table-header>Applies from</s-table-header>
+                  <s-table-header>Action</s-table-header>
+                </s-table-header-row>
+                <s-table-body>
+                  {rules.feeRules.map((r) => (
+                    <s-table-row key={r.id}>
+                      <s-table-cell>{r.gateway ?? 'All gateways'}</s-table-cell>
+                      <s-table-cell>{r.percent}%</s-table-cell>
+                      <s-table-cell>{formatMoney(r.fixedAmount, cur)}</s-table-cell>
+                      <s-table-cell>{longDate(r.effectiveFrom)}</s-table-cell>
+                      <s-table-cell>
+                        <RemoveRule
+                          path={`/settings/fee-rules/${r.id}`}
+                          onDone={onChanged}
+                          label={`Remove fee rule for ${r.gateway ?? 'all gateways'}`}
+                        />
+                      </s-table-cell>
+                    </s-table-row>
+                  ))}
+                </s-table-body>
+              </s-table>
+            </ScrollTable>
           )}
           <s-text type="strong">Add a rule</s-text>
           <s-grid
@@ -308,38 +311,40 @@ export function ShippingTab({ rules, onChanged }: { rules: RulesResponse; onChan
       <s-section heading="Shipping cost rules">
         <s-stack gap="base">
           {rules.shippingRules.length > 0 && (
-            <s-table>
-              <s-table-header-row>
-                <s-table-header listSlot="primary">Where</s-table-header>
-                <s-table-header>Method</s-table-header>
-                <s-table-header format="numeric">Value</s-table-header>
-                <s-table-header>Applies from</s-table-header>
-                <s-table-header>Action</s-table-header>
-              </s-table-header-row>
-              <s-table-body>
-                {rules.shippingRules.map((r) => (
-                  <s-table-row key={r.id}>
-                    <s-table-cell>{shipWhere(r)}</s-table-cell>
-                    <s-table-cell>{shipMethod(r.mode)}</s-table-cell>
-                    <s-table-cell>
-                      {r.mode === 'percent_of_shipping_charged'
-                        ? `${r.percent}%`
-                        : r.mode === 'per_kilogram'
-                          ? `${formatMoney(r.amount, cur)} / kg`
-                          : formatMoney(r.amount, cur)}
-                    </s-table-cell>
-                    <s-table-cell>{longDate(r.effectiveFrom)}</s-table-cell>
-                    <s-table-cell>
-                      <RemoveRule
-                        path={`/settings/shipping-rules/${r.id}`}
-                        onDone={onChanged}
-                        label="Remove shipping cost rule"
-                      />
-                    </s-table-cell>
-                  </s-table-row>
-                ))}
-              </s-table-body>
-            </s-table>
+            <ScrollTable>
+              <s-table>
+                <s-table-header-row>
+                  <s-table-header listSlot="primary">Where</s-table-header>
+                  <s-table-header>Method</s-table-header>
+                  <s-table-header format="numeric">Value</s-table-header>
+                  <s-table-header>Applies from</s-table-header>
+                  <s-table-header>Action</s-table-header>
+                </s-table-header-row>
+                <s-table-body>
+                  {rules.shippingRules.map((r) => (
+                    <s-table-row key={r.id}>
+                      <s-table-cell>{shipWhere(r)}</s-table-cell>
+                      <s-table-cell>{shipMethod(r.mode)}</s-table-cell>
+                      <s-table-cell>
+                        {r.mode === 'percent_of_shipping_charged'
+                          ? `${r.percent}%`
+                          : r.mode === 'per_kilogram'
+                            ? `${formatMoney(r.amount, cur)} / kg`
+                            : formatMoney(r.amount, cur)}
+                      </s-table-cell>
+                      <s-table-cell>{longDate(r.effectiveFrom)}</s-table-cell>
+                      <s-table-cell>
+                        <RemoveRule
+                          path={`/settings/shipping-rules/${r.id}`}
+                          onDone={onChanged}
+                          label="Remove shipping cost rule"
+                        />
+                      </s-table-cell>
+                    </s-table-row>
+                  ))}
+                </s-table-body>
+              </s-table>
+            </ScrollTable>
           )}
           <s-text type="strong">Add a rule</s-text>
           <s-grid

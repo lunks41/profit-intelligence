@@ -5,6 +5,7 @@ import type { SupportListResponse } from '@pi/contracts';
 import { longDate } from '../../lib/format';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { SupportForm } from './SupportForm';
+import { ScrollTable } from '../common/ScrollTable';
 
 const KIND = {
   feedback: 'Feedback',
@@ -61,30 +62,32 @@ export function HelpTab() {
           <s-text color="subdued">You have not sent any messages yet.</s-text>
         )}
         {list.data && list.data.rows.length > 0 && (
-          <s-table>
-            <s-table-header-row>
-              <s-table-header listSlot="primary">Message</s-table-header>
-              <s-table-header>Type</s-table-header>
-              <s-table-header>Sent</s-table-header>
-              <s-table-header>Status</s-table-header>
-            </s-table-header-row>
-            <s-table-body>
-              {list.data.rows.map((r) => (
-                <s-table-row key={r.id}>
-                  <s-table-cell>
-                    {r.message.length > 120 ? `${r.message.slice(0, 120)}…` : r.message}
-                  </s-table-cell>
-                  <s-table-cell>{KIND[r.kind]}</s-table-cell>
-                  <s-table-cell>{longDate(r.createdAt.slice(0, 10))}</s-table-cell>
-                  <s-table-cell>
-                    <s-badge tone={r.status === 'answered' ? 'success' : 'neutral'}>
-                      {r.status}
-                    </s-badge>
-                  </s-table-cell>
-                </s-table-row>
-              ))}
-            </s-table-body>
-          </s-table>
+          <ScrollTable>
+            <s-table>
+              <s-table-header-row>
+                <s-table-header listSlot="primary">Message</s-table-header>
+                <s-table-header>Type</s-table-header>
+                <s-table-header>Sent</s-table-header>
+                <s-table-header>Status</s-table-header>
+              </s-table-header-row>
+              <s-table-body>
+                {list.data.rows.map((r) => (
+                  <s-table-row key={r.id}>
+                    <s-table-cell>
+                      {r.message.length > 120 ? `${r.message.slice(0, 120)}…` : r.message}
+                    </s-table-cell>
+                    <s-table-cell>{KIND[r.kind]}</s-table-cell>
+                    <s-table-cell>{longDate(r.createdAt.slice(0, 10))}</s-table-cell>
+                    <s-table-cell>
+                      <s-badge tone={r.status === 'answered' ? 'success' : 'neutral'}>
+                        {r.status}
+                      </s-badge>
+                    </s-table-cell>
+                  </s-table-row>
+                ))}
+              </s-table-body>
+            </s-table>
+          </ScrollTable>
         )}
       </s-section>
     </>

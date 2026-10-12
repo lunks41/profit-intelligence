@@ -7,6 +7,7 @@ import { fulfillmentStatus, paymentStatus } from '../../lib/order-status';
 import { useApi } from '../profitability/shared';
 import { Card, CardPad } from '../common';
 import { CardHeader } from './card-parts';
+import { ScrollTable } from '../common/ScrollTable';
 
 /**
  * The five most recent orders in the period: number, date, revenue and payment status. Customer
@@ -38,34 +39,38 @@ export function RecentOrders({ page }: { page: OverviewResponse }) {
             </s-text>
           </s-box>
         ) : (
-          <s-table>
-            <s-table-header-row>
-              <s-table-header listSlot="primary">Order</s-table-header>
-              <s-table-header>Date</s-table-header>
-              <s-table-header format="numeric">Revenue</s-table-header>
-              <s-table-header>Payment</s-table-header>
-              <s-table-header>Fulfillment</s-table-header>
-            </s-table-header-row>
-            <s-table-body>
-              {rows.map((r) => {
-                const st = paymentStatus(r.financialStatus);
-                const ful = fulfillmentStatus(r.fulfillmentStatus);
-                return (
-                  <s-table-row key={r.orderShopifyId}>
-                    <s-table-cell>{r.name}</s-table-cell>
-                    <s-table-cell>{shortDate(r.orderDate)}</s-table-cell>
-                    <s-table-cell>{r.recognized ? formatMoney(r.revenue, cur) : '—'}</s-table-cell>
-                    <s-table-cell>
-                      <s-badge tone={st.tone}>{st.label}</s-badge>
-                    </s-table-cell>
-                    <s-table-cell>
-                      <s-badge tone={ful.tone}>{ful.label}</s-badge>
-                    </s-table-cell>
-                  </s-table-row>
-                );
-              })}
-            </s-table-body>
-          </s-table>
+          <ScrollTable>
+            <s-table>
+              <s-table-header-row>
+                <s-table-header listSlot="primary">Order</s-table-header>
+                <s-table-header>Date</s-table-header>
+                <s-table-header format="numeric">Revenue</s-table-header>
+                <s-table-header>Payment</s-table-header>
+                <s-table-header>Fulfillment</s-table-header>
+              </s-table-header-row>
+              <s-table-body>
+                {rows.map((r) => {
+                  const st = paymentStatus(r.financialStatus);
+                  const ful = fulfillmentStatus(r.fulfillmentStatus);
+                  return (
+                    <s-table-row key={r.orderShopifyId}>
+                      <s-table-cell>{r.name}</s-table-cell>
+                      <s-table-cell>{shortDate(r.orderDate)}</s-table-cell>
+                      <s-table-cell>
+                        {r.recognized ? formatMoney(r.revenue, cur) : '—'}
+                      </s-table-cell>
+                      <s-table-cell>
+                        <s-badge tone={st.tone}>{st.label}</s-badge>
+                      </s-table-cell>
+                      <s-table-cell>
+                        <s-badge tone={ful.tone}>{ful.label}</s-badge>
+                      </s-table-cell>
+                    </s-table-row>
+                  );
+                })}
+              </s-table-body>
+            </s-table>
+          </ScrollTable>
         )}
       </>
     </Card>

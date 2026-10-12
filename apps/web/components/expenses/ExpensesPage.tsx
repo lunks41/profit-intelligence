@@ -23,6 +23,7 @@ import { Modal } from '../common/Modal';
 import { BulkExpenseTools } from './BulkExpenseDialog';
 import { formatDateTime, prettyDates } from '../../lib/shop-time';
 import { DateField } from '../common/DateField';
+import { ScrollTable } from '../common/ScrollTable';
 
 type Tab = 'all' | 'recurring' | 'history';
 
@@ -569,83 +570,85 @@ function List({
                 gap: '1rem',
               }}
             >
-              <s-table>
-                <s-table-header-row>
-                  <s-table-header listSlot="primary">Name</s-table-header>
-                  <s-table-header>Category</s-table-header>
-                  <s-table-header>Repeats</s-table-header>
-                  <s-table-header format="numeric">Amount</s-table-header>
-                  <s-table-header format="numeric">This month</s-table-header>
-                  <s-table-header>Next charge</s-table-header>
-                  <s-table-header>Status</s-table-header>
-                  <s-table-header>Action</s-table-header>
-                </s-table-header-row>
-                <s-table-body>
-                  {data.rows.map((r) => (
-                    <s-table-row key={r.id}>
-                      <s-table-cell>
-                        <s-stack gap="none">
-                          <s-text>{r.name}</s-text>
-                          {r.reference && <s-text color="subdued">Ref. {r.reference}</s-text>}
-                          {r.description && <s-text color="subdued">{r.description}</s-text>}
-                        </s-stack>
-                      </s-table-cell>
-                      <s-table-cell>
-                        {r.category}
-                        <br />
-                        <s-text color="subdued">{CLASS_LABEL[r.categoryClass]}</s-text>
-                      </s-table-cell>
-                      <s-table-cell>
-                        {r.kind === 'one_time'
-                          ? 'One time'
-                          : r.frequency === 'yearly'
-                            ? 'Yearly'
-                            : 'Monthly'}
-                      </s-table-cell>
-                      <s-table-cell>
-                        {formatMoney(r.amount, data.currency)}
-                        {r.originalAmount && r.originalCurrency && (
-                          <>
-                            <br />
-                            <s-text color="subdued">
-                              {formatMoney(r.originalAmount, r.originalCurrency)} at {r.fxRate}
-                              {r.fxEstimated ? ' (estimated rate)' : ''}
-                            </s-text>
-                          </>
-                        )}
-                      </s-table-cell>
-                      <s-table-cell>{formatMoney(r.thisMonth, data.currency)}</s-table-cell>
-                      <s-table-cell>{r.nextCharge ? longDate(r.nextCharge) : '—'}</s-table-cell>
-                      <s-table-cell>
-                        <s-badge
-                          tone={
-                            r.status === 'active'
-                              ? 'success'
+              <ScrollTable>
+                <s-table>
+                  <s-table-header-row>
+                    <s-table-header listSlot="primary">Name</s-table-header>
+                    <s-table-header>Category</s-table-header>
+                    <s-table-header>Repeats</s-table-header>
+                    <s-table-header format="numeric">Amount</s-table-header>
+                    <s-table-header format="numeric">This month</s-table-header>
+                    <s-table-header>Next charge</s-table-header>
+                    <s-table-header>Status</s-table-header>
+                    <s-table-header>Action</s-table-header>
+                  </s-table-header-row>
+                  <s-table-body>
+                    {data.rows.map((r) => (
+                      <s-table-row key={r.id}>
+                        <s-table-cell>
+                          <s-stack gap="none">
+                            <s-text>{r.name}</s-text>
+                            {r.reference && <s-text color="subdued">Ref. {r.reference}</s-text>}
+                            {r.description && <s-text color="subdued">{r.description}</s-text>}
+                          </s-stack>
+                        </s-table-cell>
+                        <s-table-cell>
+                          {r.category}
+                          <br />
+                          <s-text color="subdued">{CLASS_LABEL[r.categoryClass]}</s-text>
+                        </s-table-cell>
+                        <s-table-cell>
+                          {r.kind === 'one_time'
+                            ? 'One time'
+                            : r.frequency === 'yearly'
+                              ? 'Yearly'
+                              : 'Monthly'}
+                        </s-table-cell>
+                        <s-table-cell>
+                          {formatMoney(r.amount, data.currency)}
+                          {r.originalAmount && r.originalCurrency && (
+                            <>
+                              <br />
+                              <s-text color="subdued">
+                                {formatMoney(r.originalAmount, r.originalCurrency)} at {r.fxRate}
+                                {r.fxEstimated ? ' (estimated rate)' : ''}
+                              </s-text>
+                            </>
+                          )}
+                        </s-table-cell>
+                        <s-table-cell>{formatMoney(r.thisMonth, data.currency)}</s-table-cell>
+                        <s-table-cell>{r.nextCharge ? longDate(r.nextCharge) : '—'}</s-table-cell>
+                        <s-table-cell>
+                          <s-badge
+                            tone={
+                              r.status === 'active'
+                                ? 'success'
+                                : r.status === 'scheduled'
+                                  ? 'info'
+                                  : 'neutral'
+                            }
+                          >
+                            {r.status === 'active'
+                              ? 'Active'
                               : r.status === 'scheduled'
-                                ? 'info'
-                                : 'neutral'
-                          }
-                        >
-                          {r.status === 'active'
-                            ? 'Active'
-                            : r.status === 'scheduled'
-                              ? 'Scheduled'
-                              : 'Ended'}
-                        </s-badge>
-                      </s-table-cell>
-                      <s-table-cell>
-                        <s-button
-                          variant="tertiary"
-                          accessibilityLabel={`Manage ${r.name}`}
-                          onClick={() => setSelected(r)}
-                        >
-                          Manage
-                        </s-button>
-                      </s-table-cell>
-                    </s-table-row>
-                  ))}
-                </s-table-body>
-              </s-table>
+                                ? 'Scheduled'
+                                : 'Ended'}
+                          </s-badge>
+                        </s-table-cell>
+                        <s-table-cell>
+                          <s-button
+                            variant="tertiary"
+                            accessibilityLabel={`Manage ${r.name}`}
+                            onClick={() => setSelected(r)}
+                          >
+                            Manage
+                          </s-button>
+                        </s-table-cell>
+                      </s-table-row>
+                    ))}
+                  </s-table-body>
+                </s-table>
+              </ScrollTable>
             </div>
           )}
         </s-stack>
@@ -869,22 +872,24 @@ function History({ version }: { version: number }) {
       {loading && !data && <Loading what="history" />}
       {data && data.rows.length === 0 && <s-text color="subdued">No changes yet.</s-text>}
       {data && data.rows.length > 0 && (
-        <s-table>
-          <s-table-header-row>
-            <s-table-header listSlot="primary">When</s-table-header>
-            <s-table-header>Who</s-table-header>
-            <s-table-header>Change</s-table-header>
-          </s-table-header-row>
-          <s-table-body>
-            {data.rows.map((r) => (
-              <s-table-row key={r.id}>
-                <s-table-cell>{formatDateTime(r.createdAt)}</s-table-cell>
-                <s-table-cell>{r.actor.replace('shopify-user:', 'User ')}</s-table-cell>
-                <s-table-cell>{prettyDates(r.summary)}</s-table-cell>
-              </s-table-row>
-            ))}
-          </s-table-body>
-        </s-table>
+        <ScrollTable>
+          <s-table>
+            <s-table-header-row>
+              <s-table-header listSlot="primary">When</s-table-header>
+              <s-table-header>Who</s-table-header>
+              <s-table-header>Change</s-table-header>
+            </s-table-header-row>
+            <s-table-body>
+              {data.rows.map((r) => (
+                <s-table-row key={r.id}>
+                  <s-table-cell>{formatDateTime(r.createdAt)}</s-table-cell>
+                  <s-table-cell>{r.actor.replace('shopify-user:', 'User ')}</s-table-cell>
+                  <s-table-cell>{prettyDates(r.summary)}</s-table-cell>
+                </s-table-row>
+              ))}
+            </s-table-body>
+          </s-table>
+        </ScrollTable>
       )}
     </s-section>
   );

@@ -11,6 +11,7 @@ import { SyncSection } from '../sync/SyncSection';
 import { useSyncStatus } from '../sync/useSyncStatus';
 import { FormError, useAction, FormActions } from './shared';
 import { formatDateTime, prettyDates } from '../../lib/shop-time';
+import { ScrollTable } from '../common/ScrollTable';
 
 export function DataTab({ reloadKey }: { reloadKey: number }) {
   const sync = useSyncStatus();
@@ -207,22 +208,24 @@ function History({ reloadKey }: { reloadKey: number }) {
         </s-text>
       )}
       {data && data.rows.length > 0 && (
-        <s-table>
-          <s-table-header-row>
-            <s-table-header listSlot="primary">When</s-table-header>
-            <s-table-header>Who</s-table-header>
-            <s-table-header>Change</s-table-header>
-          </s-table-header-row>
-          <s-table-body>
-            {data.rows.map((r) => (
-              <s-table-row key={r.id}>
-                <s-table-cell>{formatDateTime(r.createdAt)}</s-table-cell>
-                <s-table-cell>{r.actor.replace('shopify-user:', 'User ')}</s-table-cell>
-                <s-table-cell>{prettyDates(r.summary)}</s-table-cell>
-              </s-table-row>
-            ))}
-          </s-table-body>
-        </s-table>
+        <ScrollTable>
+          <s-table>
+            <s-table-header-row>
+              <s-table-header listSlot="primary">When</s-table-header>
+              <s-table-header>Who</s-table-header>
+              <s-table-header>Change</s-table-header>
+            </s-table-header-row>
+            <s-table-body>
+              {data.rows.map((r) => (
+                <s-table-row key={r.id}>
+                  <s-table-cell>{formatDateTime(r.createdAt)}</s-table-cell>
+                  <s-table-cell>{r.actor.replace('shopify-user:', 'User ')}</s-table-cell>
+                  <s-table-cell>{prettyDates(r.summary)}</s-table-cell>
+                </s-table-row>
+              ))}
+            </s-table-body>
+          </s-table>
+        </ScrollTable>
       )}
     </s-section>
   );
