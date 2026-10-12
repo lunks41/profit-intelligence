@@ -282,13 +282,18 @@ function ExpenseForm({
 
   async function save() {
     setTouched(true);
-    if (!nameOk || !amountOk || !categoryId) return;
+    if (!nameOk || !amountOk || !categoryId || !endOk) return;
     if (row) {
       const effectiveFrom = recurringRow ? `${from.slice(0, 7)}-01` : start;
       const body = {
         ...(name.trim() !== row.name ? { name: name.trim() } : {}),
         ...(categoryId !== row.categoryId ? { categoryId } : {}),
         ...(amount.trim() !== strip(row.amount) ? { amount: amount.trim() } : {}),
+        ...(reference.trim() !== (row.reference ?? '') ? { reference: reference.trim() } : {}),
+        ...(description.trim() !== (row.description ?? '')
+          ? { description: description.trim() }
+          : {}),
+        ...(recurringRow && end !== (row.endDate ?? '') ? { endDate: end || null } : {}),
         effectiveFrom,
       };
       if (Object.keys(body).length === 1 && (recurringRow || start === row.startDate)) {
@@ -333,66 +338,53 @@ function ExpenseForm({
           error={touched && !amountOk ? 'Enter a number such as 1200.00' : undefined}
           onInput={(e) => setAmount(e.currentTarget.value)}
         />
-        {!editing && (
-          <s-text-field
-            label={`Currency (blank = ${currency})`}
-            placeholder={currency}
-            value={foreign}
-            disabled={editing}
-            error={touched && !currencyOk ? 'Use a three-letter code such as EUR' : undefined}
-            onInput={(e) => setForeign(e.currentTarget.value.toUpperCase())}
-          />
-        )}
+        <s-text-field
+          label={`Currency (blank = ${currency})`}
+          placeholder={currency}
+          value={foreign}
+          disabled={editing}
+          error={touched && !currencyOk ? 'Use a three-letter code such as EUR' : undefined}
+          onInput={(e) => setForeign(e.currentTarget.value.toUpperCase())}
+        />
         <CategoryDropdown value={categoryId} categories={categories} onChange={setCategoryId} />
-        {!editing && (
-          <s-text-field
-            label="Reference (optional)"
-            placeholder="Invoice 1042"
-            value={reference}
-            disabled={editing}
-            onInput={(e) => setReference(e.currentTarget.value)}
-          />
-        )}
-        {!editing && (
-          <s-text-field
-            label="Description (optional)"
-            value={description}
-            disabled={editing}
-            onInput={(e) => setDescription(e.currentTarget.value)}
-          />
-        )}
-        {!editing && (
-          <Dropdown
-            label="Repeats"
-            value={kind === 'one_time' ? 'once' : frequency}
-            disabled={editing}
-            options={[
-              { value: 'once', label: 'One time' },
-              { value: 'monthly', label: 'Every month' },
-              { value: 'yearly', label: 'Every year' },
-            ]}
-            onChange={(v) => {
-              if (v === 'once') setKind('one_time');
-              else {
-                setKind('recurring');
-                setFrequency(v as 'monthly' | 'yearly');
-              }
-            }}
-          />
-        )}
-        {(!editing || !recurringRow) && (
-          <DateField
-            label={kind === 'one_time' ? 'Date' : 'Starts'}
-            value={start}
-            disabled={editing && recurringRow}
-            onChange={(v) => setStart(v)}
-          />
-        )}
-        {!editing && kind === 'recurring' && (
+        <s-text-field
+          label="Reference (optional)"
+          placeholder="Invoice 1042"
+          value={reference}
+          onInput={(e) => setReference(e.currentTarget.value)}
+        />
+        <s-text-field
+          label="Description (optional)"
+          value={description}
+          onInput={(e) => setDescription(e.currentTarget.value)}
+        />
+        <Dropdown
+          label="Repeats"
+          value={kind === 'one_time' ? 'once' : frequency}
+          disabled={editing}
+          options={[
+            { value: 'once', label: 'One time' },
+            { value: 'monthly', label: 'Every month' },
+            { value: 'yearly', label: 'Every year' },
+          ]}
+          onChange={(v) => {
+            if (v === 'once') setKind('one_time');
+            else {
+              setKind('recurring');
+              setFrequency(v as 'monthly' | 'yearly');
+            }
+          }}
+        />
+        <DateField
+          label={kind === 'one_time' ? 'Date' : 'Starts'}
+          value={start}
+          disabled={editing && recurringRow}
+          onChange={(v) => setStart(v)}
+        />
+        {kind === 'recurring' && (
           <DateField
             label="Ends (optional)"
             value={end}
-            disabled={editing}
             error={touched && !endOk ? 'Must be after the start' : undefined}
             onChange={(v) => setEnd(v)}
           />
@@ -405,7 +397,7 @@ function ExpenseForm({
           />
         )}
       </s-grid>
-      {plan && !editing && (
+      {plan && (
         <s-banner tone="info" heading="How it will count">
           <s-paragraph>{plan}</s-paragraph>
         </s-banner>

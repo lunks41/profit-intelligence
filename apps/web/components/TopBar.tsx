@@ -1,5 +1,6 @@
 'use client';
 
+import { ActivityIndicator } from './ActivityIndicator';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { NotificationListResponse, SessionResponse } from '@pi/contracts';
 import { apiGet, apiPost } from '../lib/api';
@@ -76,9 +77,18 @@ export function TopBar() {
         .catch(() => undefined);
     }, 600);
     const timer = setInterval(() => void load(), REFRESH_MS);
+    // a change was saved: its message is in the bell a moment later
+    let soon: ReturnType<typeof setTimeout> | null = null;
+    const changed = () => {
+      if (soon) clearTimeout(soon);
+      soon = setTimeout(() => void load(), 1200);
+    };
+    window.addEventListener('pi:changed', changed);
     return () => {
       clearTimeout(first);
       clearInterval(timer);
+      if (soon) clearTimeout(soon);
+      window.removeEventListener('pi:changed', changed);
     };
   }, [load]);
 
@@ -122,6 +132,7 @@ export function TopBar() {
         flex: 'none',
       }}
     >
+      <ActivityIndicator />
       <div ref={box} style={{ position: 'relative' }}>
         <IconButton
           icon="notification"

@@ -415,6 +415,40 @@ describe('expenses', () => {
     ).toEqual([]);
   });
 
+  it('a change can also set the reference, the description and the last day, and clear them', async () => {
+    const id = (await addExpense()).body.id;
+    const set = await json('POST', `/expenses/${id}/change`, 'id-exp-a', {
+      reference: 'LEASE-9',
+      description: 'Unit 4',
+      endDate: '2026-12-31',
+      effectiveFrom: '2026-01-01',
+    });
+    expect(set.res.statusCode).toBe(201);
+    let row = expenseListResponseSchema
+      .parse((await json('GET', '/expenses')).body)
+      .rows.find((r) => r.status !== 'ended' && r.reference === 'LEASE-9')!;
+    expect(row.description).toBe('Unit 4');
+    expect(row.endDate).toBe('2026-12-31');
+    // an empty text clears a note, null lets it run until stopped
+    const clear = await json('POST', `/expenses/${row.id}/change`, 'id-exp-a', {
+      reference: '',
+      endDate: null,
+      effectiveFrom: '2026-01-01',
+    });
+    expect(clear.res.statusCode).toBe(201);
+    row = expenseListResponseSchema
+      .parse((await json('GET', '/expenses')).body)
+      .rows.find((r) => r.description === 'Unit 4')!;
+    expect(row.reference).toBeNull();
+    expect(row.endDate).toBeNull();
+    // a last day before the start is refused
+    const bad = await json('POST', `/expenses/${row.id}/change`, 'id-exp-a', {
+      endDate: '2025-12-31',
+      effectiveFrom: '2026-01-01',
+    });
+    expect(bad.res.statusCode).toBe(400);
+  });
+
   it('a change from September leaves August as it was and September at the new amount', async () => {
     const id = (await addExpense()).body.id;
     expect((await opex(AUG)).operatingExpenses).toBe('1000.0000');

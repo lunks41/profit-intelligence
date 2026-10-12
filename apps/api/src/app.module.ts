@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
+import { ActivityModule } from './activity/activity.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { ConfigModule } from './config/config.module.js';
 import { ApiErrorFilter } from './common/error.filter.js';
@@ -39,6 +40,7 @@ import { WebhooksModule } from './webhooks/webhooks.module.js';
     LeakageModule,
     BillingModule,
     SupportModule,
+    ActivityModule,
   ],
   controllers: [HealthController, SessionController],
   providers: [

@@ -450,6 +450,11 @@ export async function changeExpense(
     name?: string;
     categoryId?: string;
     amount?: string;
+    /** an empty text clears it */
+    reference?: string;
+    description?: string;
+    /** recurring only: the new last day, or null to run until stopped */
+    endDate?: string | null;
     /** one-time: the new date; recurring: first day of the first month the change applies to */
     effectiveFrom: string;
     actor: string;
@@ -492,6 +497,11 @@ export async function changeExpense(
         .where(eq(fExpense.id, old.id));
     }
 
+    const endDate =
+      old.kind !== 'recurring' ? null : change.endDate !== undefined ? change.endDate : old.endDate;
+    if (endDate !== null && endDate < startDate) {
+      throw new ExpenseError('invalid_change', 'The last day cannot be before the first');
+    }
     const row = await insertExpense(tx, scope, {
       categoryId,
       name: change.name ?? old.name,
@@ -500,11 +510,11 @@ export async function changeExpense(
       kind: old.kind as 'one_time' | 'recurring',
       frequency: old.frequency as 'monthly' | 'yearly' | null,
       startDate,
-      endDate: old.kind === 'recurring' ? old.endDate : null,
+      endDate,
       requestKey: null,
       replacesId: old.id,
-      reference: old.reference,
-      description: old.description,
+      reference: change.reference !== undefined ? change.reference || null : old.reference,
+      description: change.description !== undefined ? change.description || null : old.description,
       // a new amount is in the shop currency, so the foreign details of the old one no longer describe it
       ...(change.amount === undefined || change.amount === old.amount
         ? {

@@ -1033,12 +1033,24 @@ export const changeExpenseBodySchema = z
     name: nameString.optional(),
     categoryId: uuidString.optional(),
     amount: amountString.optional(),
+    /** an empty text clears it */
+    reference: z.string().trim().max(60).optional(),
+    description: z.string().trim().max(500).optional(),
+    /** recurring only: the new last day; null lets it run until it is stopped */
+    endDate: isoDate.nullable().optional(),
     /** one-time: the new date; recurring: first day of the first month the change applies to */
     effectiveFrom: isoDate,
   })
-  .refine((v) => v.name !== undefined || v.categoryId !== undefined || v.amount !== undefined, {
-    message: 'Change at least one thing',
-  });
+  .refine(
+    (v) =>
+      v.name !== undefined ||
+      v.categoryId !== undefined ||
+      v.amount !== undefined ||
+      v.reference !== undefined ||
+      v.description !== undefined ||
+      v.endDate !== undefined,
+    { message: 'Change at least one thing' },
+  );
 
 export const stopExpenseBodySchema = z.object({ lastDay: isoDate });
 

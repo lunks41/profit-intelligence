@@ -56,6 +56,10 @@ async function request<T>(
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
+  if (method !== 'GET' && res.ok && typeof window !== 'undefined') {
+    // something was saved: the background work it causes (recalculating profit, a sync) shows in the top strip
+    window.dispatchEvent(new Event('pi:changed'));
+  }
   if (!res.ok) {
     const err = (await res.json().catch(() => null)) as ApiError | null;
     const code = err?.error.code ?? 'request_failed';

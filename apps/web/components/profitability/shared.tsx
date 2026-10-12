@@ -41,6 +41,14 @@ export function useApi<T>(path: string | null) {
     return () => clearTimeout(t);
   }, [load]);
 
+  // the background work after a change has finished: show the new figures without a refresh
+  useEffect(() => {
+    if (path === null) return;
+    const again = () => void load();
+    window.addEventListener('pi:data-updated', again);
+    return () => window.removeEventListener('pi:data-updated', again);
+  }, [load, path]);
+
   return { data, error, errorCode, loading, reload: load };
 }
 

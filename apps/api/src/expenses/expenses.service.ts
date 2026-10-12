@@ -366,7 +366,15 @@ export class ExpensesService {
   async change(
     scope: TenantContext,
     id: string,
-    body: { name?: string; categoryId?: string; amount?: string; effectiveFrom: string },
+    body: {
+      name?: string;
+      categoryId?: string;
+      amount?: string;
+      reference?: string;
+      description?: string;
+      endDate?: string | null;
+      effectiveFrom: string;
+    },
   ) {
     const { today } = await this.shop(scope);
     this.checkDate(body.effectiveFrom, today, 'date');
