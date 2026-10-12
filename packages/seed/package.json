@@ -11,6 +11,7 @@
     "counts": "tsx --env-file=../../.env src/counts.ts",
     "daily": "tsx --env-file=../../.env src/daily.ts",
     "marketing": "tsx --env-file=../../.env src/marketing.ts",
+    "shipping": "tsx --env-file=../../.env src/shipping.ts",
     "verify": "tsx --env-file=../../.env src/verify.ts",
     "profit-verify": "tsx --env-file=../../.env src/profit-verify.ts"
   },
