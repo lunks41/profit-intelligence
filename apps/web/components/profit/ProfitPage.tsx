@@ -54,9 +54,6 @@ export function ProfitPage() {
       <FilterBar chip filters={filters} onChange={setFilters} />
       {overview.data && <Freshness data={overview.data} />}
       {overview.data && <Kpis data={overview.data} />}
-      {overview.data && (
-        <DataQualityCard quality={overview.data.dataQuality} issues={overview.data.issues} />
-      )}
       {overview.data && <QualifiersBanner qualifiers={overview.data.summary.qualifiers} />}
       <s-stack direction="inline" gap="small">
         {(
@@ -115,6 +112,9 @@ export function ProfitPage() {
             planLimited={leakage.errorCode === 'plan_limit'}
           />
         </>
+      )}
+      {overview.data && (
+        <DataQualityCard quality={overview.data.dataQuality} issues={overview.data.issues} />
       )}
     </>
   );
