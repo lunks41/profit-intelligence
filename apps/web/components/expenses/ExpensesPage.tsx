@@ -463,8 +463,12 @@ function List({
               ]}
               onChange={setStatus}
             />
-            <DateField label="From" value={dateFrom} onChange={(v) => setDateFrom(v)} />
-            <DateField label="To" value={dateTo} onChange={(v) => setDateTo(v)} />
+            <div style={{ width: '11rem' }}>
+              <DateField label="From" value={dateFrom} onChange={(v) => setDateFrom(v)} />
+            </div>
+            <div style={{ width: '11rem' }}>
+              <DateField label="To" value={dateTo} onChange={(v) => setDateTo(v)} />
+            </div>
             <s-button
               variant="tertiary"
               disabled={exportCsv.busy}
@@ -590,15 +594,17 @@ function List({
         </s-stack>
       </s-section>
       {selected && data && (
-        <Manage
-          row={data.rows.find((r) => r.id === selected.id) ?? selected}
-          currency={data.currency}
-          categories={categories}
-          onClose={() => setSelected(null)}
-          onChanged={() => {
-            onChanged();
-          }}
-        />
+        <Modal heading={`Manage ${selected.name}`} onClose={() => setSelected(null)}>
+          <Manage
+            row={data.rows.find((r) => r.id === selected.id) ?? selected}
+            currency={data.currency}
+            categories={categories}
+            onClose={() => setSelected(null)}
+            onChanged={() => {
+              onChanged();
+            }}
+          />
+        </Modal>
       )}
     </>
   );
@@ -636,7 +642,7 @@ function Manage({
   const monthAmountOk = isAmount(monthAmount);
 
   return (
-    <s-section heading={`Manage ${row.name}`}>
+    <s-section>
       <s-stack gap="base">
         {message && (
           <s-banner tone="success">
@@ -825,11 +831,9 @@ function Manage({
             </s-button>
           </div>
         )}
-        <div>
-          <s-button variant="tertiary" onClick={onClose}>
-            Close
-          </s-button>
-        </div>
+        <FormActions>
+          <s-button onClick={onClose}>Close</s-button>
+        </FormActions>
       </s-stack>
     </s-section>
   );
