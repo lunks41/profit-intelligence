@@ -13,8 +13,8 @@ the whole product. Merchants never see these credentials.
 
 The **redirect address** is the same pattern everywhere. With the production address `https://app.yourdomain.com`:
 
-| Platform | Redirect address to register                                     |
-| -------- | ---------------------------------------------------------------- |
+| Platform | Redirect address to register                                        |
+| -------- | ------------------------------------------------------------------- |
 | Meta     | `https://app.yourdomain.com/api/v1/marketing/oauth/meta/callback`   |
 | Google   | `https://app.yourdomain.com/api/v1/marketing/oauth/google/callback` |
 | TikTok   | `https://app.yourdomain.com/api/v1/marketing/oauth/tiktok/callback` |

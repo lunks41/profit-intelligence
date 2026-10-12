@@ -318,7 +318,12 @@ export function calculateOrder(order: EngineOrder, cfg: EngineConfig): OrderResu
 
     const rsub = sum(refund.lines.map((l) => l.subtotalAmount));
     const rtax = sum(refund.lines.map((l) => l.taxAmount));
-    const residual = D.max(total.minus(rsub).minus(rtax), ZERO); // shipping (and its tax) refunded
+    // What is left of the money returned, after the refunded lines, is the shipping (and its tax) refunded. When
+    // prices include tax a refunded line's subtotal already holds its tax, so the tax is not taken off again.
+    const residual = D.max(
+      order.taxesIncluded ? total.minus(rsub) : total.minus(rsub).minus(rtax),
+      ZERO,
+    );
 
     let productRefund = ZERO;
     let productTax = ZERO;

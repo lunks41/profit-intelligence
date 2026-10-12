@@ -97,3 +97,9 @@ Tests: `cost-source.test.ts`, `order.test.ts` ("product cost: source, dates and 
 ## Advertising
 
 Platform-reported sales are the platform's own claim and are kept apart from Shopify revenue (Marketing screen and report). Spend is not allocated to products or orders; nothing is estimated. When advertising is not set up, or has no spend for the period, profit is shown without it and says so.
+
+## Refunds on orders whose prices include tax
+
+A refunded line's subtotal already holds its tax when prices include tax, so the shipping refunded is the refund
+total minus the line subtotals only (not minus the tax again). Otherwise the shipping refund was dropped. Found by
+`pnpm profit:verify` (16 refunds on the dev store); fixed in `order.ts` and covered in `refunds.test.ts`.

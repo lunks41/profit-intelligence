@@ -184,3 +184,91 @@ describe('refunds', () => {
     expect(r.flags).toContain('cancelled_without_refund');
   });
 });
+
+describe('a refund on an order whose prices include tax', () => {
+  // 1 unit at 600.00 including 28.57 of tax, 9.99 shipping, paid 609.99
+  const inclusive = (): EngineOrder =>
+    order({
+      taxesIncluded: true,
+      lines: [
+        line({
+          shopifyId: 1,
+          variantShopifyId: 100,
+          quantity: 1,
+          unitPriceAmount: '600.00',
+          taxAmount: '28.57',
+        }),
+      ],
+      subtotalAmount: '600.00',
+      discountsAmount: '0.00',
+      shippingAmount: '9.99',
+      taxAmount: '28.57',
+      totalAmount: '609.99',
+    });
+  const refundOf = (total: string, sub: string) => ({
+    shopifyId: 9,
+    processedAt: new Date('2026-06-20T10:00:00Z'),
+    totalAmount: total,
+    lines: [
+      {
+        shopifyId: 90,
+        lineItemShopifyId: 1,
+        quantity: 1,
+        subtotalAmount: sub,
+        taxAmount: '28.57',
+        restockType: 'NO_RESTOCK' as string | null,
+      },
+    ],
+  });
+  const part = (o: EngineOrder, c: string) =>
+    calc(o)
+      .entries.filter((e) => e.component === c)
+      .map((e) => e.amount);
+
+  it('the shipping refunded is what is left after the line, which already holds its tax', () => {
+    const o = inclusive();
+    o.refunds = [refundOf('609.9900', '600.0000')];
+    expect(part(o, 'product_refund')).toEqual(['-571.4300']);
+    expect(part(o, 'tax_refunded')).toEqual(['-28.5700']);
+    expect(part(o, 'shipping_refund')).toEqual(['-9.9900']);
+  });
+
+  it('the parts always add up to the money returned', () => {
+    const o = inclusive();
+    o.refunds = [refundOf('609.9900', '600.0000')];
+    const sum = ['product_refund', 'shipping_refund', 'tax_refunded']
+      .flatMap((c) => part(o, c))
+      .reduce((t, v) => t + Math.round(Number(v) * 100), 0);
+    expect(-sum).toBe(60999);
+  });
+
+  it('a refund of the line alone returns no shipping', () => {
+    const o = inclusive();
+    o.refunds = [refundOf('600.0000', '600.0000')];
+    expect(part(o, 'shipping_refund')).toEqual([]);
+  });
+
+  it('orders whose prices do not include tax are worked out as before', () => {
+    // 2 units at 100.00, tax added on top: the refund line is 90.00 plus 7.00 tax, 97.00 in all
+    const o = base({ taxesIncluded: false });
+    o.refunds = [
+      {
+        shopifyId: 5,
+        processedAt: new Date('2026-06-20T10:00:00Z'),
+        totalAmount: '97.0000',
+        lines: [
+          {
+            shopifyId: 50,
+            lineItemShopifyId: 1,
+            quantity: 1,
+            subtotalAmount: '90.0000',
+            taxAmount: '7.0000',
+            restockType: 'NO_RESTOCK' as string | null,
+          },
+        ],
+      },
+    ];
+    expect(part(o, 'shipping_refund')).toEqual([]);
+    expect(part(o, 'product_refund')).toEqual(['-90.0000']);
+  });
+});
