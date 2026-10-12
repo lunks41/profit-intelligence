@@ -24,7 +24,7 @@ import { BulkExpenseTools } from './BulkExpenseDialog';
 import { formatDateTime } from '../../lib/shop-time';
 import { DateField } from '../common/DateField';
 
-type Tab = 'all' | 'recurring' | 'categories' | 'history';
+type Tab = 'all' | 'recurring' | 'history';
 
 const COLORS = ['#005bd3', '#047b5d', '#b98900', '#8a3ffc', '#c4295c', '#007f9f'];
 const monthName = (m: string) =>
@@ -43,13 +43,18 @@ export function ExpensesPage() {
 
   return (
     <>
-      <Summary data={summary.data} error={summary.error} onRetry={() => void summary.reload()} />
+      <Summary
+        data={summary.data}
+        error={summary.error}
+        onRetry={() => void summary.reload()}
+        categories={cats.data?.categories ?? null}
+        onCategoriesChanged={changed}
+      />
       <s-stack direction="inline" gap="small">
         {(
           [
             ['all', 'All expenses'],
             ['recurring', 'Recurring'],
-            ['categories', 'Categories'],
             ['history', 'Change history'],
           ] as const
         ).map(([id, label]) => (
@@ -96,9 +101,6 @@ export function ExpensesPage() {
       {(tab === 'all' || tab === 'recurring') && cats.data && (
         <List mode={tab} categories={cats.data.categories} version={version} onChanged={changed} />
       )}
-      {tab === 'categories' && cats.data && (
-        <CategoriesSection categories={cats.data.categories} onChanged={changed} />
-      )}
       {tab === 'history' && <History version={version} />}
     </>
   );
@@ -108,10 +110,14 @@ function Summary({
   data,
   error,
   onRetry,
+  categories,
+  onCategoriesChanged,
 }: {
   data: ExpenseSummaryResponse | null;
   error: string | null;
   onRetry: () => void;
+  categories: CategoryListResponse['categories'] | null;
+  onCategoriesChanged: () => void;
 }) {
   if (error) return <ErrorBanner message={error} onRetry={onRetry} />;
   if (!data) return <Loading what="expenses" />;
@@ -180,14 +186,23 @@ function Summary({
           )}
         />
       </s-grid>
-      {names.length > 0 && (
-        <s-section heading="Expenses by month">
-          <SampleBars
-            data={chart}
-            keys={names.map((n, i) => ({ key: n, name: n, color: COLORS[i % COLORS.length]! }))}
-          />
-        </s-section>
-      )}
+      <s-grid
+        gridTemplateColumns="@container (inline-size > 760px) 3fr 2fr, 1fr"
+        gap="small"
+        alignItems="start"
+      >
+        {names.length > 0 && (
+          <s-section heading="Expenses by month">
+            <SampleBars
+              data={chart}
+              keys={names.map((n, i) => ({ key: n, name: n, color: COLORS[i % COLORS.length]! }))}
+            />
+          </s-section>
+        )}
+        {categories && (
+          <CategoriesSection categories={categories} onChanged={onCategoriesChanged} />
+        )}
+      </s-grid>
     </>
   );
 }
