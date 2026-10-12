@@ -4,7 +4,8 @@ import type { MarketingResponse } from '@pi/contracts';
 import { formatMoney } from '../../lib/format';
 import { formatDate } from '../../lib/shop-time';
 import { CardHeader } from '../common/CardHeader';
-import { markFor } from '../common/platform-marks';
+import { markFor, platformKey } from '../common/platform-marks';
+import { PlatformLogo, hasLogo } from '../common/PlatformLogo';
 
 const PLATFORM: Record<string, string> = {
   meta: 'Meta Ads',
@@ -55,24 +56,28 @@ export function AdAccountsCard({ data }: { data: MarketingResponse }) {
                   background: '#fff',
                 }}
               >
-                <span
-                  aria-hidden="true"
-                  style={{
-                    flex: 'none',
-                    width: '2.25rem',
-                    height: '2.25rem',
-                    borderRadius: '50%',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: mark.background,
-                    color: mark.color ?? '#fff',
-                    fontWeight: 700,
-                    fontSize: '0.75rem',
-                  }}
-                >
-                  {mark.text}
-                </span>
+                {hasLogo(platformKey(a.provider, a.name)) ? (
+                  <PlatformLogo platform={platformKey(a.provider, a.name)!} size={2.25} />
+                ) : (
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      flex: 'none',
+                      width: '2.25rem',
+                      height: '2.25rem',
+                      borderRadius: '50%',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: mark.background,
+                      color: mark.color ?? '#fff',
+                      fontWeight: 700,
+                      fontSize: '0.75rem',
+                    }}
+                  >
+                    {mark.text}
+                  </span>
+                )}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div
                     style={{

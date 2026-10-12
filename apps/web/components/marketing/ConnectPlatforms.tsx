@@ -84,6 +84,7 @@ export function ConnectPlatforms({
         name: NAME[id],
         description: WHAT[id],
         mark: PLATFORM_MARKS[id]!,
+        logo: id,
         status: !available ? 'unavailable' : mine.length > 0 ? 'connected' : 'idle',
         detail:
           !available || mine.length === 0 ? (
@@ -158,6 +159,7 @@ export function ConnectPlatforms({
       name,
       description,
       mark: { text, background, color: id === 'snapchat' ? '#000' : '#fff' },
+      logo: id,
       status: 'soon',
     })),
   ];

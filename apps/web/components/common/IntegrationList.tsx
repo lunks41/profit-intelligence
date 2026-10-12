@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { PlatformLogo, hasLogo } from './PlatformLogo';
 
 export interface IntegrationAction {
   label: string;
@@ -16,6 +17,8 @@ export interface Integration {
   description: string;
   /** the round mark in front of the name: the first letters in the colour of the service */
   mark: { text: string; background: string; color?: string };
+  /** the platform whose logo replaces the mark (see PlatformLogo) */
+  logo?: string;
   /** connected: green check; idle: nothing to say; soon: not built yet; unavailable: cannot be used on this server */
   status: 'connected' | 'idle' | 'soon' | 'unavailable';
   statusLabel?: string;
@@ -47,25 +50,29 @@ export function IntegrationList({ items }: { items: Integration[] }) {
             opacity: it.status === 'soon' ? 0.7 : 1,
           }}
         >
-          <span
-            aria-hidden="true"
-            style={{
-              flex: 'none',
-              width: '2.5rem',
-              height: '2.5rem',
-              borderRadius: '50%',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: it.mark.background,
-              color: it.mark.color ?? '#fff',
-              fontWeight: 700,
-              fontSize: '0.8rem',
-              letterSpacing: '0.02em',
-            }}
-          >
-            {it.mark.text}
-          </span>
+          {hasLogo(it.logo) ? (
+            <PlatformLogo platform={it.logo} />
+          ) : (
+            <span
+              aria-hidden="true"
+              style={{
+                flex: 'none',
+                width: '2.5rem',
+                height: '2.5rem',
+                borderRadius: '50%',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: it.mark.background,
+                color: it.mark.color ?? '#fff',
+                fontWeight: 700,
+                fontSize: '0.8rem',
+                letterSpacing: '0.02em',
+              }}
+            >
+              {it.mark.text}
+            </span>
+          )}
           <div style={{ flex: '1 1 10rem', minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
               <s-text type="strong">{it.name}</s-text>
