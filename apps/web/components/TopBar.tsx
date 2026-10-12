@@ -3,19 +3,13 @@
 import { Modal } from './common/Modal';
 import { SupportForm } from './settings/SupportForm';
 import { ActivityIndicator } from './ActivityIndicator';
+import { NotificationPanel } from './NotificationPanel';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { NotificationListResponse, SessionResponse } from '@pi/contracts';
 import { apiGet, apiPost } from '../lib/api';
 import { newTabUrl } from '../lib/new-tab-url';
-import { prettyDates } from '../lib/shop-time';
 
 const REFRESH_MS = 60_000;
-const TONE = {
-  info: 'info',
-  success: 'success',
-  warning: 'caution',
-  critical: 'critical',
-} as const;
 
 /** One of the two icons: a large square button so it is easy to see and to hit. */
 function IconButton({
@@ -112,7 +106,6 @@ export function TopBar() {
 
   if (!notes && !shop) return null;
   const unread = notes?.unread ?? 0;
-  const latest = (notes?.rows ?? []).slice(0, 6);
 
   async function act(path: string) {
     setBusy(true);
@@ -175,73 +168,12 @@ export function TopBar() {
           </span>
         )}
         {open && (
-          <div
-            role="dialog"
-            aria-label="Notifications"
-            style={{
-              position: 'absolute',
-              top: '100%',
-              right: 0,
-              zIndex: 20,
-              width: 'min(22rem, 90vw)',
-              maxHeight: '26rem',
-              overflowY: 'auto',
-              background: 'var(--p-color-bg-surface, #fff)',
-              border: '1px solid var(--p-color-border, #d0d0d0)',
-              borderRadius: '0.75rem',
-              boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
-              padding: '0.75rem',
-            }}
-          >
-            <s-stack gap="small">
-              <s-stack direction="inline" gap="base" alignItems="center">
-                <s-text type="strong">Notifications</s-text>
-                {unread > 0 && (
-                  <s-button
-                    variant="secondary"
-                    disabled={busy}
-                    onClick={() => void act('/notifications/read-all')}
-                  >
-                    Mark all as read
-                  </s-button>
-                )}
-              </s-stack>
-              {latest.length === 0 && (
-                <s-text color="subdued">
-                  Nothing yet. Finished reports and problems appear here.
-                </s-text>
-              )}
-              {latest.map((n) => (
-                <s-stack key={n.id} gap="small-300">
-                  <s-stack direction="inline" gap="small" alignItems="center">
-                    <s-badge tone={TONE[n.severity]}>{n.severity}</s-badge>
-                    <s-text type={n.read ? undefined : 'strong'}>
-                      {n.read ? '' : '● '}
-                      {n.title}
-                    </s-text>
-                  </s-stack>
-                  <s-text color="subdued">{prettyDates(n.body)}</s-text>
-                  <s-stack direction="inline" gap="small">
-                    {n.link && (
-                      <s-button variant="secondary" href={n.link}>
-                        Open
-                      </s-button>
-                    )}
-                    {!n.read && (
-                      <s-button
-                        variant="secondary"
-                        disabled={busy}
-                        onClick={() => void act(`/notifications/${n.id}/read`)}
-                      >
-                        Mark as read
-                      </s-button>
-                    )}
-                  </s-stack>
-                </s-stack>
-              ))}
-              <s-link href="/reports?tab=notifications">See all notifications</s-link>
-            </s-stack>
-          </div>
+          <NotificationPanel
+            rows={notes?.rows ?? []}
+            unread={unread}
+            busy={busy}
+            onAct={(path) => void act(path)}
+          />
         )}
       </div>
       <s-link href="/settings" accessibilityLabel="Settings">

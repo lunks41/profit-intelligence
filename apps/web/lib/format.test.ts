@@ -106,3 +106,16 @@ describe('misc', () => {
     expect(describeBand(null)).toEqual({ label: 'Not enough data', tone: 'neutral' });
   });
 });
+
+import { shortAgo } from './format';
+
+describe('how long ago, in a few characters', () => {
+  const now = new Date('2026-10-12T12:00:00Z');
+  it('says just now, minutes, hours and days', () => {
+    expect(shortAgo('2026-10-12T11:59:40Z', now)).toBe('just now');
+    expect(shortAgo('2026-10-12T11:55:00Z', now)).toBe('5m ago');
+    expect(shortAgo('2026-10-12T09:00:00Z', now)).toBe('3h ago');
+    expect(shortAgo('2026-10-09T12:00:00Z', now)).toBe('3d ago');
+    expect(shortAgo('not a date', now)).toBe('');
+  });
+});
