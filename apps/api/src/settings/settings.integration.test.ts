@@ -187,7 +187,7 @@ describe('currency and time zone', () => {
     }
   }
 
-  it('shows each shop its own currency and time zone, and writes no audit row', async () => {
+  it('reports USD for every shop, says what the store currency is, and writes no audit row', async () => {
     await withEmptyRates(async () => {
       await admin.query('update m_shop set currency = $1, iana_timezone = $2 where id = $3', [
         'JPY',
@@ -207,17 +207,22 @@ describe('currency and time zone', () => {
         latestRateDate: null,
         rateStatus: 'missing',
       });
-      expect(mine.explanation.join(' ')).toContain('store currency (USD)');
+      expect(mine).toMatchObject({ storeCurrency: 'USD', converted: false });
+      expect(mine.explanation.join(' ')).toContain('Your store sells in US dollars');
       expect(mine.explanation.join(' ')).toContain('3.6725');
       expect(mine.explanation.join(' ')).toContain('Missing');
 
       const theirs = currencySettingsResponseSchema.parse(
         (await json('GET', '/currency', 'id-set-b')).body,
       );
-      expect(theirs.currency).toBe('JPY');
+      // a yen store is still reported in US dollars, with cents: its amounts are converted
+      expect(theirs.currency).toBe('USD');
+      expect(theirs.storeCurrency).toBe('JPY');
+      expect(theirs.converted).toBe(true);
       expect(theirs.timezone).toBe('Asia/Tokyo');
-      expect(theirs.decimals).toBe(0);
-      expect(theirs.explanation.join(' ')).toContain('store currency (JPY)');
+      expect(theirs.decimals).toBe(2);
+      expect(theirs.explanation.join(' ')).toContain('Your store sells in JPY');
+      expect(theirs.explanation.join(' ')).toContain('converted to USD');
 
       const after = auditResponseSchema.parse((await json('GET', '/audit')).body);
       expect(after.rows.map((r) => r.id)).toEqual(before.rows.map((r) => r.id));

@@ -38,6 +38,7 @@ import {
   toStored,
   businessDate,
   daysInMonth,
+  REPORTING_CURRENCY,
 } from '@pi/profit-engine';
 import type { ExpenseInput } from '@pi/profit-engine';
 import { csvCell } from '@pi/reports';
@@ -73,7 +74,7 @@ export class ExpensesService {
   private async shop(scope: TenantContext) {
     const shop = await getShopOverview(this.db, scope);
     if (!shop) throw new BadRequestException({ code: 'shop_not_found', message: 'Shop not found' });
-    return { currency: shop.currency, today: businessDate(new Date(), shop.ianaTimezone) };
+    return { currency: REPORTING_CURRENCY, today: businessDate(new Date(), shop.ianaTimezone) };
   }
 
   /** Start dates may be a little in the future (scheduled) but not years ahead, nor ancient. */

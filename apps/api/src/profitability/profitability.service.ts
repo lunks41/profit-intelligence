@@ -29,6 +29,7 @@ import {
   summarizePeriod,
   totalAdSpend,
   toStored,
+  REPORTING_CURRENCY,
 } from '@pi/profit-engine';
 import type { Dec } from '@pi/profit-engine';
 import { productRows } from '@pi/reports';
@@ -93,7 +94,7 @@ export class ProfitabilityService {
   }
 
   async products(scope: Scope, q: ProductListQuery): Promise<ProductListResponse> {
-    const { shop, range, period } = await this.context(scope, q);
+    const { range, period } = await this.context(scope, q);
     const {
       rows: productList,
       variantRows,
@@ -174,7 +175,7 @@ export class ProfitabilityService {
       );
     return {
       period,
-      currency: shop.currency,
+      currency: REPORTING_CURRENCY,
       rows: list.slice(start, start + q.pageSize).map((r) => ({ ...r, trend: trendOf(r) })),
       insights: productInsights(productList, variantRows),
       paging: {
@@ -206,7 +207,7 @@ export class ProfitabilityService {
     key: string,
     q: { preset: string; from?: string; to?: string; page: number; pageSize: number },
   ): Promise<ProductDetailResponse> {
-    const { shop, range, period } = await this.context(scope, q);
+    const { range, period } = await this.context(scope, q);
     const { rows, variantRows, lines } = await this.productsOf(scope, range);
     const product = rows.find((r) => r.key === key);
     if (!product)
@@ -251,7 +252,7 @@ export class ProfitabilityService {
       : [];
     return {
       period,
-      currency: shop.currency,
+      currency: REPORTING_CURRENCY,
       product,
       variants: variantRows.filter((r) => r.productKey === key),
       trend,
@@ -269,7 +270,7 @@ export class ProfitabilityService {
   }
 
   async orders(scope: Scope, q: OrderListQuery): Promise<OrderListResponse> {
-    const { shop, range, period } = await this.context(scope, q);
+    const { range, period } = await this.context(scope, q);
     const { rows, total } = await listOrders(this.db, scope, range, {
       filter: q.filter,
       search: q.search,
@@ -280,7 +281,7 @@ export class ProfitabilityService {
     });
     return {
       period,
-      currency: shop.currency,
+      currency: REPORTING_CURRENCY,
       rows: rows.map((r) => ({
         orderShopifyId: r.orderShopifyId,
         grossSales: r.grossSales,
@@ -353,7 +354,7 @@ export class ProfitabilityService {
         engineVersion: header.engineVersion,
         fulfillmentStatus: extras?.fulfillmentStatus ?? null,
       },
-      currency: shop.currency,
+      currency: REPORTING_CURRENCY,
       shipping: {
         country: extras?.shipCountry ?? null,
         charged: toStored(sum(['shipping_revenue'])),

@@ -226,11 +226,6 @@ export const overviewQuerySchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .optional(),
-  /** display currency; defaults to the shop currency */
-  currency: z
-    .string()
-    .regex(/^[A-Z]{3}$/)
-    .optional(),
   /** how the chart groups days; "auto" is daily up to 90 days and weekly beyond */
   interval: z.enum(['auto', 'day', 'week', 'month']).default('auto'),
 });
@@ -240,12 +235,15 @@ export const overviewResponseSchema = z.object({
   period: periodSchema,
   previousPeriod: z.object({ from: z.string(), to: z.string() }),
   currency: z.object({
-    /** currency of the amounts in this response */
+    /** currency of the amounts in this response: always USD */
     code: z.string(),
+    /** the currency Shopify says the store sells in */
     shopCode: z.string(),
+    /** only USD: there is no currency switching */
     available: z.array(z.string()),
+    /** true when the store currency is not USD, so its amounts were converted */
     converted: z.boolean(),
-    /** why the display currency fell back to the shop currency, or how it was converted */
+    /** when the store sells in another currency: how its amounts were converted to USD */
     note: z.string().nullable(),
   }),
   summary: profitSummarySchema,
@@ -910,7 +908,12 @@ export type AuditResponse = z.infer<typeof auditResponseSchema>;
 
 /** Read-only currency and time facts for Settings. Shopify owns the currency and time zone. */
 export const currencySettingsResponseSchema = z.object({
+  /** the one reporting currency: always USD */
   currency: z.string(),
+  /** the currency Shopify says the store sells in */
+  storeCurrency: z.string(),
+  /** true when the store currency is not USD, so its amounts are converted to USD */
+  converted: z.boolean(),
   timezone: z.string(),
   /** minor-unit decimal places of `currency` (ISO 4217: 0, 2, or 3) */
   decimals: z.number().int().min(0).max(3),

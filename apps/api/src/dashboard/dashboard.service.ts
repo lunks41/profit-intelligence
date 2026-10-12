@@ -16,11 +16,11 @@ import {
 } from '@pi/db';
 import type { DailyTotals, Db, ProfitAggregate } from '@pi/db';
 import {
+  REPORTING_CURRENCY,
   businessDate,
   convertMoney,
   dec,
   operatingExpensesFor,
-  roundToCurrency,
   summarizeFromTotals,
   summarizePeriod,
   toStored,
@@ -33,7 +33,7 @@ import { buildAlerts } from './alerts.js';
 import { buildIssues, dataQualityOf } from './issues.js';
 import { groupChannels } from './channels.js';
 import { buildTrend, intervalFor } from './trend.js';
-import { buildFx, convertDaily } from './currency.js';
+import { buildFx } from './currency.js';
 import { InvalidRangeError, addDays, eachDay, previousRange, resolveRange } from './range.js';
 
 interface Scope {
@@ -60,7 +60,8 @@ export class DashboardService {
     const shop = await getShopOverview(this.db, scope);
     if (!shop) throw new BadRequestException({ code: 'shop_not_found', message: 'Shop not found' });
     const tz = shop.ianaTimezone;
-    const shopCurrency = shop.currency;
+    // every stored figure is in USD (a store in another currency is converted when profit is worked out)
+    const shopCurrency = REPORTING_CURRENCY;
 
     let range;
     try {
@@ -83,20 +84,10 @@ export class DashboardService {
     // both periods plus a week before, so a weekend or holiday can use the latest earlier rate.
     const fxFrom = addDays(prevQuery.from < range.from ? prevQuery.from : range.from, -10);
     const fx = buildFx(await loadExchangeRates(this.db, { from: fxFrom, to: range.to }));
-    const available = fx.currencies(shopCurrency);
-    const wanted = query.currency ?? shopCurrency;
-    if (!available.includes(wanted)) {
-      throw new BadRequestException({
-        code: 'unsupported_currency',
-        message: `Amounts cannot be shown in ${wanted}`,
-      });
-    }
-
     const [
       aggNow,
       aggPrev,
       dailyNow,
-      dailyPrev,
       attention,
       threshold,
       syncStatus,
@@ -110,7 +101,6 @@ export class DashboardService {
       getProfitAggregate(this.db, scope, range),
       getProfitAggregate(this.db, scope, prevQuery),
       getDailyTotals(this.db, scope, range),
-      getDailyTotals(this.db, scope, prevQuery),
       getOrderAttention(this.db, scope, range),
       getMissingCogsThreshold(this.db, scope),
       this.sync.status(scope, now),
@@ -122,45 +112,21 @@ export class DashboardService {
       periodGaps(this.db, scope, range),
     ]);
 
-    // Display currency: convert day by day, or fall back to the shop currency and say why.
-    let code = shopCurrency;
-    let converted = false;
-    let note: string | null = null;
-    let totalsNow = aggNow.totals;
-    let totalsPrev = aggPrev.totals;
-    let trendDays: DailyTotals[] = dailyNow;
-    let awaitingAmount = attention.awaitingPayment.amount;
-    if (wanted !== shopCurrency) {
-      const now_ = convertDaily(dailyNow, shopCurrency, wanted, fx.provider);
-      const prev_ = convertDaily(dailyPrev, shopCurrency, wanted, fx.provider);
-      const awaiting = fx.provider.getRate(shopCurrency, wanted, range.to);
-      if (now_.ok && prev_.ok && awaiting) {
-        code = wanted;
-        converted = true;
-        totalsNow = now_.totals;
-        totalsPrev = prev_.totals;
-        trendDays = now_.daily;
-        awaitingAmount = toStored(
-          roundToCurrency(dec(attention.awaitingPayment.amount).mul(awaiting.rate), wanted),
-        );
-        note = `Converted from ${shopCurrency} at the rate of each day (${awaiting.source}).`;
-      } else {
-        note = `No exchange rate is available for ${shopCurrency} to ${wanted}, so ${shopCurrency} is shown.`;
-      }
-    }
-    const extras = available.filter((c) => c !== shopCurrency);
-    if (!note && extras.every((c) => c === 'USD' || c === 'AED')) {
-      note =
-        'Only USD and AED can be converted until daily exchange rates are stored. Other store and ad-account currencies use those rates after the evening update.';
-    }
+    // Everything is shown in USD; nothing is switched or converted for display. A store in another currency
+    // says so, and how it was converted.
+    const code = REPORTING_CURRENCY;
+    const available = [REPORTING_CURRENCY];
+    const converted = shop.currency !== REPORTING_CURRENCY;
+    let note: string | null = converted
+      ? `This store sells in ${shop.currency}. Every amount is converted to USD with the exchange rate of its own day (ECB reference rates), before profit is worked out.`
+      : null;
+    const totalsNow = aggNow.totals;
+    const totalsPrev = aggPrev.totals;
+    const trendDays: DailyTotals[] = dailyNow;
+    const awaitingAmount = attention.awaitingPayment.amount;
 
-    // Advertising and operating expenses are kept in the shop currency; show them in the display
-    // currency at the rate of the day (ad spend) or of the period end (expenses).
-    const display = (amount: string, date: string): string => {
-      if (!converted) return amount;
-      const c = convertMoney(amount, shopCurrency, code, date, fx.provider);
-      return c.status === 'missing' ? amount : toStored(c.amount);
-    };
+    // Advertising and operating expenses are kept in USD already, so they are shown as they are.
+    const display = (amount: string, _date: string): string => amount;
     // Advertising is converted day by day (the rate of the day it was spent) and then added up, for
     // the headline figure and the chart alike, so the two always agree.
     let adFxGap = false;
@@ -274,7 +240,7 @@ export class DashboardService {
         timezone: tz,
       },
       previousPeriod: prev,
-      currency: { code, shopCode: shopCurrency, available, converted, note },
+      currency: { code, shopCode: shop.currency, available, converted, note },
       summary,
       previous,
       deltas: {

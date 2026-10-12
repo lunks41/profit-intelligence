@@ -57,6 +57,7 @@ import {
   parseProductCostCsv,
   parseShippingRulesCsv,
   ruleCoverage,
+  REPORTING_CURRENCY,
 } from '@pi/profit-engine';
 import type { EngineOrder } from '@pi/profit-engine';
 import type { PgBoss } from 'pg-boss';
@@ -75,15 +76,19 @@ function daysFrom(from: string, to: string): number {
   return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / DAY_MS);
 }
 
-function currencyExplanation(currency: string, decimals: number): string[] {
-  return [
-    `Amounts stay in the store currency (${currency}). Shopify sets that currency.`,
-    "Other currencies are converted with the European Central Bank's daily euro reference rates, using the rate of each day, not today's rate.",
-    'US dollars and UAE dirhams use the fixed peg of 3.6725 dirhams per dollar. That rate is exact.',
-    `Each amount is rounded once, half up, to ${decimals} decimal places, the minor unit of ${currency}. Totals add those rounded amounts.`,
-    'If a rate is missing, the amount stays Missing. It is never treated as zero or as a rate of 1.',
+function currencyExplanation(storeCurrency: string, decimals: number): string[] {
+  const lines = [
+    'Every amount in the app is in US dollars (USD): the figures, product costs, rules, expenses, reports and CSV files.',
+    storeCurrency === REPORTING_CURRENCY
+      ? 'Your store sells in US dollars, so nothing needs converting.'
+      : `Your store sells in ${storeCurrency}. Shopify's amounts are converted to USD before profit is worked out, with the exchange rate of each order's own day (and of each refund's day), not today's rate. The original amounts are kept on the order.`,
+    "Other currencies (an expense or ad spend entered in another currency) are converted to USD with the European Central Bank's daily euro reference rates, using the rate of each day.",
+    'The UAE dirham uses the fixed peg of 3.6725 dirhams per dollar. That rate is exact.',
+    `Each amount is rounded once, half up, to ${decimals} decimal places (cents). Totals add those rounded amounts.`,
+    'If a rate is missing, the amount stays Missing, or the order is left out and says why. It is never treated as zero or as a rate of 1.',
     `A rate older than ${RATE_STALE_DAYS} days is marked Estimated.`,
   ];
+  return lines;
 }
 
 @Injectable()
@@ -97,7 +102,8 @@ export class SettingsService {
     const shop = await getShopOverview(this.db, scope);
     if (!shop) throw new BadRequestException({ code: 'shop_not_found', message: 'Shop not found' });
     return {
-      currency: shop.currency,
+      currency: REPORTING_CURRENCY,
+      storeCurrency: shop.currency,
       timezone: shop.ianaTimezone,
       today: businessDate(new Date(), shop.ianaTimezone),
     };
@@ -111,7 +117,7 @@ export class SettingsService {
     const shop = await this.shop(scope);
     const latest = await latestExchangeRateDate(this.db);
     const latestRateDate = latest ? String(latest).slice(0, 10) : null;
-    const decimals = minorUnitDigits(shop.currency);
+    const decimals = minorUnitDigits(REPORTING_CURRENCY);
     const rateStatus =
       latestRateDate === null
         ? 'missing'
@@ -119,14 +125,16 @@ export class SettingsService {
           ? 'estimated'
           : 'current';
     return {
-      currency: shop.currency,
+      currency: REPORTING_CURRENCY,
+      storeCurrency: shop.storeCurrency,
+      converted: shop.storeCurrency !== REPORTING_CURRENCY,
       timezone: shop.timezone,
       decimals,
       rounding: 'half-up',
       rateSource: 'ECB',
       latestRateDate,
       rateStatus,
-      explanation: currencyExplanation(shop.currency, decimals),
+      explanation: currencyExplanation(shop.storeCurrency, decimals),
     };
   }
 

@@ -172,7 +172,7 @@ export interface LedgerEntry {
 }
 
 export type ExclusionReason =
-  'test_order' | 'awaiting_payment' | 'cancelled_unpaid' | 'voided_or_expired';
+  'test_order' | 'awaiting_payment' | 'cancelled_unpaid' | 'voided_or_expired' | 'no_exchange_rate';
 
 export interface OrderResult {
   recognized: boolean;

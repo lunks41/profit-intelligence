@@ -12,7 +12,7 @@ import {
 import type { InstallResult } from '@pi/db';
 import { mapOrder } from '@pi/shopify';
 import pg from 'pg';
-import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ADMIN_URL, APP_URL } from '../../../../packages/db/test/urls.js';
 import { recalculateProfit } from './recalculate.js';
 
@@ -438,6 +438,124 @@ describe('changes to an order', () => {
       await count(
         'f_profit_entry',
         `order_id in (select id from t_order where shopify_id = ${id})`,
+      ),
+    ).toBe(0);
+  });
+});
+
+describe('a store that sells in another currency', () => {
+  // 1 EUR = 2 USD on every day, so every converted amount is exactly double
+  const RATE_SOURCE = 'test-usd-only';
+  const sumOf = async (who: InstallResult, component: string) =>
+    Number(
+      (
+        await admin.query(
+          `select coalesce(sum(amount), 0)::text s from f_profit_entry where shop_id = $1 and component = $2`,
+          [who.shopId, component],
+        )
+      ).rows[0].s,
+    );
+  const eurShop = async () => {
+    const who = await installShop(db, {
+      shopDomain: 'rc-eur.myshopify.com',
+      name: 'rc-eur',
+      currency: 'EUR',
+      ianaTimezone: 'UTC',
+      encryptedAccessToken: 'x',
+      keyId: 'k1',
+      scopes: 'read_orders',
+    });
+    await seedCatalog(who);
+    await loadOrders(who);
+    await admin.query(`update t_order set currency = 'EUR' where shop_id = $1`, [who.shopId]);
+    return who;
+  };
+  const withRates = () =>
+    admin.query(
+      `insert into o_exchange_rate (quote, rate_date, rate, source)
+       select 'USD', d::date, 2, $1 from generate_series('2020-01-01'::date, '2030-01-01'::date, '1 day') d
+       on conflict do nothing`,
+      [RATE_SOURCE],
+    );
+  // the rates table is shared with other tests: begin with none, and leave none
+  beforeEach(async () => {
+    await admin.query('delete from o_exchange_rate');
+  });
+  afterEach(async () => {
+    await admin.query('delete from o_exchange_rate');
+  });
+
+  it('works the profit out in USD: the ledger is USD, and every figure is the EUR one at the rate of its day', async () => {
+    await withRates();
+    await seedCatalog(a);
+    await loadOrders(a);
+    await recalc(a); // the same orders in USD, as the baseline
+    const eur = await eurShop();
+    await recalc(eur);
+    expect(await count('f_profit_entry', `shop_id = '${eur.shopId}' and currency <> 'USD'`)).toBe(
+      0,
+    );
+    for (const component of [
+      'gross_sales',
+      'discounts',
+      'shipping_revenue',
+      'product_refund',
+      'payment_fees',
+    ]) {
+      expect(await sumOf(eur, component), component).toBeCloseTo(
+        2 * (await sumOf(a, component)),
+        2,
+      );
+    }
+    // Shopify's own cost (10.00 EUR) is converted too: 20.00 USD a unit
+    expect(await sumOf(eur, 'cogs')).toBeCloseTo(2 * (await sumOf(a, 'cogs')), 2);
+  });
+
+  it('marks the converted orders, and the original amounts stay on the order untouched', async () => {
+    await withRates();
+    const eur = await eurShop();
+    await recalc(eur);
+    const flagged = await count(
+      'f_order_profit',
+      `shop_id = '${eur.shopId}' and recognized and 'converted_from_EUR' = any(flags)`,
+    );
+    expect(flagged).toBe(await count('f_order_profit', `shop_id = '${eur.shopId}' and recognized`));
+    expect(flagged).toBeGreaterThan(0);
+    // the order table still holds the store-currency figures
+    expect(await count('t_order', `shop_id = '${eur.shopId}' and currency = 'EUR'`)).toBe(
+      orderNodes.length,
+    );
+  });
+
+  it('with no rate, the orders are left out with the reason, and a rate of 1 is never assumed', async () => {
+    const eur = await eurShop();
+    await recalc(eur);
+    expect(await count('f_order_profit', `shop_id = '${eur.shopId}' and recognized`)).toBe(0);
+    const reasons = (
+      await admin.query(
+        `select exclusion_reason, count(*)::int n from f_order_profit where shop_id = $1 and exclusion_reason = 'no_exchange_rate' group by 1`,
+        [eur.shopId],
+      )
+    ).rows;
+    expect(reasons).toHaveLength(1);
+    expect(reasons[0].n).toBeGreaterThan(0);
+    expect(await count('f_profit_entry', `shop_id = '${eur.shopId}'`)).toBe(0);
+  });
+
+  it('a USD store is not touched by any of this', async () => {
+    await seedCatalog(a);
+    await loadOrders(a);
+    await recalc(a);
+    expect(
+      await count(
+        'f_order_profit',
+        `shop_id = '${a.shopId}' and 'converted_from_EUR' = any(flags)`,
+      ),
+    ).toBe(0);
+    expect(
+      await count(
+        'f_order_profit',
+        `shop_id = '${a.shopId}' and exclusion_reason = 'no_exchange_rate'`,
       ),
     ).toBe(0);
   });

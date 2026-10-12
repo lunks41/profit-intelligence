@@ -375,6 +375,8 @@ export async function loadFrozenCosts(
         eq(fProfitEntry.shopId, scope.shopId),
         inArray(fProfitEntry.orderId, orderIds),
         eq(fProfitEntry.component, 'cogs'),
+        // a cost frozen in another currency (before reporting was USD only) is worked out again
+        eq(fProfitEntry.currency, 'USD'),
         inArray(fProfitEntry.status, ['actual', 'estimated']),
       ),
     );

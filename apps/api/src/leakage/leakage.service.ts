@@ -2,7 +2,7 @@ import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import type { LeakageResponse, PeriodPreset } from '@pi/contracts';
 import { getLeakageSettings, getShopOverview } from '@pi/db';
 import type { Db } from '@pi/db';
-import { businessDate } from '@pi/profit-engine';
+import { businessDate, REPORTING_CURRENCY } from '@pi/profit-engine';
 import { leakageFindings, productRows } from '@pi/reports';
 import type { TenantContext } from '../auth/installation.service.js';
 import { InvalidRangeError, previousRange, resolveRange } from '../dashboard/range.js';
@@ -34,7 +34,7 @@ export class LeakageService {
     await this.entitlements.assertRange(scope, range, businessDate(new Date(), shop.ianaTimezone));
     const limits = await getLeakageSettings(this.db, scope);
     const [findings, products] = await Promise.all([
-      leakageFindings(this.db, scope, range, previousRange(range), shop.currency, limits),
+      leakageFindings(this.db, scope, range, previousRange(range), REPORTING_CURRENCY, limits),
       productRows(this.db, scope, range),
     ]);
     // "checked" counts what the rules looked at, so an empty list can be told from an empty shop.
@@ -49,7 +49,7 @@ export class LeakageService {
         preset: range.preset,
         timezone: shop.ianaTimezone,
       },
-      currency: shop.currency,
+      currency: REPORTING_CURRENCY,
       findings,
       limits,
       checked: { orders, products: products.rows.length },

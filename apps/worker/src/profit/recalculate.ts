@@ -1,4 +1,5 @@
 import {
+  loadExchangeRates,
   loadFrozenCosts,
   loadProfitSnapshots,
   logAudit,
@@ -8,8 +9,18 @@ import {
   withTenant,
 } from '@pi/db';
 import type { Db, ProfitJobPayload } from '@pi/db';
-import { ENGINE_VERSION, businessDate, calculateOrder, sum, toStored } from '@pi/profit-engine';
-import type { EngineConfig, EngineOrder } from '@pi/profit-engine';
+import {
+  ENGINE_VERSION,
+  REPORTING_CURRENCY,
+  businessDate,
+  calculateOrder,
+  orderToUsd,
+  shopifyCostsToUsd,
+  sum,
+  toStored,
+  usdRateProvider,
+} from '@pi/profit-engine';
+import type { EngineConfig, EngineOrder, OrderResult, RateProvider } from '@pi/profit-engine';
 
 export interface RecalcDeps {
   db: Db;
@@ -28,7 +39,7 @@ export interface RecalcResult {
   nowComplete: number;
   /** counted orders that still have something missing */
   stillIncomplete: number;
-  /** contribution profit of the counted orders, summed in the order currency, before and after */
+  /** contribution profit of the counted orders, in USD, before and after */
   profitBefore: string;
   profitAfter: string;
 }
@@ -97,6 +108,25 @@ export async function recalculateProfit(
         scope,
         loaded.map((l) => l.orderId),
       );
+      // a store that sells in another currency has every amount converted to USD before profit is worked out,
+      // with the rates of the days involved; the rates are loaded only for this page's days, and only if needed
+      let usd: RateProvider | null = null;
+      if (loaded.some((l) => (l.order as EngineOrder).currency !== REPORTING_CURRENCY)) {
+        const days = loaded.flatMap((l) => {
+          const o = l.order as EngineOrder;
+          return [o.processedAt, ...o.refunds.map((r) => r.processedAt)].map((d) =>
+            businessDate(d, rules.timezone),
+          );
+        });
+        const from = new Date(
+          Date.parse(`${days.reduce((a, b) => (a < b ? a : b))}T00:00:00Z`) - 14 * 86_400_000,
+        );
+        const rates = await loadExchangeRates(db, {
+          from: from.toISOString().slice(0, 10),
+          to: days.reduce((a, b) => (a > b ? a : b)),
+        });
+        usd = usdRateProvider(rates);
+      }
       let recognized = 0;
       let entries = 0;
       let changed = 0;
@@ -104,8 +134,35 @@ export async function recalculateProfit(
       let stillIncomplete = 0;
       let pageBefore = 0;
       let pageAfter = 0;
-      for (const { orderId, order } of loaded) {
-        const calc = calculateOrder(order as EngineOrder, cfg);
+      for (const { orderId, order: loadedOrder } of loaded) {
+        let order = loadedOrder as EngineOrder;
+        let orderCfg = cfg;
+        let calc: OrderResult;
+        const extraFlags: string[] = [];
+        const conv = usd ? orderToUsd(order, usd, rules.timezone) : null;
+        if (conv && !conv.ok) {
+          // no rate for that day: the order is left out and says why; a rate is never assumed to be 1
+          calc = {
+            recognized: false,
+            exclusionReason: 'no_exchange_rate',
+            flags: [],
+            entries: [],
+          };
+          extraFlags.push('no_exchange_rate');
+          order = { ...order, currency: REPORTING_CURRENCY };
+        } else {
+          if (conv?.ok && conv.from) {
+            const date = businessDate(order.processedAt, rules.timezone);
+            order = conv.order;
+            orderCfg = {
+              ...cfg,
+              shopifyCosts: shopifyCostsToUsd(cfg.shopifyCosts, conv.from, date, usd!) ?? new Map(),
+            };
+            extraFlags.push(`converted_from_${conv.from}`);
+            if (conv.estimated) extraFlags.push('fx_estimated');
+          }
+          calc = calculateOrder(order, orderCfg);
+        }
         const rows = calc.entries.map((e) => ({
           component: e.component,
           occurredAt: e.occurredAt,
@@ -123,13 +180,13 @@ export async function recalculateProfit(
           tx,
           scope,
           orderId,
-          order.currency,
+          REPORTING_CURRENCY,
           ENGINE_VERSION,
           {
             orderDate: businessDate(order.processedAt, rules.timezone),
             recognized: calc.recognized,
             exclusionReason: calc.exclusionReason,
-            flags: calc.flags,
+            flags: [...calc.flags, ...extraFlags],
             contributionAmount: calc.recognized
               ? toStored(sum(calc.entries.filter((e) => !e.memo).map((e) => e.amount)))
               : null,

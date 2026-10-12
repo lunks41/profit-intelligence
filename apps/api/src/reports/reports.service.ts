@@ -31,7 +31,7 @@ import {
   updateSchedule,
 } from '@pi/db';
 import type { Db, ExportRow, ScheduleRow } from '@pi/db';
-import { businessDate } from '@pi/profit-engine';
+import { businessDate, REPORTING_CURRENCY } from '@pi/profit-engine';
 import { REPORT_TITLES, buildReport, latestOccurrence } from '@pi/reports';
 import type { ReportKind } from '@pi/reports';
 import type { PgBoss } from 'pg-boss';
@@ -133,7 +133,7 @@ export class ReportsService {
         filter: q.filter,
         sort: q.sort,
       },
-      { shopName: shop.shopifyDomain, currency: shop.currency, timezone: shop.ianaTimezone },
+      { shopName: shop.shopifyDomain, currency: REPORTING_CURRENCY, timezone: shop.ianaTimezone },
     );
     return {
       ...report,

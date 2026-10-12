@@ -29,6 +29,7 @@ import {
   summarizePeriod,
   toStored,
   totalAdSpend,
+  REPORTING_CURRENCY,
 } from '@pi/profit-engine';
 import type { TokenCrypto } from '@pi/shopify';
 import type { TenantContext } from '../auth/installation.service.js';
@@ -214,7 +215,7 @@ export class MarketingService {
       pendingId,
       accountIds,
       actor: actorOf(scope),
-      shopCurrency: shop.currency,
+      shopCurrency: REPORTING_CURRENCY,
     });
     if (!r.ok) {
       throw r.reason === 'not_found'
@@ -288,13 +289,13 @@ export class MarketingService {
 
     let fxNote: string | null = null;
     const currencyOf = new Map(ads.byAccount.map((a) => [a.accountId, a.currency.trim()]));
-    if ([...currencyOf.values()].some((c) => c !== shop.currency)) {
+    if ([...currencyOf.values()].some((c) => c !== REPORTING_CURRENCY)) {
       const fx = buildFx(
         await loadExchangeRates(this.db, { from: addDays(range.from, -10), to: range.to }),
       );
       const convertAt = (amount: string, from: string, date: string): string | null => {
-        if (from === shop.currency) return amount;
-        const c = convertMoney(amount, from, shop.currency, date, fx.provider);
+        if (from === REPORTING_CURRENCY) return amount;
+        const c = convertMoney(amount, from, REPORTING_CURRENCY, date, fx.provider);
         if (c.status === 'missing') {
           fxNote =
             'Some ad spend is in a currency with no exchange rate yet, so that spend is left out of the totals.';
@@ -304,20 +305,20 @@ export class MarketingService {
       };
       const sums = new Map<string, InstanceType<typeof D>>();
       for (const d of ads.daily) {
-        const next = convertAt(d.spend, currencyOf.get(d.accountId) ?? shop.currency, d.date);
+        const next = convertAt(d.spend, currencyOf.get(d.accountId) ?? REPORTING_CURRENCY, d.date);
         d.spend = next ?? '0.0000';
         sums.set(d.accountId, (sums.get(d.accountId) ?? new D(0)).plus(dec(d.spend)));
       }
       for (const a of ads.byAccount) {
-        const from = currencyOf.get(a.accountId) ?? shop.currency;
-        if (from === shop.currency) continue;
+        const from = currencyOf.get(a.accountId) ?? REPORTING_CURRENCY;
+        if (from === REPORTING_CURRENCY) continue;
         a.spend = toStored(sums.get(a.accountId) ?? new D(0));
         const sales = convertAt(a.reportedSales, from, range.to);
         if (sales) a.reportedSales = sales;
       }
       for (const c of ads.byCampaign) {
-        const from = currencyOf.get(c.accountId) ?? shop.currency;
-        if (from === shop.currency) continue;
+        const from = currencyOf.get(c.accountId) ?? REPORTING_CURRENCY;
+        if (from === REPORTING_CURRENCY) continue;
         const spendRow = convertAt(c.spend, from, range.to);
         const sales = convertAt(c.reportedSales, from, range.to);
         if (spendRow) c.spend = spendRow;
@@ -364,7 +365,7 @@ export class MarketingService {
         preset: range.preset,
         timezone: shop.ianaTimezone,
       },
-      currency: shop.currency,
+      currency: REPORTING_CURRENCY,
       accounts: accounts.map((a) => ({
         ...a,
         connectedVia: a.connectedVia as 'manual' | 'token' | 'oauth',
@@ -440,7 +441,7 @@ export class MarketingService {
     return createAdAccount(this.db, scope, {
       provider: body.provider,
       name: body.name,
-      currency: shop.currency,
+      currency: REPORTING_CURRENCY,
       externalId: body.externalId ?? null,
       encryptedAccessToken: encrypted,
       actor: actorOf(scope),

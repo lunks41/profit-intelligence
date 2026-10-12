@@ -91,6 +91,14 @@ export function parseProductCostCsv(text: string): {
   const header = table[0]!.map((c) => c.trim());
   const joined = header.join(',');
   const columns = joined === FULL.join(',') ? FULL : joined === SHORT.join(',') ? SHORT : null;
+  // costs are in US dollars only, so there is no currency column to fill in
+  if (!columns && header.some((c) => c.toLowerCase() === 'currency')) {
+    return {
+      rows: [],
+      errors: ['Costs are in US dollars (USD) only. Remove the currency column from the file.'],
+      skipped: 0,
+    };
+  }
   if (!columns) {
     return {
       rows: [],
@@ -124,7 +132,9 @@ export function parseProductCostCsv(text: string): {
       errors.push(`row ${rowNo}: variant id must be the number from the export`);
     }
     if (!cost || !AMOUNT_RE.test(cost))
-      errors.push(`row ${rowNo}: cost must be a number such as 4.50`);
+      errors.push(
+        `row ${rowNo}: cost must be a number in USD such as 4.50, with no currency sign or code`,
+      );
     if (!realDate(effectiveFrom)) errors.push(`row ${rowNo}: effective_from must be a real date`);
     const key = `${(sku ?? '').toLowerCase()}|${variantId ?? ''}|${effectiveFrom}`;
     if (seen.has(key)) errors.push(`row ${rowNo}: the same product and date appears twice`);

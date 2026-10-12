@@ -25,6 +25,29 @@ describe('product cost CSV', () => {
     expect(parsed.errors.join(' ')).toMatch(/row 2/);
   });
 
+  it('costs are in USD only: a currency column is refused, and so is a cost with a sign or a code', () => {
+    const withColumn = parseProductCostCsv(`sku,variant_id,cost,currency,effective_from
+TEE-1,100,4.50,USD,2026-01-01
+`);
+    expect(withColumn.rows).toEqual([]);
+    expect(withColumn.errors).toEqual([
+      'Costs are in US dollars (USD) only. Remove the currency column from the file.',
+    ]);
+    for (const bad of ['$4.50', 'AED 4.50', '4.50 USD', '4,50']) {
+      const r = parseProductCostCsv(`sku,variant_id,cost,effective_from
+TEE-1,100,"${bad}",2026-01-01
+`);
+      expect(r.rows, bad).toEqual([]);
+      expect(r.errors[0], bad).toMatch(/row 2: cost must be a number in USD/);
+    }
+  });
+
+  it('the exported template has no currency column', () => {
+    expect(formatProductCostCsv([]).split('\n')[0]).toBe(
+      'sku,variant_id,product,variant,vendor,collection,cost,effective_from',
+    );
+  });
+
   it('skips a row with no cost so an export can be filled in part way', () => {
     const parsed = parseProductCostCsv(`sku,variant_id,cost,effective_from
 TEE-1,100,4.50,2026-01-01
