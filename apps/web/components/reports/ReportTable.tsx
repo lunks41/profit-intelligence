@@ -57,7 +57,7 @@ export function ReportTable({
                 )}
             </s-table-header-row>
             <s-table-body>
-              {report.rows.map((r, i) => (
+              {(showType ? groupedByKind(report.rows) : report.rows).map((r, i) => (
                 <s-table-row key={`r${i}`}>
                   {r.flatMap((v, j) => {
                     const c = (
@@ -119,4 +119,18 @@ function KindCell({ label }: { label: string }) {
   return (
     <s-table-cell>{kind ? <s-badge tone={KIND_TONE[kind]}>{kind}</s-badge> : null}</s-table-cell>
   );
+}
+
+const KIND_ORDER = { Income: 0, Outgoing: 1, Result: 2 } as const;
+
+/** The lines grouped as Income, then Outgoing, then Result; inside a group they keep the order of the report. */
+function groupedByKind(rows: string[][]): string[][] {
+  const rank = (r: string[]) => {
+    const k = lineKind(r[0] ?? '');
+    return k ? KIND_ORDER[k] : 3;
+  };
+  return rows
+    .map((r, i) => ({ r, i }))
+    .sort((a, b) => rank(a.r) - rank(b.r) || a.i - b.i)
+    .map((x) => x.r);
 }
