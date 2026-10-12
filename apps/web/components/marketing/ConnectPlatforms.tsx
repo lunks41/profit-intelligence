@@ -12,6 +12,8 @@ import { formatMoney, longDate } from '../../lib/format';
 import { readParam } from '../../lib/url-params';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormError, useAction, FormActions } from '../settings/shared';
+import { IntegrationList } from '../common/IntegrationList';
+import type { Integration } from '../common/IntegrationList';
 
 const PLATFORMS = ['meta', 'google', 'tiktok'] as const;
 type Platform = (typeof PLATFORMS)[number];
@@ -58,6 +60,111 @@ export function ConnectPlatforms({
   const connectedCount = data.accounts.filter(
     (a) => a.provider !== 'manual' && a.status !== 'disconnected',
   ).length;
+
+  const MARK: Record<Platform, Integration['mark']> = {
+    meta: { text: 'f', background: '#1877f2' },
+    google: { text: 'G', background: '#e8f0fe', color: '#1a73e8' },
+    tiktok: { text: 'Tt', background: '#000000' },
+  };
+  const items: Integration[] = [
+    ...PLATFORMS.map((id): Integration => {
+      const info = providers.providers.find((p) => p.id === id);
+      const mine = data.accounts.filter((a) => a.provider === id && a.status !== 'disconnected');
+      const rows = data.channels.filter((c) =>
+        data.accounts.some((a) => a.id === c.accountId && a.provider === id),
+      );
+      const spend = rows.reduce((t, c) => t + Number(c.spend), 0);
+      const sales = rows.reduce((t, c) => t + Number(c.platformReportedSales), 0);
+      const available = !info || info.configured;
+      const connect = async () => {
+        const r = await start.run(() =>
+          apiPost<AdConnectStartResponse>(`/marketing/connect/${id}/start`, {}),
+        );
+        // the platform's sign-in cannot run inside the Shopify frame, so open it on the whole page
+        if (r) window.open(r.url, '_top');
+      };
+      return {
+        id,
+        name: NAME[id],
+        description: WHAT[id],
+        mark: MARK[id],
+        status: !available ? 'unavailable' : mine.length > 0 ? 'connected' : 'idle',
+        detail:
+          !available || mine.length === 0 ? (
+            !available ? (
+              <s-text color="subdued">
+                The owner of this app has not added the {NAME[id]} app credentials on the server.
+              </s-text>
+            ) : undefined
+          ) : (
+            <s-stack gap="small-300">
+              <s-text>
+                Spend{' '}
+                <s-text type="strong">
+                  {rows.length > 0 ? formatMoney(spend.toFixed(4), data.currency) : '—'}
+                </s-text>
+                <s-text color="subdued">
+                  {rows.length > 0 && spend > 0
+                    ? ` · the platform reports ${formatMoney(sales.toFixed(4), data.currency)} in sales (${(sales / spend).toFixed(2)}x)`
+                    : ' · no spend imported for this period yet'}
+                </s-text>
+              </s-text>
+              {mine.map((a) => (
+                <s-stack key={a.id} direction="inline" gap="small" alignItems="center">
+                  <s-text>
+                    {a.name}
+                    {a.status === 'error' && <s-badge tone="critical"> Needs attention</s-badge>}
+                  </s-text>
+                  <s-text color="subdued">
+                    {a.lastSyncAt
+                      ? `Last import ${longDate(a.lastSyncAt.slice(0, 10))}`
+                      : 'No import yet. It starts right after you connect, or press Refresh spend now.'}
+                    {a.lastError ? ` ${a.lastError}` : ''}
+                  </s-text>
+                  <s-button
+                    variant="tertiary"
+                    tone="critical"
+                    disabled={disconnect.busy}
+                    accessibilityLabel={`Disconnect ${a.name}`}
+                    onClick={async () => {
+                      if (await disconnect.run(() => apiDelete(`/marketing/accounts/${a.id}`)))
+                        onChanged();
+                    }}
+                  >
+                    Disconnect
+                  </s-button>
+                </s-stack>
+              ))}
+            </s-stack>
+          ),
+        actions: available
+          ? [
+              {
+                label: mine.length > 0 ? 'Connect another' : 'Connect',
+                variant: mine.length > 0 ? 'secondary' : 'primary',
+                disabled: start.busy,
+                onClick: () => void connect(),
+              },
+            ]
+          : [],
+      };
+    }),
+    // platforms that are not built yet, so the merchant can see what is planned
+    ...(
+      [
+        ['bing', 'Microsoft Ads', 'Bing and Microsoft Advertising campaigns.', 'Ms', '#00809d'],
+        ['snapchat', 'Snapchat Ads', 'Snapchat campaigns.', 'Sn', '#fffc00'],
+        ['pinterest', 'Pinterest Ads', 'Pinterest campaigns.', 'P', '#e60023'],
+        ['reddit', 'Reddit Ads', 'Reddit campaigns.', 'R', '#ff4500'],
+      ] as const
+    ).map(([id, name, description, text, background]): Integration => ({
+      id,
+      name,
+      description,
+      mark: { text, background, color: id === 'snapchat' ? '#000' : '#fff' },
+      status: 'soon',
+    })),
+  ];
 
   return (
     <s-stack gap="base">
@@ -109,95 +216,7 @@ export function ConnectPlatforms({
         />
       ))}
       <FormError message={start.error ?? disconnect.error} />
-      <s-grid gridTemplateColumns="repeat(auto-fit, minmax(16rem, 1fr))" gap="small">
-        {PLATFORMS.map((id) => {
-          const info = providers.providers.find((p) => p.id === id);
-          const mine = data.accounts.filter(
-            (a) => a.provider === id && a.status !== 'disconnected',
-          );
-          const rows = data.channels.filter((c) =>
-            data.accounts.some((a) => a.id === c.accountId && a.provider === id),
-          );
-          const spend = rows.reduce((s, c) => s + Number(c.spend), 0);
-          const sales = rows.reduce((s, c) => s + Number(c.platformReportedSales), 0);
-          return (
-            <s-box key={id} padding="base" borderWidth="base" borderRadius="base">
-              <s-stack gap="small">
-                <s-stack direction="inline" gap="small" alignItems="center">
-                  <s-text type="strong">{NAME[id]}</s-text>
-                  {mine.length > 0 && <s-badge tone="success">Connected</s-badge>}
-                </s-stack>
-                <s-text color="subdued">{WHAT[id]}</s-text>
-                {mine.length > 0 && (
-                  <s-stack gap="small-300">
-                    <s-text>
-                      Spend{' '}
-                      <s-text type="strong">
-                        {rows.length > 0 ? formatMoney(spend.toFixed(4), data.currency) : '—'}
-                      </s-text>
-                    </s-text>
-                    <s-text color="subdued">
-                      {rows.length > 0 && spend > 0
-                        ? `Platform reports ${formatMoney(sales.toFixed(4), data.currency)} in sales (${(sales / spend).toFixed(2)}x)`
-                        : 'No spend imported for this period yet'}
-                    </s-text>
-                  </s-stack>
-                )}
-                {mine.map((a) => (
-                  <s-stack key={a.id} gap="small-300">
-                    <s-text>
-                      {a.name}
-                      {a.status === 'error' && <s-badge tone="critical"> Needs attention</s-badge>}
-                    </s-text>
-                    <s-text color="subdued">
-                      {a.lastSyncAt
-                        ? `Last import ${longDate(a.lastSyncAt.slice(0, 10))}`
-                        : 'No import yet. It starts right after you connect, or press Refresh spend now.'}
-                      {a.lastError ? ` ${a.lastError}` : ''}
-                    </s-text>
-                    <div>
-                      <s-button
-                        variant="tertiary"
-                        tone="critical"
-                        disabled={disconnect.busy}
-                        accessibilityLabel={`Disconnect ${a.name}`}
-                        onClick={async () => {
-                          if (await disconnect.run(() => apiDelete(`/marketing/accounts/${a.id}`)))
-                            onChanged();
-                        }}
-                      >
-                        Disconnect
-                      </s-button>
-                    </div>
-                  </s-stack>
-                ))}
-                {info && !info.configured ? (
-                  <s-text color="subdued">
-                    Not available yet. The owner of this app has not added the {NAME[id]} app
-                    credentials on the server.
-                  </s-text>
-                ) : (
-                  <div>
-                    <s-button
-                      variant={mine.length > 0 ? 'secondary' : 'primary'}
-                      disabled={start.busy}
-                      onClick={async () => {
-                        const r = await start.run(() =>
-                          apiPost<AdConnectStartResponse>(`/marketing/connect/${id}/start`, {}),
-                        );
-                        // the platform's sign-in cannot run inside the Shopify frame, so open it on the whole page
-                        if (r) window.open(r.url, '_top');
-                      }}
-                    >
-                      {mine.length > 0 ? 'Connect another account' : `Connect ${NAME[id]}`}
-                    </s-button>
-                  </div>
-                )}
-              </s-stack>
-            </s-box>
-          );
-        })}
-      </s-grid>
+      <IntegrationList items={items} />
     </s-stack>
   );
 }
