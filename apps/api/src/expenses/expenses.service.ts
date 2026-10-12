@@ -3,6 +3,7 @@ import type {
   AuditResponse,
   CategoryListResponse,
   CreateExpenseBody,
+  ExpenseImportBody,
   ExpenseListResponse,
   ExpenseRow,
   ExpenseClassName,
@@ -42,6 +43,7 @@ import {
 } from '@pi/profit-engine';
 import type { ExpenseInput } from '@pi/profit-engine';
 import { csvCell } from '@pi/reports';
+import { EXPENSE_TEMPLATE, parseExpenseCsv } from './expense-csv.js';
 import type { TenantContext } from '../auth/installation.service.js';
 import { buildFx } from '../dashboard/currency.js';
 import { addDays } from '../dashboard/range.js';
@@ -189,7 +191,7 @@ export class ExpensesService {
     return { currency, today, rows };
   }
 
-  async summary(scope: TenantContext): Promise<ExpenseSummaryResponse> {
+  async summary(scope: TenantContext, count = 6): Promise<ExpenseSummaryResponse> {
     const { currency, today } = await this.shop(scope);
     const { expenses, overrides } = await loadExpenses(this.db, scope);
     const inputs = expenses.map(toInput);
@@ -197,7 +199,9 @@ export class ExpensesService {
     const thisMonthRange = { from: monthStart(today), to: lastOfMonth(today) };
 
     const oneTimeIds = new Set(expenses.filter((e) => e.kind === 'one_time').map((e) => e.id));
-    const monthStarts = Array.from({ length: 6 }, (_, i) => addMonths(monthStart(today), i - 5));
+    const monthStarts = Array.from({ length: count }, (_, i) =>
+      addMonths(monthStart(today), i - (count - 1)),
+    );
     // each month goes through the same calculation as the Overview, so the monthly profit and loss
     // here always agrees with it (revenue, advertising and expenses included)
     const monthFigures = await Promise.all(
@@ -463,6 +467,83 @@ export class ExpensesService {
         ) +
         '\r\n',
     };
+  }
+
+  /** The file to fill in: the columns the import reads, with two example rows. */
+  importTemplate(): { csv: string } {
+    return { csv: '﻿' + EXPENSE_TEMPLATE };
+  }
+
+  /**
+   * Adds the expenses of a CSV. A preview only counts: rows that would be added (matched), rows left out because the
+   * same expense is already there or repeated in the file (skipped), and rows with a problem (invalid). Nothing is
+   * saved when any row has a problem, so a file is added whole or not at all.
+   */
+  async importCsv(scope: TenantContext, body: ExpenseImportBody) {
+    const parsed = parseExpenseCsv(body.csv);
+    const errors = [...parsed.errors];
+    const categories = (await this.categories(scope)).categories;
+    const byName = new Map(categories.map((c) => [c.name.toLowerCase(), c.id]));
+    const fallback = byName.get('other') ?? categories[0]?.id;
+    const existing = await this.list(scope, { filter: 'all', status: 'all' });
+    const key = (r: {
+      name: string;
+      amount: string;
+      kind: string;
+      frequency: string | null;
+      startDate: string;
+    }) =>
+      [r.name.trim().toLowerCase(), Number(r.amount), r.kind, r.frequency ?? '', r.startDate].join(
+        '|',
+      );
+    const seen = new Set(existing.rows.map(key));
+    let skipped = 0;
+    const toAdd: Array<(typeof parsed.rows)[number] & { categoryId: string }> = [];
+    for (const r of parsed.rows) {
+      const categoryId = r.category ? byName.get(r.category.toLowerCase()) : fallback;
+      if (!categoryId) {
+        errors.push(
+          `row ${r.line}: the category ${r.category} does not exist. Add it under Categories first, or leave the cell empty.`,
+        );
+        continue;
+      }
+      const k = key(r);
+      if (seen.has(k)) {
+        skipped++;
+        continue;
+      }
+      seen.add(k);
+      toAdd.push({ ...r, categoryId });
+    }
+    if (body.preview) {
+      return {
+        preview: true as const,
+        matched: errors.length ? 0 : toAdd.length,
+        skipped,
+        invalid: errors.length,
+        messages: errors.slice(0, 200),
+      };
+    }
+    if (errors.length) {
+      throw new BadRequestException({
+        code: 'invalid_input',
+        message: errors.slice(0, 8).join('; '),
+      });
+    }
+    for (const r of toAdd) {
+      await this.create(scope, {
+        name: r.name,
+        categoryId: r.categoryId,
+        amount: r.amount,
+        kind: r.kind,
+        ...(r.frequency ? { frequency: r.frequency } : {}),
+        startDate: r.startDate,
+        ...(r.endDate ? { endDate: r.endDate } : {}),
+        ...(r.reference ? { reference: r.reference } : {}),
+        ...(r.description ? { description: r.description } : {}),
+      });
+    }
+    return { matched: toAdd.length, skipped, invalid: 0, messages: [] as string[] };
   }
 
   async history(scope: TenantContext): Promise<AuditResponse> {

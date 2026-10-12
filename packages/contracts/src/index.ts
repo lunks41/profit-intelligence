@@ -980,6 +980,13 @@ export const expenseListQuerySchema = z.object({
   to: isoDate.optional(),
 });
 
+export const expenseImportBodySchema = z.object({
+  csv: z.string().trim().min(1).max(2_000_000),
+  /** when true, count matched, skipped and invalid rows and do not save */
+  preview: z.boolean().optional(),
+});
+export type ExpenseImportBody = z.infer<typeof expenseImportBodySchema>;
+
 export const createExpenseBodySchema = z
   .object({
     name: nameString,

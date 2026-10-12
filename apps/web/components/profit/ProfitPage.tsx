@@ -11,6 +11,7 @@ import type {
 import { describeDelta, describePoints, formatMoney, formatPercent } from '../../lib/format';
 import { sparkSeries } from '../../lib/series';
 import { buildListQuery } from '../../lib/query';
+import { MonthlyPnl } from './MonthlyPnl';
 import { DataQualityCard } from '../overview/DataQualityCard';
 import { FilterBar, type Filters } from '../overview/OverviewView';
 import { describeFreshness } from '../../lib/freshness';
@@ -23,7 +24,7 @@ import { readParam } from '../../lib/url-params';
 import { todayInShop } from '../../lib/shop-time';
 import { formatDateTime } from '../../lib/shop-time';
 
-type Tab = 'statement' | 'trend' | 'leakage' | 'quality';
+type Tab = 'statement' | 'monthly' | 'trend' | 'leakage' | 'quality';
 const today = todayInShop;
 const QUALITY_RULES = new Set(['missing_costs', 'missing_fees', 'missing_shipping_cost']);
 
@@ -61,6 +62,7 @@ export function ProfitPage() {
         {(
           [
             ['statement', 'Profit and loss'],
+            ['monthly', 'Monthly profit and loss'],
             ['trend', 'Monthly trend'],
             ['leakage', `Profit leakage${serious > 0 ? ` (${serious})` : ''}`],
             ['quality', `Data quality${quality.length > 0 ? ` (${quality.length})` : ''}`],
@@ -83,6 +85,7 @@ export function ProfitPage() {
           {pnl.data && <ReportTable report={pnl.data} />}
         </>
       )}
+      {tab === 'monthly' && <MonthlyPnl />}
       {tab === 'trend' && (
         <Trend pnl={pnl.data} loading={pnl.loading} error={pnl.error} reload={pnl.reload} />
       )}

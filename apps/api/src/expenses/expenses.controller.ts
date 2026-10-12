@@ -17,6 +17,7 @@ import {
   categoryClassBodySchema,
   changeExpenseBodySchema,
   createExpenseBodySchema,
+  expenseImportBodySchema,
   expenseListQuerySchema,
   monthOverrideBodySchema,
   monthParamSchema,
@@ -75,13 +76,28 @@ export class ExpensesController {
   }
 
   @Get('summary')
-  summary(@Tenant() t: TenantContext): Promise<ExpenseSummaryResponse> {
-    return this.service.summary(t);
+  summary(
+    @Tenant() t: TenantContext,
+    @Query('months') months?: string,
+  ): Promise<ExpenseSummaryResponse> {
+    // 3, 6, 12 or 24 months back; anything else is the usual 6
+    const n = Number(months);
+    return this.service.summary(t, [3, 6, 12, 24].includes(n) ? n : 6);
   }
 
   @Get('history')
   history(@Tenant() t: TenantContext): Promise<AuditResponse> {
     return this.service.history(t);
+  }
+
+  @Get('import-template')
+  importTemplate() {
+    return this.service.importTemplate();
+  }
+
+  @Post('import')
+  importCsv(@Tenant() t: TenantContext, @Body() body: unknown) {
+    return this.service.importCsv(t, parse(expenseImportBodySchema, body));
   }
 
   @Get('export')
