@@ -132,12 +132,14 @@ export function DateField({
   value,
   onChange,
   error,
+  disabled,
 }: {
   label: string;
   /** YYYY-MM-DD, or empty */
   value: string;
   onChange: (iso: string) => void;
   error?: string;
+  disabled?: boolean;
 }) {
   const id = `cal-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   const [text, setText] = useState(value ? formatDate(value) : '');
@@ -168,6 +170,7 @@ export function DateField({
       <s-text-field
         label={label}
         value={text}
+        disabled={disabled}
         placeholder="12-Oct-2026"
         error={bad ? 'Use a date such as 12-Oct-2026' : error}
         onInput={(e) => {
@@ -181,6 +184,7 @@ export function DateField({
           slot="accessory"
           variant="tertiary"
           icon="calendar"
+          disabled={disabled}
           commandFor={id}
           command="--toggle"
           accessibilityLabel={`Pick ${label} from a calendar`}

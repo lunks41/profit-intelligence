@@ -66,15 +66,17 @@ export function ExpensesPage() {
 
       {adding && cats.data && (
         <Modal heading="Add expense" onClose={() => setAdding(false)}>
-          <AddExpense
-            categories={cats.data.categories}
-            currency={summary.data?.currency ?? ''}
-            onCancel={() => setAdding(false)}
-            onSaved={() => {
-              setAdding(false);
-              changed();
-            }}
-          />
+          <s-section>
+            <ExpenseForm
+              categories={cats.data.categories}
+              currency={summary.data?.currency ?? ''}
+              onCancel={() => setAdding(false)}
+              onSaved={() => {
+                setAdding(false);
+                changed();
+              }}
+            />
+          </s-section>
         </Modal>
       )}
 
@@ -232,25 +234,36 @@ function Summary({
   );
 }
 
-function AddExpense({
+/**
+ * The one expense form, for adding an expense and for changing one. Adding fills in everything; changing shows the
+ * same fields with the ones that cannot change after the fact (how it repeats, when it starts, its currency, the
+ * reference) greyed out, and saves the change from a date on, so earlier months keep what applied then.
+ */
+function ExpenseForm({
   categories,
   currency,
+  row,
   onSaved,
   onCancel,
 }: {
   categories: CategoryListResponse['categories'];
   currency: string;
+  /** the expense to change; none when adding */
+  row?: ExpenseRow;
   onSaved: () => void;
   onCancel: () => void;
 }) {
-  const [name, setName] = useState('');
-  const [amount, setAmount] = useState('');
-  const [categoryId, setCategoryId] = useState(categories[0]?.id ?? '');
+  const editing = row !== undefined;
+  const recurringRow = row?.kind === 'recurring';
+  const strip = (v: string) => v.replace(/\.?0+$/, '');
+  const [name, setName] = useState(row?.name ?? '');
+  const [amount, setAmount] = useState(row ? strip(row.amount) : '');
+  const [categoryId, setCategoryId] = useState(row?.categoryId ?? categories[0]?.id ?? '');
   const defaults = useApi<{ kind: 'one_time' | 'recurring'; frequency: 'monthly' | 'yearly' }>(
-    '/settings/expense-defaults',
+    editing ? null : '/settings/expense-defaults',
   );
-  const [kind, setKind] = useState<'one_time' | 'recurring'>('recurring');
-  const [frequency, setFrequency] = useState<'monthly' | 'yearly'>('monthly');
+  const [kind, setKind] = useState<'one_time' | 'recurring'>(row?.kind ?? 'recurring');
+  const [frequency, setFrequency] = useState<'monthly' | 'yearly'>(row?.frequency ?? 'monthly');
   const [defaultsApplied, setDefaultsApplied] = useState(false);
   useEffect(() => {
     if (defaults.data && !defaultsApplied) {
@@ -259,12 +272,15 @@ function AddExpense({
       setDefaultsApplied(true);
     }
   }, [defaults.data, defaultsApplied]);
-  const [start, setStart] = useState(todayLocal());
-  const [end, setEnd] = useState('');
-  const [reference, setReference] = useState('');
-  const [description, setDescription] = useState('');
-  const [foreign, setForeign] = useState('');
+  const [start, setStart] = useState(row?.startDate ?? todayLocal());
+  const [end, setEnd] = useState(row?.endDate ?? '');
+  const [reference, setReference] = useState(row?.reference ?? '');
+  const [description, setDescription] = useState(row?.description ?? '');
+  const [foreign, setForeign] = useState(row?.originalCurrency ?? '');
+  // when changing: the date the change counts from (the first of a month for a recurring expense)
+  const [from, setFrom] = useState(`${todayLocal().slice(0, 7)}-01`);
   const [touched, setTouched] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
   // One key per open form: pressing Save twice, or a retry, cannot add the expense twice.
   const [requestKey] = useState(() => crypto.randomUUID());
   const { busy, error, run } = useAction();
@@ -279,7 +295,23 @@ function AddExpense({
 
   async function save() {
     setTouched(true);
-    if (!nameOk || !amountOk || !startOk || !endOk || !currencyOk || !categoryId) return;
+    if (!nameOk || !amountOk || !categoryId) return;
+    if (row) {
+      const effectiveFrom = recurringRow ? `${from.slice(0, 7)}-01` : start;
+      const body = {
+        ...(name.trim() !== row.name ? { name: name.trim() } : {}),
+        ...(categoryId !== row.categoryId ? { categoryId } : {}),
+        ...(amount.trim() !== strip(row.amount) ? { amount: amount.trim() } : {}),
+        effectiveFrom,
+      };
+      if (Object.keys(body).length === 1 && (recurringRow || start === row.startDate)) {
+        setNote('Nothing to change.');
+        return;
+      }
+      if (await run(() => apiPost(`/expenses/${row.id}/change`, body))) onSaved();
+      return;
+    }
+    if (!startOk || !endOk || !currencyOk) return;
     const ok = await run(() =>
       apiPost('/expenses', {
         name: name.trim(),
@@ -299,91 +331,109 @@ function AddExpense({
   }
 
   return (
-    <s-section heading="Add expense">
-      <s-stack gap="base">
-        <s-grid gridTemplateColumns={FILTER_GRID} gap="base" alignItems="end">
-          <s-text-field
-            label="Name"
-            placeholder="Warehouse rent"
-            value={name}
-            error={touched && !nameOk ? 'Enter a name' : undefined}
-            onInput={(e) => setName(e.currentTarget.value)}
-          />
-          <s-text-field
-            label={`Amount (${foreign || currency})`}
-            value={amount}
-            error={touched && !amountOk ? 'Enter a number such as 1200.00' : undefined}
-            onInput={(e) => setAmount(e.currentTarget.value)}
-          />
-          <s-text-field
-            label={`Currency (blank = ${currency})`}
-            placeholder={currency}
-            value={foreign}
-            error={touched && !currencyOk ? 'Use a three-letter code such as EUR' : undefined}
-            onInput={(e) => setForeign(e.currentTarget.value.toUpperCase())}
-          />
-          <CategoryDropdown value={categoryId} categories={categories} onChange={setCategoryId} />
-          <s-text-field
-            label="Reference (optional)"
-            placeholder="Invoice 1042"
-            value={reference}
-            onInput={(e) => setReference(e.currentTarget.value)}
-          />
-          <s-text-field
-            label="Description (optional)"
-            value={description}
-            onInput={(e) => setDescription(e.currentTarget.value)}
-          />
-          <Dropdown
-            label="Repeats"
-            value={kind === 'one_time' ? 'once' : frequency}
-            options={[
-              { value: 'once', label: 'One time' },
-              { value: 'monthly', label: 'Every month' },
-              { value: 'yearly', label: 'Every year' },
-            ]}
-            onChange={(v) => {
-              if (v === 'once') setKind('one_time');
-              else {
-                setKind('recurring');
-                setFrequency(v as 'monthly' | 'yearly');
-              }
-            }}
-          />
+    <s-stack gap="base">
+      <s-grid gridTemplateColumns={FILTER_GRID} gap="base" alignItems="end">
+        <s-text-field
+          label="Name"
+          placeholder="Warehouse rent"
+          value={name}
+          error={touched && !nameOk ? 'Enter a name' : undefined}
+          onInput={(e) => setName(e.currentTarget.value)}
+        />
+        <s-text-field
+          label={`Amount (${foreign && !editing ? foreign : currency})`}
+          value={amount}
+          error={touched && !amountOk ? 'Enter a number such as 1200.00' : undefined}
+          onInput={(e) => setAmount(e.currentTarget.value)}
+        />
+        <s-text-field
+          label={`Currency (blank = ${currency})`}
+          placeholder={currency}
+          value={foreign}
+          disabled={editing}
+          error={touched && !currencyOk ? 'Use a three-letter code such as EUR' : undefined}
+          onInput={(e) => setForeign(e.currentTarget.value.toUpperCase())}
+        />
+        <CategoryDropdown value={categoryId} categories={categories} onChange={setCategoryId} />
+        <s-text-field
+          label="Reference (optional)"
+          placeholder="Invoice 1042"
+          value={reference}
+          disabled={editing}
+          onInput={(e) => setReference(e.currentTarget.value)}
+        />
+        <s-text-field
+          label="Description (optional)"
+          value={description}
+          disabled={editing}
+          onInput={(e) => setDescription(e.currentTarget.value)}
+        />
+        <Dropdown
+          label="Repeats"
+          value={kind === 'one_time' ? 'once' : frequency}
+          disabled={editing}
+          options={[
+            { value: 'once', label: 'One time' },
+            { value: 'monthly', label: 'Every month' },
+            { value: 'yearly', label: 'Every year' },
+          ]}
+          onChange={(v) => {
+            if (v === 'once') setKind('one_time');
+            else {
+              setKind('recurring');
+              setFrequency(v as 'monthly' | 'yearly');
+            }
+          }}
+        />
+        <DateField
+          label={kind === 'one_time' ? 'Date' : 'Starts'}
+          value={start}
+          disabled={editing && recurringRow}
+          onChange={(v) => setStart(v)}
+        />
+        {kind === 'recurring' && (
           <DateField
-            label={kind === 'one_time' ? 'Date' : 'Starts'}
-            value={start}
-            onChange={(v) => setStart(v)}
+            label="Ends (optional)"
+            value={end}
+            disabled={editing}
+            error={touched && !endOk ? 'Must be after the start' : undefined}
+            onChange={(v) => setEnd(v)}
           />
-          {kind === 'recurring' && (
-            <DateField
-              label="Ends (optional)"
-              value={end}
-              error={touched && !endOk ? 'Must be after the start' : undefined}
-              onChange={(v) => setEnd(v)}
-            />
-          )}
-        </s-grid>
-        {warning && (
-          <s-banner tone="warning" heading="This could be counted twice">
-            <s-paragraph>{warning}</s-paragraph>
-          </s-banner>
         )}
-        {foreign && foreign !== currency && (
-          <s-text color="subdued">
-            The amount is converted to {currency} once, at the exchange rate of the expense date,
-            and marked as an estimate when that rate is not from the day itself.
-          </s-text>
+        {editing && recurringRow && (
+          <DateField
+            label="Change applies from (first of a month)"
+            value={from}
+            onChange={(v) => setFrom(v)}
+          />
         )}
-        <FormError message={error} />
-        <FormActions>
-          <s-button onClick={onCancel}>Cancel</s-button>
-          <s-button variant="primary" disabled={busy} onClick={() => void save()}>
-            Save expense
-          </s-button>
-        </FormActions>
-      </s-stack>
-    </s-section>
+      </s-grid>
+      {editing && recurringRow && (
+        <s-text color="subdued">
+          Earlier months keep the amount that applied then. Only the month you choose and later
+          months change.
+        </s-text>
+      )}
+      {warning && (
+        <s-banner tone="warning" heading="This could be counted twice">
+          <s-paragraph>{warning}</s-paragraph>
+        </s-banner>
+      )}
+      {!editing && foreign && foreign !== currency && (
+        <s-text color="subdued">
+          The amount is converted to {currency} once, at the exchange rate of the expense date, and
+          marked as an estimate when that rate is not from the day itself.
+        </s-text>
+      )}
+      {note && <s-text color="subdued">{note}</s-text>}
+      <FormError message={error} />
+      <FormActions>
+        <s-button onClick={onCancel}>Cancel</s-button>
+        <s-button variant="primary" disabled={busy} onClick={() => void save()}>
+          {editing ? 'Save change' : 'Save expense'}
+        </s-button>
+      </FormActions>
+    </s-stack>
   );
 }
 
@@ -624,21 +674,15 @@ function Manage({
   onChanged: () => void;
 }) {
   const recurring = row.kind === 'recurring';
-  const [name, setName] = useState(row.name);
-  const [amount, setAmount] = useState(row.amount.replace(/\.?0+$/, ''));
-  const [categoryId, setCategoryId] = useState(row.categoryId);
-  const [from, setFrom] = useState(recurring ? `${todayLocal().slice(0, 7)}-01` : row.startDate);
   const [stopDay, setStopDay] = useState(todayLocal());
   const [month, setMonth] = useState(`${todayLocal().slice(0, 7)}-01`);
   const [monthAmount, setMonthAmount] = useState('');
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const change = useAction();
   const stop = useAction();
   const mo = useAction();
   const rm = useAction();
 
-  const amountOk = isAmount(amount);
   const monthAmountOk = isAmount(monthAmount);
 
   return (
@@ -649,55 +693,16 @@ function Manage({
             <s-paragraph>{message}</s-paragraph>
           </s-banner>
         )}
-        <s-text type="strong">{recurring ? 'Change from a month on' : 'Edit'}</s-text>
-        <s-grid gridTemplateColumns={FILTER_GRID} gap="base" alignItems="end">
-          <s-text-field label="Name" value={name} onInput={(e) => setName(e.currentTarget.value)} />
-          <s-text-field
-            label={`Amount (${currency})`}
-            value={amount}
-            error={!amountOk ? 'Enter a number' : undefined}
-            onInput={(e) => setAmount(e.currentTarget.value)}
-          />
-          <CategoryDropdown value={categoryId} categories={categories} onChange={setCategoryId} />
-          <DateField
-            label={recurring ? 'Applies from (first of a month)' : 'Date'}
-            value={from}
-            onChange={(v) => setFrom(v)}
-          />
-        </s-grid>
-        {recurring && (
-          <s-text color="subdued">
-            Earlier months keep the amount that applied then. Only this month and later change.
-          </s-text>
-        )}
-        <FormError message={change.error} />
-        <FormActions>
-          <s-button
-            variant="primary"
-            disabled={change.busy || !amountOk}
-            onClick={async () => {
-              const body = {
-                ...(name.trim() !== row.name ? { name: name.trim() } : {}),
-                ...(categoryId !== row.categoryId ? { categoryId } : {}),
-                ...(amount.trim() !== row.amount.replace(/\.?0+$/, '')
-                  ? { amount: amount.trim() }
-                  : {}),
-                effectiveFrom: recurring ? `${from.slice(0, 7)}-01` : from,
-              };
-              if (Object.keys(body).length === 1) {
-                setMessage('Nothing to change.');
-                return;
-              }
-              if (await change.run(() => apiPost(`/expenses/${row.id}/change`, body))) {
-                setMessage('Saved.');
-                onChanged();
-                onClose();
-              }
-            }}
-          >
-            Save change
-          </s-button>
-        </FormActions>
+        <ExpenseForm
+          row={row}
+          categories={categories}
+          currency={currency}
+          onCancel={onClose}
+          onSaved={() => {
+            onChanged();
+            onClose();
+          }}
+        />
 
         {recurring && (
           <>
@@ -831,9 +836,6 @@ function Manage({
             </s-button>
           </div>
         )}
-        <FormActions>
-          <s-button onClick={onClose}>Close</s-button>
-        </FormActions>
       </s-stack>
     </s-section>
   );
