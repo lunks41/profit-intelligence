@@ -30,11 +30,14 @@ export function ReportTable({
   report,
   showType = false,
   headerExtra,
+  tableMaxHeight,
 }: {
   report: ReportTableResponse;
   showType?: boolean;
   /** something beside the title inside the card, such as a switch between two views */
   headerExtra?: React.ReactNode;
+  /** the height at which the table starts to scroll (default: the usual frame) */
+  tableMaxHeight?: string;
 }) {
   const empty = report.rows.length === 0 && report.totalRows.length === 0;
   const title = `${report.title}, ${report.from === report.to ? formatDate(report.from) : `${formatDate(report.from)} to ${formatDate(report.to)}`}`;
@@ -47,7 +50,7 @@ export function ReportTable({
             <s-text color="subdued">Nothing to show for this period.</s-text>
           </s-box>
         ) : (
-          <ScrollTable>
+          <ScrollTable maxHeight={tableMaxHeight}>
             <s-table>
               <s-table-header-row>
                 {report.columns

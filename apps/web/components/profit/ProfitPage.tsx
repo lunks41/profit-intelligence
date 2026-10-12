@@ -94,7 +94,12 @@ export function ProfitPage() {
                 pnlView === 'accounting' ? (
                   <AccountingView report={pnl.data!} headerExtra={switcher} />
                 ) : (
-                  <ReportTable report={pnl.data!} showType headerExtra={switcher} />
+                  <ReportTable
+                    report={pnl.data!}
+                    showType
+                    headerExtra={switcher}
+                    tableMaxHeight="min(85vh, 52rem)"
+                  />
                 )
               }
             />

@@ -350,7 +350,7 @@ function EditSpend({
           <s-text color="subdued">No days left in this period.</s-text>
         )}
         {data && data.rows.length > 0 && (
-          <div style={{ maxHeight: '22rem', overflowY: 'auto' }}>
+          <ScrollTable maxHeight="22rem">
             <s-table>
               <s-table-header-row>
                 <s-table-header listSlot="primary">Day</s-table-header>
@@ -426,7 +426,7 @@ function EditSpend({
                 ))}
               </s-table-body>
             </s-table>
-          </div>
+          </ScrollTable>
         )}
         <FormError message={save.error ?? del.error} />
         <FormActions>

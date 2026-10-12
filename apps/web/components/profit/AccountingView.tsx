@@ -99,7 +99,7 @@ export function AccountingView({
           {headerExtra}
         </div>
       )}
-      <ScrollTable>
+      <ScrollTable maxHeight="min(85vh, 52rem)">
         <s-table>
           <s-table-header-row>
             <s-table-header listSlot="primary">Line</s-table-header>

@@ -8,6 +8,7 @@ import { CardHeader } from '../common/CardHeader';
 import { Modal } from '../common/Modal';
 import { Dropdown } from '../dropdown';
 import { FormActions, FormError, useAction } from '../settings/shared';
+import { ScrollTable } from '../common/ScrollTable';
 
 type Category = CategoryListResponse['categories'][number];
 
@@ -36,7 +37,7 @@ export function CategoriesSection({
             </s-button>
           }
         />
-        <div style={{ maxHeight: '15rem', overflowY: 'auto' }}>
+        <ScrollTable maxHeight="15rem">
           <s-table>
             <s-table-header-row>
               <s-table-header listSlot="primary">Category</s-table-header>
@@ -77,7 +78,7 @@ export function CategoriesSection({
               ))}
             </s-table-body>
           </s-table>
-        </div>
+        </ScrollTable>
         <FormError message={del.error} />
         <s-text color="subdued">
           Archiving hides a category from new expenses. Existing expenses keep their label.

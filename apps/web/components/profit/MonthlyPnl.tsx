@@ -70,7 +70,7 @@ function Table({ data, filter }: { data: ExpenseSummaryResponse; filter: React.R
           <s-heading>Monthly profit and loss</s-heading>
           {filter}
         </div>
-        <ScrollTable>
+        <ScrollTable maxHeight="min(85vh, 52rem)">
           <s-table>
             <s-table-header-row>
               <s-table-header listSlot="primary">Month</s-table-header>
