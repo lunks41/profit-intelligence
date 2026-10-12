@@ -4,13 +4,13 @@ import { FilterSearch, ShowDropdown } from '../dropdown';
 
 import { useEffect, useState } from 'react';
 import type { OrderDetailResponse, OrderListResponse, PeriodPreset } from '@pi/contracts';
-import { formatMoney, formatPercent, longDate, periodLabel, spent } from '../../lib/format';
+import { formatMoney, formatPercent, longDate, periodLabel } from '../../lib/format';
 import { buildListQuery } from '../../lib/query';
 import { FilterBar, type Filters } from '../overview/OverviewView';
 import { ErrorBanner, Loading, QualityBadge, RuleNote, SortControls, useApi } from './shared';
 import { LabelValueRow } from '../common';
+import { OrdersTable } from './OrdersTable';
 import { readParam } from '../../lib/url-params';
-import { fulfillmentStatus, paymentStatus } from '../../lib/order-status';
 import { todayInShop } from '../../lib/shop-time';
 
 type Sort = 'date' | 'name' | 'revenue' | 'cogs' | 'profit' | 'margin';
@@ -134,103 +134,39 @@ export function OrdersPage() {
                 <s-paragraph>Try a longer period or clear the search and filter.</s-paragraph>
               </s-empty-state>
             ) : (
-              <s-stack gap="base">
-                <s-table
-                  paginate
-                  hasPreviousPage={data.paging.page > 1}
-                  hasNextPage={data.paging.page < data.paging.totalPages}
-                  onPreviousPage={() => setPage(data.paging.page - 1)}
-                  onNextPage={() => setPage(data.paging.page + 1)}
-                >
-                  <s-table-header-row>
-                    <s-table-header listSlot="primary">Order</s-table-header>
-                    <s-table-header>Date</s-table-header>
-                    <s-table-header>Profit status</s-table-header>
-                    <s-table-header>Payment</s-table-header>
-                    <s-table-header>Fulfillment</s-table-header>
-                    <s-table-header format="numeric">Gross sales</s-table-header>
-                    <s-table-header format="numeric">Discounts</s-table-header>
-                    <s-table-header format="numeric">Refunds</s-table-header>
-                    <s-table-header format="numeric">Net sales</s-table-header>
-                    <s-table-header format="numeric">Revenue</s-table-header>
-                    <s-table-header format="numeric">Product cost</s-table-header>
-                    <s-table-header>Payment fees</s-table-header>
-                    <s-table-header format="numeric">Profit</s-table-header>
-                    <s-table-header format="numeric">Margin</s-table-header>
-                    <s-table-header>Details</s-table-header>
-                  </s-table-header-row>
-                  <s-table-body>
-                    {data.rows.map((r) => (
-                      <s-table-row key={r.orderShopifyId}>
-                        <s-table-cell>{r.name}</s-table-cell>
-                        <s-table-cell>{longDate(r.orderDate)}</s-table-cell>
-                        <s-table-cell>
-                          {r.recognized ? (
-                            r.partial ? (
-                              <s-badge tone="caution">Partial</s-badge>
-                            ) : r.flags.includes('refund_lines_incomplete') ? (
-                              <s-badge tone="caution">Refunds incomplete</s-badge>
-                            ) : (
-                              <s-badge tone="success">Counted</s-badge>
-                            )
-                          ) : (
-                            <s-badge tone="neutral">Not counted</s-badge>
-                          )}
-                        </s-table-cell>
-                        <s-table-cell>
-                          <s-badge tone={paymentStatus(r.financialStatus).tone}>
-                            {paymentStatus(r.financialStatus).label}
-                          </s-badge>
-                        </s-table-cell>
-                        <s-table-cell>
-                          <s-badge tone={fulfillmentStatus(r.fulfillmentStatus).tone}>
-                            {fulfillmentStatus(r.fulfillmentStatus).label}
-                          </s-badge>
-                        </s-table-cell>
-                        <s-table-cell>
-                          {r.recognized ? formatMoney(r.grossSales, data.currency) : '—'}
-                        </s-table-cell>
-                        <s-table-cell>
-                          {r.recognized ? formatMoney(r.discounts, data.currency) : '—'}
-                        </s-table-cell>
-                        <s-table-cell>
-                          {r.recognized ? formatMoney(r.refunds, data.currency) : '—'}
-                        </s-table-cell>
-                        <s-table-cell>
-                          {r.recognized ? formatMoney(r.netSales, data.currency) : '—'}
-                        </s-table-cell>
-                        <s-table-cell>
-                          {r.recognized ? formatMoney(r.revenue, data.currency) : '—'}
-                        </s-table-cell>
-                        <s-table-cell>
-                          {!r.recognized ? (
-                            '—'
-                          ) : r.statuses?.cogs === 'missing' ? (
-                            <s-badge tone="caution">Missing</s-badge>
-                          ) : (
-                            formatMoney(spent(r.cogs), data.currency)
-                          )}
-                        </s-table-cell>
-                        <s-table-cell>
-                          {r.recognized ? <FeeBadge status={r.statuses?.paymentFees} /> : '—'}
-                        </s-table-cell>
-                        <s-table-cell>{formatMoney(r.profit, data.currency)}</s-table-cell>
-                        <s-table-cell>
-                          {r.statuses?.cogs === 'missing' ? '—' : formatPercent(r.margin)}
-                        </s-table-cell>
-                        <s-table-cell>
-                          <s-button
-                            variant="tertiary"
-                            accessibilityLabel={`Explain order ${r.name}`}
-                            onClick={() => setSelected(r.orderShopifyId)}
-                          >
-                            Explain
-                          </s-button>
-                        </s-table-cell>
-                      </s-table-row>
-                    ))}
-                  </s-table-body>
-                </s-table>
+              <s-stack gap="small">
+                <OrdersTable
+                  rows={data.rows}
+                  currency={data.currency}
+                  feeBadge={(status) => <FeeBadge status={status} />}
+                  onExplain={setSelected}
+                />
+                <div style={{ padding: '0 0.75rem 0.5rem' }}>
+                  <s-stack
+                    direction="inline"
+                    gap="small"
+                    alignItems="center"
+                    justifyContent="space-between"
+                  >
+                    <s-text color="subdued">
+                      Page {data.paging.page} of {data.paging.totalPages}
+                    </s-text>
+                    <s-stack direction="inline" gap="small">
+                      <s-button
+                        disabled={data.paging.page <= 1}
+                        onClick={() => setPage(data.paging.page - 1)}
+                      >
+                        Previous
+                      </s-button>
+                      <s-button
+                        disabled={data.paging.page >= data.paging.totalPages}
+                        onClick={() => setPage(data.paging.page + 1)}
+                      >
+                        Next
+                      </s-button>
+                    </s-stack>
+                  </s-stack>
+                </div>
               </s-stack>
             )}
           </s-section>

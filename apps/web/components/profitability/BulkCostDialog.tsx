@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { apiGet, apiPost } from '../../lib/api';
+import { daysBefore } from '../../lib/shop-time';
 import { downloadText, importSummaryCsv } from '../../lib/import-summary';
 import { Dropdown } from '../dropdown';
 import { FormError, isAmount, todayLocal, useAction, FormActions } from '../settings/shared';
@@ -195,7 +196,8 @@ function EditTab({ onSaved }: { onSaved: () => void }) {
   const [by, setBy] = useState<ByKind>('vendor');
   const [value, setValue] = useState('');
   const [amount, setAmount] = useState('');
-  const [from, setFrom] = useState(todayLocal());
+  // a cost counts only for orders on or after its date: start well back so older orders are filled in too
+  const [from, setFrom] = useState(daysBefore(todayLocal(), 90));
   const [touched, setTouched] = useState(false);
   const [done, setDone] = useState(false);
   const { busy, error, run } = useAction();
@@ -236,7 +238,8 @@ function EditTab({ onSaved }: { onSaved: () => void }) {
     <s-stack gap="base">
       <s-text color="subdued">
         Sets one cost, in US dollars (USD), on every variant of a vendor, a product, a collection,
-        or a list of SKUs. The cost applies from the date you choose.
+        or a list of SKUs. The cost applies to orders from the date you choose, so keep it early to
+        fill in older orders.
       </s-text>
       <s-grid
         gridTemplateColumns="repeat(auto-fit, minmax(10.625rem, 1fr))"

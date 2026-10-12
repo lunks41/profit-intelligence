@@ -1,6 +1,7 @@
 'use client';
 
 import { showToast } from '../../lib/shopify-toast';
+import { daysBefore } from '../../lib/shop-time';
 import { Dropdown, ShowDropdown } from '../dropdown';
 
 import { useEffect, useState } from 'react';
@@ -15,13 +16,6 @@ import { readParam } from '../../lib/url-params';
 import { DateField } from '../common/DateField';
 
 const ALL = 'all-variants';
-
-/** The calendar date `days` before a YYYY-MM-DD date. */
-function daysBefore(date: string, days: number): string {
-  const d = new Date(`${date}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() - days);
-  return d.toISOString().slice(0, 10);
-}
 
 const QUALITY = {
   actual: { label: 'Entered by you', tone: 'success' },
