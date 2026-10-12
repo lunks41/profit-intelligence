@@ -10,6 +10,7 @@
     "seed": "tsx --env-file=../../.env src/cli.ts",
     "counts": "tsx --env-file=../../.env src/counts.ts",
     "daily": "tsx --env-file=../../.env src/daily.ts",
+    "marketing": "tsx --env-file=../../.env src/marketing.ts",
     "verify": "tsx --env-file=../../.env src/verify.ts",
     "profit-verify": "tsx --env-file=../../.env src/profit-verify.ts"
   },

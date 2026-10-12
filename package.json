@@ -38,6 +38,7 @@
     "seed:shopify": "pnpm --filter @pi/seed seed",
     "seed:counts": "pnpm --filter @pi/seed counts",
     "seed:daily": "pnpm --filter @pi/seed daily",
+    "seed:marketing": "pnpm --filter @pi/seed marketing",
     "sync:verify": "pnpm --filter @pi/seed verify",
     "profit:verify": "pnpm --filter @pi/seed profit-verify",
     "audit:secrets": "node scripts/secrets.mjs",
