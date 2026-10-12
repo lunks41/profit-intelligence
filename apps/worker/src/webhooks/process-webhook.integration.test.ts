@@ -365,17 +365,34 @@ describe('uninstall and privacy', () => {
     expect(await count('t_order', `tenant_id = '${other.tenantId}'`)).toBe(1);
   });
 
-  it('customer privacy requests are acknowledged: no customer personal data is stored', async () => {
-    for (const topic of ['customers/redact', 'customers/data_request']) {
-      const fake = fakeShopify();
-      const ev = await newEvent(topic, 99);
-      await run(deps(fake.gql), ev);
-      expect(await event(ev.eventId)).toMatchObject({
-        status: 'ignored',
-        error: 'No customer personal data is stored',
-      });
-      expect(fake.calls).toEqual([]);
-    }
+  it('a customer data request is acknowledged: no customer personal data is stored', async () => {
+    const fake = fakeShopify();
+    const ev = await newEvent('customers/data_request', 99);
+    await run(deps(fake.gql), ev);
+    expect(await event(ev.eventId)).toMatchObject({
+      status: 'ignored',
+      error: 'No customer personal data is stored',
+    });
+    expect(fake.calls).toEqual([]);
+  });
+
+  it('a customer redact request takes that customer off their orders and nobody else', async () => {
+    const keyed = [
+      { ...plain, customer: { id: 'gid://shopify/Customer/99' } },
+      {
+        ...orderNodes.find((o) => o.id !== plain.id)!,
+        customer: { id: 'gid://shopify/Customer/7' },
+      },
+    ];
+    await withTenant(db, shop.tenantId, (tx) => upsertOrders(tx, shop, keyed.map(mapOrder)));
+    expect(await count('t_order', 'customer_key is not null')).toBe(2);
+    const fake = fakeShopify();
+    const ev = await newEvent('customers/redact', 99);
+    await run(deps(fake.gql), ev);
+    expect((await event(ev.eventId))?.status).toBe('processed');
+    expect(await count('t_order', 'customer_key is not null')).toBe(1);
+    expect(await count('t_order')).toBe(2); // the orders stay
+    expect(fake.calls).toEqual([]);
   });
 
   it('an unknown topic is ignored', async () => {

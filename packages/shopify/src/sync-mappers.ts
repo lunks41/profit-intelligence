@@ -1,6 +1,8 @@
 // Pure mappers: Shopify GraphQL nodes -> normalized rows. No I/O. Money stays a decimal STRING
 // end to end (never a JavaScript float); sums use scaled BigInt arithmetic.
 
+import { createHash } from 'node:crypto';
+
 // Any is intentional: input is untrusted JSON, validated field by field below.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Json = any;
@@ -221,6 +223,8 @@ export interface MappedOrder {
   tags: string[];
   sourceName: string | null;
   shipCountry: string | null;
+  /** One-way key of the customer (see customerKey); null for a guest checkout or when not readable. */
+  customerKey: string | null;
   /** Shopify returned more refund line items than one page; the rest were not imported. */
   refundLinesIncomplete: boolean;
 }
@@ -265,6 +269,19 @@ export function mapRefundLine(rl: Json) {
   };
 }
 
+/**
+ * A pseudonymous key for the customer who placed an order, used only to group a shop's orders by customer for
+ * lifetime value. It is a one-way hash of Shopify's customer id: no name, email, phone or address is read or
+ * stored, and the key means nothing outside this app. A guest checkout has no customer, so no key.
+ */
+export function customerKey(gid: unknown): string | null {
+  if (typeof gid !== 'string' || !gid) return null;
+  return createHash('sha256')
+    .update(`profit-intelligence:customer:${gid}`)
+    .digest('hex')
+    .slice(0, 32);
+}
+
 export function mapOrder(node: Json): MappedOrderBundle {
   const createdAt = date(node.createdAt);
   const processedAt = optDate(node.processedAt) ?? createdAt;
@@ -298,6 +315,7 @@ export function mapOrder(node: Json): MappedOrderBundle {
     tags: (node.tags ?? []).map(String),
     sourceName: node.sourceName ? String(node.sourceName) : null,
     shipCountry: countryCode(node.shippingAddress?.countryCodeV2),
+    customerKey: customerKey(node.customer?.id),
     refundLinesIncomplete: (node.refunds ?? []).some(
       (r: Json) => r.refundLineItems?.pageInfo?.hasNextPage,
     ),

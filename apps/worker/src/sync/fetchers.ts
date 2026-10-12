@@ -23,6 +23,8 @@ type Json = any;
 /** Remembers whether the shop allows reading transaction fees, so we only probe once. */
 export interface FeesState {
   enabled: boolean;
+  /** Whether the customer id can be read (it is protected customer data); true until Shopify refuses it. */
+  customers?: boolean;
 }
 
 /** True when Shopify Payments balance transactions are not available to this app. */
@@ -62,6 +64,16 @@ export async function fetchBalanceFees(
     after = conn.pageInfo.endCursor;
   }
   return mapBalanceFees(nodes);
+}
+
+/** True when an error says the customer on an order may not be read by this app. */
+export function isCustomerError(e: unknown, state: FeesState): boolean {
+  return (
+    state.customers !== false &&
+    e instanceof Error &&
+    !(e instanceof ShopifyAccessError) &&
+    /customer/i.test(e.message)
+  );
 }
 
 /** True when an error looks like "fees need a permission this app does not have". */
@@ -131,11 +143,17 @@ export async function fetchOrder(
   let data: Json;
   for (;;) {
     try {
-      data = await gql.query(orderByIdQuery({ fees: fees.enabled }), { id: orderGid });
+      data = await gql.query(
+        orderByIdQuery({ fees: fees.enabled, customers: fees.customers !== false }),
+        { id: orderGid },
+      );
       break;
     } catch (e) {
-      if (!isFeesError(e, fees)) throw e;
-      fees.enabled = false; // fall back without fees and retry once
+      if (isCustomerError(e, fees))
+        fees.customers = false; // no customer key; retry
+      else if (isFeesError(e, fees))
+        fees.enabled = false; // fall back without fees and retry once
+      else throw e;
     }
   }
   if (!data.order) return null;

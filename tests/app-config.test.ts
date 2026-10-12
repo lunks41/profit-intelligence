@@ -16,7 +16,7 @@ describe('Shopify app configuration', () => {
       'read_shopify_payments_accounts',
       'read_shopify_payments_payouts',
     ]);
-    // no write scope, and no access to customers (we store no customer personal data)
+    // no write scope, and no customer scope: only a one-way customer key is kept, read from the order itself
     expect(scopes.filter((s) => s.startsWith('write_'))).toEqual([]);
     expect(scopes.some((s) => /customer/.test(s))).toBe(false);
     // older than 60 days needs Shopify approval; the app keeps 90 days so it must not claim more

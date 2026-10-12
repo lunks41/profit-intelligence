@@ -5,7 +5,7 @@ This is the text used by the app's `/privacy` page. It describes what the app ac
 ## What the app collects
 
 - From your Shopify store: products, variants, costs Shopify holds, orders, line items, refunds and payment transactions, including payment fees Shopify reports. The destination **country code** of an order and the **weight** of products are kept only to choose a shipping cost rule.
-- **No customer names, emails, street addresses or phone numbers are stored.**
+- **No customer names, emails, street addresses or phone numbers are stored.** Each order keeps only a one-way key made from Shopify's customer id, so the app can tell which orders came from the same customer for lifetime value. The key cannot be turned back into the customer and is removed when Shopify asks for that customer to be erased.
 - From you: product costs, fee and shipping rules, expenses, advertising account ids and access tokens you provide, report recipient email addresses, alert email addresses, and feedback you send.
 - Operational data: sync jobs and webhook event records (topic, ids, status, never contents).
 
@@ -27,4 +27,4 @@ Access tokens are encrypted at rest. Every request is tied to the signed Shopify
 
 ## Your rights and contact
 
-Ask for access, correction or deletion at the support address. Customer data requests from Shopify are answered: the app holds no customer personal data to export or erase.
+Ask for access, correction or deletion at the support address. Customer data requests from Shopify are answered: nothing about a customer can be exported, and an erase request removes the customer's key from their orders.

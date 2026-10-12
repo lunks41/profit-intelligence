@@ -221,6 +221,8 @@ export const tOrder = pgTable(
     sourceName: text('source_name'),
     /** Destination country (ISO code) used only to choose a shipping cost rule. */
     shipCountry: char('ship_country', { length: 2 }),
+    /** One-way key of the customer, only to group orders for lifetime value. No personal data. */
+    customerKey: char('customer_key', { length: 32 }),
     /** Refund line items were only partly imported, so product refunds may be understated. */
     refundLinesIncomplete: boolean('refund_lines_incomplete').notNull().default(false),
     syncedAt: syncedAt(),
@@ -236,6 +238,13 @@ export const tOrder = pgTable(
       'ck_t_order_ship_country',
       sql`${t.shipCountry} is null or ${t.shipCountry} ~ '^[A-Z]{2}$'`,
     ),
+    check(
+      'ck_t_order_customer_key',
+      sql`${t.customerKey} is null or ${t.customerKey} ~ '^[0-9a-f]{32}$'`,
+    ),
+    index('ix_t_order_shop_customer')
+      .on(t.tenantId, t.shopId, t.customerKey)
+      .where(sql`${t.customerKey} is not null`),
     unique('uq_t_order_shop_shopify_id').on(t.shopId, t.shopifyId),
     unique('uq_t_order_tenant_id_id').on(t.tenantId, t.id),
     index('ix_t_order_shop_processed_at').on(t.tenantId, t.shopId, t.processedAt),

@@ -83,10 +83,14 @@ export function parseWebhookHeaders(headers: HeaderBag): WebhookHeaders | null {
 export function extractResourceId(topic: string, payload: unknown): number | null {
   if (typeof payload !== 'object' || payload === null) return null;
   const p = payload as Record<string, unknown>;
+  // a customer request names the customer, not an order
+  const customer = (p.customer ?? {}) as Record<string, unknown>;
   const raw =
     topic === 'refunds/create'
       ? (p.order_id ?? p.order_admin_graphql_api_id)
-      : (p.id ?? p.admin_graphql_api_id);
+      : topic === 'customers/redact' || topic === 'customers/data_request'
+        ? (customer.id ?? customer.admin_graphql_api_id)
+        : (p.id ?? p.admin_graphql_api_id);
   if (typeof raw === 'number' && Number.isSafeInteger(raw) && raw > 0) return raw;
   if (typeof raw === 'string') {
     const m = /(\d+)$/.exec(raw);

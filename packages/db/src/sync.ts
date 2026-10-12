@@ -81,6 +81,7 @@ export interface OrderInput {
     tags: string[];
     sourceName: string | null;
     shipCountry: string | null;
+    customerKey?: string | null;
     /** refund line items were only partly imported (optional: defaults to false) */
     refundLinesIncomplete?: boolean;
   };
@@ -280,6 +281,8 @@ export async function upsertOrders(
           tags: ex(tOrder.tags),
           sourceName: ex(tOrder.sourceName),
           shipCountry: ex(tOrder.shipCountry),
+          // an unreadable customer (no permission) must not wipe a key stored earlier
+          customerKey: sql`coalesce(excluded."customer_key", ${tOrder.customerKey})`,
           refundLinesIncomplete: ex(tOrder.refundLinesIncomplete),
           syncedAt: sql`now()`,
         },

@@ -21,6 +21,7 @@ import {
   completeRefundLines,
   completeVariants,
   fetchBalanceFees,
+  isCustomerError,
   isFeesError,
   isPaymentsError,
 } from './fetchers.js';
@@ -148,12 +149,21 @@ export async function runSync(deps: SyncDeps, payload: SyncPayload, info: RunInf
     for (;;) {
       let data;
       try {
-        data = await gql.query(ordersQuery({ fees: fees.enabled }), {
-          first: deps.pageSize?.orders ?? 25,
-          after,
-          query: filter,
-        });
+        data = await gql.query(
+          ordersQuery({ fees: fees.enabled, customers: fees.customers !== false }),
+          {
+            first: deps.pageSize?.orders ?? 25,
+            after,
+            query: filter,
+          },
+        );
       } catch (e) {
+        // The customer id is protected customer data: without it only lifetime value is missing.
+        if (isCustomerError(e, fees)) {
+          fees.customers = false;
+          log.warn(`sync ${job.id}: customer ids unavailable, continuing without them`);
+          continue;
+        }
         // Transaction fees need an extra permission on some stores; fall back without them.
         if (isFeesError(e, fees)) {
           fees.enabled = false;

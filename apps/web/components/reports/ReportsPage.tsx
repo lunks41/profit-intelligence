@@ -11,18 +11,19 @@ import { FilterBar, type Filters } from '../overview/OverviewView';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormError, useAction } from '../settings/shared';
 import type { REPORTS } from './catalog';
+import { LtvReport } from './LtvReport';
 import { Notifications } from './Notifications';
 import { ReportTable } from './ReportTable';
 import { todayInShop } from '../../lib/shop-time';
 
-type Tab = 'reports' | 'notifications';
+type Tab = 'reports' | 'ltv' | 'notifications';
 
 const today = todayInShop;
 
 export function ReportsPage() {
   const [tab, setTab] = useState<Tab>('reports');
   useEffect(() => {
-    const t = readParam('tab', ['reports', 'notifications'] as const);
+    const t = readParam('tab', ['reports', 'ltv', 'notifications'] as const);
     if (t) setTab(t);
   }, []);
   const [version, setVersion] = useState(0);
@@ -34,6 +35,7 @@ export function ReportsPage() {
         {(
           [
             ['reports', 'Reports'],
+            ['ltv', 'LTV'],
             ['notifications', 'Notifications'],
           ] as const
         ).map(([id, label]) => (
@@ -47,6 +49,7 @@ export function ReportsPage() {
         ))}
       </s-stack>
       {tab === 'reports' && <Preview />}
+      {tab === 'ltv' && <LtvReport />}
       {tab === 'notifications' && <Notifications version={version} onChanged={refresh} />}
     </>
   );

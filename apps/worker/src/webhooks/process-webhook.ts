@@ -2,6 +2,7 @@ import {
   HISTORY_DAYS,
   claimWebhookEvent,
   deleteOrderByShopifyId,
+  eraseCustomerKey,
   finishWebhookEvent,
   getWebhookEvent,
   loadShopCredential,
@@ -22,6 +23,7 @@ import {
   SHOP_INFO_QUERY,
   ShopifyAccessError,
   WEBHOOK_TOPICS,
+  customerKey,
 } from '@pi/shopify';
 import type { ShopifyGraphql, TokenCrypto } from '@pi/shopify';
 import { refreshSubscription } from '@pi/reports';
@@ -98,9 +100,18 @@ export async function processWebhook(
       log.info(`shop/redact: ${purged ? 'shop data deleted' : 'nothing to delete'}`);
       return; // the event row was deleted together with the shop
     }
-    if (topic === 'customers/redact' || topic === 'customers/data_request') {
-      // We never store customer personal data (names, emails, addresses), so there is nothing to
-      // export or erase. The request is recorded as handled.
+    if (topic === 'customers/redact') {
+      // Names, emails and addresses are never stored. Orders only carry a one-way key of the customer (for
+      // lifetime value); erasing a customer takes that key off their orders.
+      const erased = rid
+        ? await eraseCustomerKey(db, scope, customerKey(`gid://shopify/Customer/${rid}`)!)
+        : 0;
+      await finish('processed');
+      log.info(`customers/redact: customer key removed from ${erased} order(s)`);
+      return;
+    }
+    if (topic === 'customers/data_request') {
+      // Nothing to export: only a one-way key is held, which means nothing outside the app.
       await finish('ignored', 'No customer personal data is stored');
       return;
     }

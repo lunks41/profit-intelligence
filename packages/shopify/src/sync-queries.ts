@@ -43,10 +43,11 @@ query SyncInventoryItem($id: ID!) {
   inventoryItem(id: $id) { id variant { id product { id } } }
 }`;
 
-function orderFields(fees: boolean): string {
+function orderFields(fees: boolean, customers: boolean): string {
   return `
       id name processedAt createdAt updatedAt cancelledAt closedAt
       shippingAddress { countryCodeV2 }
+      ${customers ? 'customer { id }' : ''}
       displayFinancialStatus displayFulfillmentStatus taxesIncluded test sourceName tags
       currencyCode presentmentCurrencyCode
       subtotalPriceSet { ${MONEY} }
@@ -86,20 +87,20 @@ function orderFields(fees: boolean): string {
       }`;
 }
 
-export function ordersQuery(opts: { fees: boolean }): string {
+export function ordersQuery(opts: { fees: boolean; customers?: boolean }): string {
   return `
 query SyncOrders($first: Int!, $after: String, $query: String) {
   orders(first: $first, after: $after, query: $query, sortKey: PROCESSED_AT) {
     pageInfo { hasNextPage endCursor }
-    nodes { ${orderFields(opts.fees)} }
+    nodes { ${orderFields(opts.fees, opts.customers ?? true)} }
   }
 }`;
 }
 
-export function orderByIdQuery(opts: { fees: boolean }): string {
+export function orderByIdQuery(opts: { fees: boolean; customers?: boolean }): string {
   return `
 query SyncOrderById($id: ID!) {
-  order(id: $id) { ${orderFields(opts.fees)} }
+  order(id: $id) { ${orderFields(opts.fees, opts.customers ?? true)} }
 }`;
 }
 

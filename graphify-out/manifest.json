@@ -4,8 +4,8 @@
     "hash": "4bd5146becd7feefb81ce48da1f093a6"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\vitest.config.ts": {
-    "mtime": 1791667036.6279044,
-    "hash": "f18f8aac65ed42392bf28984dd0ef552"
+    "mtime": 1791810256.299461,
+    "hash": "826627f99b552b4ca683ebf0959c24b4"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\vitest.integration.config.ts": {
     "mtime": 1791529941.0595896,
@@ -16,8 +16,8 @@
     "hash": "cd0012da2ea59c5e3a6c11dbdb5d4855"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\app.module.ts": {
-    "mtime": 1791546338.1505785,
-    "hash": "a06a23c7fcd999b402e1118b612b4473"
+    "mtime": 1791810777.1255488,
+    "hash": "62ff6ef1d39ea603ac8b35d484676754"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\main.ts": {
     "mtime": 1791547615.4506269,
@@ -26,6 +26,18 @@
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\setup.ts": {
     "mtime": 1791547615.4395227,
     "hash": "6fb88acaa2258cd2bdaceaa98cb4d8b1"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\activity\\activity.controller.ts": {
+    "mtime": 1791789449.9649894,
+    "hash": "15b8f0113b9c0dcb51a1e9289f28f496"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\activity\\activity.module.ts": {
+    "mtime": 1791789450.0157318,
+    "hash": "2e1a8efab0a4dbe7f33023f1c29757b6"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\activity\\activity.service.ts": {
+    "mtime": 1791789471.4055738,
+    "hash": "ad45519d499a8d60e931853e33c12824"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\auth\\auth.module.ts": {
     "mtime": 1791530162.4146745,
@@ -87,6 +99,30 @@
     "mtime": 1791529859.5316498,
     "hash": "a997551a1b37386b50e08a56c9a9eb6f"
   },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\customers\\cohorts.test.ts": {
+    "mtime": 1791811020.9939983,
+    "hash": "44db0f5eb6da37173b59a6600e476bb1"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\customers\\cohorts.ts": {
+    "mtime": 1791810768.7977154,
+    "hash": "d91e687ea7d22426a63dc48a210d1a75"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\customers\\customers.controller.ts": {
+    "mtime": 1791810768.739571,
+    "hash": "a9769f158679c4462ba74d50784d8d08"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\customers\\customers.integration.test.ts": {
+    "mtime": 1791811026.2708528,
+    "hash": "e42e1ff594f7e2209f7226547e5c1bb7"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\customers\\customers.module.ts": {
+    "mtime": 1791810768.634572,
+    "hash": "3aaaceca5b0f923966c09e1b0aa91904"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\customers\\customers.service.ts": {
+    "mtime": 1791810768.8580637,
+    "hash": "537b3ef24923aa37cb8b0e9f1d4d9e1e"
+  },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\dashboard\\alerts.test.ts": {
     "mtime": 1791538790.7054687,
     "hash": "8206e7a37cdb8dbe6b45fcd1f711315c"
@@ -116,8 +152,8 @@
     "hash": "32ce83c38399fb1a34ab830b5e73e36d"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\dashboard\\dashboard.integration.test.ts": {
-    "mtime": 1791781690.3433003,
-    "hash": "60766c45f18830a9434f31a2f29d97bf"
+    "mtime": 1791794934.574562,
+    "hash": "926fc76a1eef4b11b49ced6eae6b51aa"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\dashboard\\dashboard.module.ts": {
     "mtime": 1791538705.9576778,
@@ -128,12 +164,12 @@
     "hash": "4055da3f3c5f0d0aadefe72a88efe0e4"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\dashboard\\issues.test.ts": {
-    "mtime": 1791747897.7210007,
-    "hash": "2032350ed17b47ae0b56737ea51ea43d"
+    "mtime": 1791794935.662553,
+    "hash": "bad0276a744fb093d429ab4faf92a015"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\dashboard\\issues.ts": {
-    "mtime": 1791747622.12189,
-    "hash": "1353d15a028f7040724a01384e6394a9"
+    "mtime": 1791794451.2068923,
+    "hash": "e0ad80bbc91485a095976698304e7064"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\dashboard\\range-calendar.test.ts": {
     "mtime": 1791563752.962485,
@@ -159,21 +195,29 @@
     "mtime": 1791530162.498395,
     "hash": "d2620cf2847ce15b923767176f2b79f3"
   },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\expenses\\expense-csv.test.ts": {
+    "mtime": 1791787746.3413274,
+    "hash": "601ca2b65486288022f1bddb50d321dc"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\expenses\\expense-csv.ts": {
+    "mtime": 1791800092.567403,
+    "hash": "ba7cf5d4474573a5448fe573cf78bf6e"
+  },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\expenses\\expenses.controller.ts": {
-    "mtime": 1791667896.424088,
-    "hash": "64454f8b5e7f4141691744adfe86c83e"
+    "mtime": 1791787840.8745718,
+    "hash": "4bbb78454428ebcdd500ce66878b420e"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\expenses\\expenses.integration.test.ts": {
-    "mtime": 1791738049.3506224,
-    "hash": "0e442877515969475fafe824ae596cdf"
+    "mtime": 1791804303.5336785,
+    "hash": "223316733bec07a5362446fd1d39ece7"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\expenses\\expenses.module.ts": {
     "mtime": 1791542481.1136055,
     "hash": "874154e4be27993800afe305b287e032"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\expenses\\expenses.service.ts": {
-    "mtime": 1791781201.11325,
-    "hash": "1fec6e3f5894338a0b291e5303a8b73f"
+    "mtime": 1791789182.2218454,
+    "hash": "affb2817eb464698078bf45e781fc0dd"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\health\\health.controller.test.ts": {
     "mtime": 1791526816.717842,
@@ -216,16 +260,28 @@
     "hash": "486c14a9a21d3586adc9342669ff8da6"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\marketing\\marketing.controller.ts": {
-    "mtime": 1791744229.9172654,
-    "hash": "2a5ae08c5e242116a9b7186a4da8f54e"
+    "mtime": 1791804268.8737147,
+    "hash": "88133abd58c0f34eb0345f8d354a7df1"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\marketing\\marketing.module.ts": {
     "mtime": 1791737153.9377367,
     "hash": "f496df736dfa5ad14581f13491247d1b"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\marketing\\marketing.service.ts": {
-    "mtime": 1791781201.3945677,
-    "hash": "cb75c1c58758db8c22e848c2693af289"
+    "mtime": 1791804270.5256438,
+    "hash": "16afc353d7be621b142974d9c059fc35"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\notifications\\activity.interceptor.ts": {
+    "mtime": 1791787025.270908,
+    "hash": "bb29701d2177674c6979d0b1e69f00f7"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\notifications\\activity.test.ts": {
+    "mtime": 1791786582.9391248,
+    "hash": "2cb35d93cb677112d58eb42fb5b12622"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\notifications\\activity.ts": {
+    "mtime": 1791804270.5437596,
+    "hash": "8605224617ddf8f8c28c13ff3472ed62"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\profitability\\explain.ts": {
     "mtime": 1791540464.3189347,
@@ -307,6 +363,30 @@
     "mtime": 1791781202.0923827,
     "hash": "093074c07f7fa58939a7e31247224f7e"
   },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\shipping\\carrier-csv.test.ts": {
+    "mtime": 1791800093.5914237,
+    "hash": "1dfa99846e9f28e050ca8a80dcbbcc4a"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\shipping\\carrier-csv.ts": {
+    "mtime": 1791800187.2243998,
+    "hash": "7ccc979143ecaefb21ee46ab2e7a505e"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\shipping\\shipping.controller.ts": {
+    "mtime": 1791806489.5216138,
+    "hash": "7080b2fa39895b7a590e9d56fd0975c7"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\shipping\\shipping.integration.test.ts": {
+    "mtime": 1791806544.857928,
+    "hash": "ea2c4fc19597409ca0c35a26dbb61822"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\shipping\\shipping.module.ts": {
+    "mtime": 1791800131.3278039,
+    "hash": "b13d4dc969885ec03fb2de5dee872ae6"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\shipping\\shipping.service.ts": {
+    "mtime": 1791806782.440756,
+    "hash": "bab281c76bd528ecb07b46963e211713"
+  },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\shopify\\shopify.module.ts": {
     "mtime": 1791529859.6787221,
     "hash": "9f15f6ffa7f3c46202a27831da6e1428"
@@ -360,8 +440,8 @@
     "hash": "f1e84d9d5178cb1b7e3057a208f2f93e"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\app\\layout.tsx": {
-    "mtime": 1791747168.9965425,
-    "hash": "8a4c675314dd8add52a48d8dfb460a24"
+    "mtime": 1791794451.0625005,
+    "hash": "fa5cd75c235cd226a33caa9629efd8f1"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\app\\page.tsx": {
     "mtime": 1791747169.0035422,
@@ -380,8 +460,8 @@
     "hash": "75e61df346e07a17d4bcf0be7f994206"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\app\\dev\\overview\\fixture.ts": {
-    "mtime": 1791747622.1361208,
-    "hash": "137a85aab56b4a1447f12aa2e2986db0"
+    "mtime": 1791794451.1615376,
+    "hash": "3d5cd50a1e3b94f56f2893f403238d56"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\app\\dev\\overview\\page.tsx": {
     "mtime": 1791569669.510592,
@@ -412,8 +492,8 @@
     "hash": "5a33f580242b212c4244d732c379ac62"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\app\\privacy\\page.tsx": {
-    "mtime": 1791615579.488387,
-    "hash": "c3af21131985e7700f873e55652ad247"
+    "mtime": 1791811251.1659145,
+    "hash": "2f77355253205860544fe372f780efa5"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\app\\products\\page.tsx": {
     "mtime": 1791569621.5620377,
@@ -431,33 +511,53 @@
     "mtime": 1791569621.5645666,
     "hash": "da712d83e1ce250609a71329d6a990ca"
   },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\app\\shipping\\page.tsx": {
+    "mtime": 1791794419.5669594,
+    "hash": "ca6d9bfc28234e40461c92c47f98b94d"
+  },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\app\\support\\page.tsx": {
     "mtime": 1791747622.2086794,
     "hash": "a1b0a3d4a0c17306b600fe8c9c1d3ef5"
   },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\ActivityIndicator.tsx": {
+    "mtime": 1791789542.0514352,
+    "hash": "89ae2266fe1ca89d0dcfb3b5ef36863a"
+  },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\ConnectionStatus.tsx": {
-    "mtime": 1791782051.4320648,
-    "hash": "efd1d3b6cfa504e12ee750ca907b7f98"
+    "mtime": 1791791027.3478642,
+    "hash": "c27ef3fac29c0d9156fa5e231f795bd2"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\GetStarted.tsx": {
     "mtime": 1791744229.943812,
     "hash": "eef1d53b3e2966986629cd09e8907836"
   },
-  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\PageBody.tsx": {
-    "mtime": 1791550317.9947555,
-    "hash": "9abf609fb36b334928b733737865101a"
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\NotificationPanel.tsx": {
+    "mtime": 1791804820.0003762,
+    "hash": "fdced9a4d50a888563075758135dbb0f"
   },
-  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\PlaceholderPage.tsx": {
-    "mtime": 1791530041.6063561,
-    "hash": "4d34da123c8c5cf998137d1571fe4067"
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\PageBody.tsx": {
+    "mtime": 1791784468.2728078,
+    "hash": "9c32eaec38513bfdf03c5d81a12f1818"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\ShopTimeZone.tsx": {
+    "mtime": 1791784671.1021323,
+    "hash": "fe2c6ddc46db62b2684f1a3bdc767bf7"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\TopBar.tsx": {
-    "mtime": 1791747897.7357128,
-    "hash": "2aadc971eec5ce71cb9d51f2f127b727"
+    "mtime": 1791804866.5598853,
+    "hash": "23bbdaba1f956fcf1d0d42879a3b5beb"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\common\\card.tsx": {
     "mtime": 1791568967.536025,
     "hash": "9e71a31d8c2fe75b3067c7fc444f9b02"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\common\\CardHeader.tsx": {
+    "mtime": 1791788442.6750116,
+    "hash": "24f634fedd8e8fe3f9f60dbb97a0c309"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\common\\DateField.tsx": {
+    "mtime": 1791793767.4271355,
+    "hash": "afbc2089ea969f1fb3d1a5632d9b2a8f"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\common\\index.ts": {
     "mtime": 1791568231.668765,
@@ -466,6 +566,10 @@
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\common\\info-tip.tsx": {
     "mtime": 1791563952.1852684,
     "hash": "53d4e2a20c1f663d868acd2d0c8162c4"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\common\\IntegrationList.tsx": {
+    "mtime": 1791805151.4956858,
+    "hash": "d421004a4236cad3c9ed1236e6e96ea8"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\common\\kpi.tsx": {
     "mtime": 1791569466.0001898,
@@ -479,25 +583,37 @@
     "mtime": 1791782156.494711,
     "hash": "bda7973167422054e279e3ffada16aa9"
   },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\common\\platform-marks.ts": {
+    "mtime": 1791804659.209275,
+    "hash": "13507e5d6a84f0c11dbae4a53955014e"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\common\\PlatformLogo.tsx": {
+    "mtime": 1791805151.4213643,
+    "hash": "b078de6d12b8a2f7527a600bb9e741de"
+  },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\common\\qualifiers-banner.tsx": {
-    "mtime": 1791569621.558532,
-    "hash": "89364d74648c30ea48180edff806029b"
+    "mtime": 1791790907.0355983,
+    "hash": "96b2fc5aaf099538173261fefd934bc4"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\common\\ScrollTable.tsx": {
+    "mtime": 1791805807.7351534,
+    "hash": "b40264672676376c6bcb18ff462d55c1"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\common\\sparkline.tsx": {
     "mtime": 1791746020.3799715,
     "hash": "b3b6003f22316efc0c3b53586a7f9be2"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\common\\stat-card.tsx": {
-    "mtime": 1791568956.9136107,
-    "hash": "7397e85b33c3718d0d838e5521821a4b"
+    "mtime": 1791784468.216271,
+    "hash": "a037c256f69edcc65453765efc3adbd6"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\dropdown\\category-dropdown.tsx": {
     "mtime": 1791552250.7238493,
     "hash": "18ce9140d1b214e38e7eb8f73e1db544"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\dropdown\\Dropdown.tsx": {
-    "mtime": 1791576085.037849,
-    "hash": "d12f6f882ff0edfc63168d47baa7b1b0"
+    "mtime": 1791793655.8091853,
+    "hash": "5e676b838121c52c04e180931ae325ab"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\dropdown\\file-type-dropdown.tsx": {
     "mtime": 1791609065.7017174,
@@ -531,25 +647,37 @@
     "mtime": 1791575181.8231275,
     "hash": "98cad1b1b0280afd619da01e3b36b2e5"
   },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\expenses\\BulkExpenseDialog.tsx": {
+    "mtime": 1791788084.4732213,
+    "hash": "76c033cb20541d37431d8721d0c0b149"
+  },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\expenses\\CategoriesSection.tsx": {
-    "mtime": 1791667954.014024,
-    "hash": "1673f4e5ba0fff56e57722c90440b988"
+    "mtime": 1791805806.40878,
+    "hash": "50e8ef7f4dbfe25086a8c697fbe56a16"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\expenses\\ExpensesPage.tsx": {
-    "mtime": 1791781954.801416,
-    "hash": "6b069206723516ad1e92353e01f1f49d"
+    "mtime": 1791805525.7297492,
+    "hash": "d6a7859c67f4adb0049428c4b31857cb"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\marketing\\AdAccountsCard.tsx": {
+    "mtime": 1791805216.9632812,
+    "hash": "f86217ff05425c775e5bd0ab44a785bc"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\marketing\\ChannelChart.tsx": {
+    "mtime": 1791804660.3773904,
+    "hash": "38375af486c4b1e3cbfbb93f2f8bf306"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\marketing\\ConnectPlatforms.tsx": {
-    "mtime": 1791744234.1597414,
-    "hash": "8ff2182e513afa5f3c38306d02e125d1"
+    "mtime": 1791806052.9469626,
+    "hash": "1607781f8e020ad24a4c7d9d6c72e4b7"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\marketing\\MarketingPage.tsx": {
-    "mtime": 1791781983.636794,
-    "hash": "0aca5ca7b20be0e2e2deedecc8cff65e"
+    "mtime": 1791805806.4124427,
+    "hash": "ce3649306748776f53eb3d3c329bee11"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\marketing\\MarketingSummaryCard.tsx": {
-    "mtime": 1791742612.7159374,
-    "hash": "ebcdc4ecd06d31999597d5e041e0e3c1"
+    "mtime": 1791804221.2280564,
+    "hash": "ae3ad435c3df05c56e8849a7df09c96b"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\notices\\Notice.tsx": {
     "mtime": 1791779603.2603016,
@@ -564,48 +692,48 @@
     "hash": "273bfef60e4aab9efcdf6a311345c99e"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\CostBreakdownCard.tsx": {
-    "mtime": 1791663902.3189576,
-    "hash": "8bf5ea00f9d2d68fedafe88694c93477"
+    "mtime": 1791791027.2781093,
+    "hash": "5c44e96e99f276057639f068473d8b19"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\DataQualityCard.tsx": {
-    "mtime": 1791568956.9212139,
-    "hash": "02bdf94575160ee8bc737b4d32e7f14e"
+    "mtime": 1791791027.2961073,
+    "hash": "465aeb4c60d6e778a316e4cd755b867e"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\ExpensesSummaryCard.tsx": {
-    "mtime": 1791745152.6593413,
-    "hash": "653e2bf32b46f4cf42f5dee190d6df21"
+    "mtime": 1791784468.1852646,
+    "hash": "9a9b77b1b98ea3c3edc77bba63b645f7"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\KpiCards.tsx": {
-    "mtime": 1791663863.2454917,
-    "hash": "411859ea2047eac9afa47880d0dca788"
+    "mtime": 1791784468.1892648,
+    "hash": "d2423d3b4042219f72a19a21069e3cb5"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\Opportunities.tsx": {
-    "mtime": 1791564903.6909423,
-    "hash": "c0d09a0b6686761da64b7d7d8486032d"
+    "mtime": 1791791027.3101118,
+    "hash": "906518d4bdb452ad649511a5624940f0"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\OverviewHeader.tsx": {
-    "mtime": 1791782009.252514,
-    "hash": "b677d633f0e2d204d242555bba528e0c"
+    "mtime": 1791784701.3057575,
+    "hash": "9248656966a75169203f07997dc0f9fe"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\OverviewPage.tsx": {
-    "mtime": 1791781983.7795298,
-    "hash": "67b76d85d6f1e7c9ed695309ec9c818d"
+    "mtime": 1791784689.836301,
+    "hash": "921361df6a1ea1aafd7808c6a038d3d9"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\OverviewView.tsx": {
-    "mtime": 1791781981.9871116,
-    "hash": "0d290265c054e550801d3bd01b72b3db"
+    "mtime": 1791805337.9404297,
+    "hash": "dae44733cb865c025f1c8cd77e79cf2f"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\ProfitBreakdown.tsx": {
     "mtime": 1791663860.2673156,
     "hash": "60fda30e50daffa06cb4ab77efd3610b"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\RecentOrders.tsx": {
-    "mtime": 1791668353.0258079,
-    "hash": "4ad84f99a9c51dc8f1b8d6b6cdbb236d"
+    "mtime": 1791805525.8669925,
+    "hash": "a6fe4757314fabe8cf2595af55e6e56c"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\SecondaryInsights.tsx": {
-    "mtime": 1791568956.922213,
-    "hash": "f5168368cae4d6fcabe4f289c8778d43"
+    "mtime": 1791784468.1972642,
+    "hash": "9616fa977e5060582a97c85142b453de"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\TopReturned.tsx": {
     "mtime": 1791780005.1724854,
@@ -624,8 +752,8 @@
     "hash": "c86501c94be244f16bc9bea804f1838b"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\WhatChangedCard.tsx": {
-    "mtime": 1791663902.3199558,
-    "hash": "2ace43a4308f77112c59b308fc22da3a"
+    "mtime": 1791791027.32462,
+    "hash": "842266c35bb666eb2a30d07f5f48c293"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\preview\\ExpensesScreen.tsx": {
     "mtime": 1791541227.8787088,
@@ -655,77 +783,93 @@
     "mtime": 1791541228.0458746,
     "hash": "3237ac2a021657567f5f72e2d85c3f10"
   },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\profit\\AccountingView.tsx": {
+    "mtime": 1791805857.9174564,
+    "hash": "c2d5064ea24c81da6083de41a207c801"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\profit\\MonthlyPnl.tsx": {
+    "mtime": 1791805857.921085,
+    "hash": "3cca46aad73c4ab72c9edc00ae044a31"
+  },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\profit\\ProfitPage.tsx": {
-    "mtime": 1791781984.0192356,
-    "hash": "9c3f2eeb582c45cf2d7a0995a148f76c"
+    "mtime": 1791805965.2598405,
+    "hash": "42efd093214efa2c0d67be8c3195c423"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\profitability\\BulkCostDialog.tsx": {
-    "mtime": 1791782178.1002243,
-    "hash": "0f666daabc9a58a495350887a39ba159"
+    "mtime": 1791787283.5224934,
+    "hash": "faee6d970335bf83d725549ccef50e57"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\profitability\\OrdersPage.tsx": {
-    "mtime": 1791782289.4388394,
-    "hash": "81e7bb7c36110d3874e8c7d83b997594"
+    "mtime": 1791794451.1585379,
+    "hash": "5edef3ab2c4313bbaeb09d1e9ae1a77d"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\profitability\\OrdersTable.tsx": {
+    "mtime": 1791787283.6719022,
+    "hash": "e2744aa001d91fa99c145dc377ad90a5"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\profitability\\ProductInsights.tsx": {
-    "mtime": 1791782251.5922625,
-    "hash": "37073b85bda604a4c7c9fc0e2d0222f9"
+    "mtime": 1791791027.338215,
+    "hash": "72cd68278fd40a1c9f9e537576e140e2"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\profitability\\ProductsPage.tsx": {
-    "mtime": 1791782270.8385856,
-    "hash": "6a964704c832c8bc200d421065eff76d"
+    "mtime": 1791805965.2548418,
+    "hash": "d442d519a1201fe634c8bd949dbdfb94"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\profitability\\RankCard.tsx": {
     "mtime": 1791780005.073714,
     "hash": "00bbe6a18ecf8db0375463dd42287ea0"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\profitability\\shared.tsx": {
-    "mtime": 1791782251.58062,
-    "hash": "110dc6345b2a6dfafb2743ca3f6a39ce"
+    "mtime": 1791789513.5561905,
+    "hash": "586ccd81935cd9be201b9865a6f98993"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\reports\\catalog.ts": {
     "mtime": 1791665337.6641066,
     "hash": "56cc3b405c388af3b4ed6f7cef7d03b9"
   },
-  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\reports\\Downloads.tsx": {
-    "mtime": 1791544952.740352,
-    "hash": "2b6f90abb9ae9ee92ee8d11259c74432"
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\reports\\LtvReport.test.tsx": {
+    "mtime": 1791812228.7465582,
+    "hash": "59469d0a4be60c8dc446e34cf4625d85"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\reports\\LtvReport.tsx": {
+    "mtime": 1791812228.7425578,
+    "hash": "ad4e9cfb845f93db0c045bcae8ade0b1"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\reports\\Notifications.tsx": {
-    "mtime": 1791544952.7500956,
-    "hash": "164a4aac7567ce71ee16a8a6faf21465"
+    "mtime": 1791791027.3412662,
+    "hash": "7cdfd5eef6cc652b5a0b69e245329463"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\reports\\ReportsPage.tsx": {
-    "mtime": 1791781984.201013,
-    "hash": "3ab5902bf8e94a34a160e383238c7aa7"
+    "mtime": 1791810891.7389712,
+    "hash": "98d7177219e39fc1f4863e63b57d883e"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\reports\\ReportTable.tsx": {
-    "mtime": 1791614719.6173255,
-    "hash": "9dfd3a1ca82eb6ef2d499166fc83a81e"
+    "mtime": 1791805857.9144564,
+    "hash": "67a4179e5001aeb7f875727f036b3e78"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\reports\\Schedules.tsx": {
-    "mtime": 1791568956.937219,
-    "hash": "c8d37f40d9105c629ba36595f005df7d"
+    "mtime": 1791805525.97402,
+    "hash": "a5dd0a4dc46185fcc7f845ef6ec6bb44"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\settings\\AlertsTab.tsx": {
-    "mtime": 1791608103.0958858,
-    "hash": "05ccdb568a9694fd44233eb09f10648e"
+    "mtime": 1791783854.9611058,
+    "hash": "ebfe5815d7f85e69fa0f8d6e8535a403"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\settings\\CostsTab.tsx": {
-    "mtime": 1791782251.3142738,
-    "hash": "f1dfdc99ff6c65d7360928762908ac73"
+    "mtime": 1791787283.869795,
+    "hash": "db1136f710348390aa93a5855d0238e2"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\settings\\CurrencyTab.tsx": {
-    "mtime": 1791782052.2166467,
-    "hash": "8f713dfd8248cd02ea7c5902a88310a4"
+    "mtime": 1791783854.9693549,
+    "hash": "6dff88d83ac5e286e2106691c8103d23"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\settings\\DataTab.tsx": {
-    "mtime": 1791781954.8317363,
-    "hash": "0d60bd2952b4c828f9b4d9e1781bc5e0"
+    "mtime": 1791805526.0085428,
+    "hash": "4720df6b07d829de13d121a7de5e767e"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\settings\\HelpTab.tsx": {
-    "mtime": 1791568956.9407299,
-    "hash": "827a3ba5a96c6df9d33e9e10417b9dc8"
+    "mtime": 1791805526.0260556,
+    "hash": "e607b31854b87c7a4521ddddced2cae1"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\settings\\PlanTab.tsx": {
     "mtime": 1791747173.0160167,
@@ -735,33 +879,57 @@
     "mtime": 1791615226.0283206,
     "hash": "f6422528ba1267ba97100b7234be6edb"
   },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\settings\\RuleForms.tsx": {
+    "mtime": 1791807753.281535,
+    "hash": "270206ed729cb49252bd08a59dabd19c"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\settings\\RulesTabs.test.tsx": {
+    "mtime": 1791810229.556898,
+    "hash": "217530da1583fc14b91509368f25b282"
+  },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\settings\\RulesTabs.tsx": {
-    "mtime": 1791615501.0749497,
-    "hash": "271e71deb84c5cc1b3971584f84c8a64"
+    "mtime": 1791807872.9451902,
+    "hash": "f40abc2120fbe341a75fa5b2782d729d"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\settings\\SettingsPage.tsx": {
-    "mtime": 1791747622.2980921,
-    "hash": "843f4127f46a85d037e5d69fa67db62b"
+    "mtime": 1791794451.0667615,
+    "hash": "a57393066dfad05c33edc62d49c7b08a"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\settings\\shared.tsx": {
-    "mtime": 1791549981.5751662,
-    "hash": "89608241ada78f9c6a8dfd6425e90465"
+    "mtime": 1791784689.8550704,
+    "hash": "dd1e9ff9a0b4965206838d43bd8ea38f"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\settings\\SupportForm.tsx": {
+    "mtime": 1791791931.9702103,
+    "hash": "2461cbcae00cb58b5fcfabdbd87afa73"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\shipping\\CarrierIntegrations.tsx": {
+    "mtime": 1791807079.5293748,
+    "hash": "afbcc31561416baebe116b263b83aee8"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\shipping\\ShippingPage.tsx": {
+    "mtime": 1791807046.1254807,
+    "hash": "e281db92dfab54f39297db5e71f3a22c"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\shipping\\ShippingParts.tsx": {
+    "mtime": 1791807079.60551,
+    "hash": "25d21b7ec6ea0c8e2412c0adf9071e54"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\sync\\SyncNotice.tsx": {
     "mtime": 1791611474.1567662,
     "hash": "1d3c027940dd1f6bd1c9d4020b1a539c"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\sync\\SyncSection.tsx": {
-    "mtime": 1791615598.6038558,
-    "hash": "d06e595c0c86a3f51f82abc82b529a0c"
+    "mtime": 1791784689.871665,
+    "hash": "6a840054d012b05869a3737311404072"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\sync\\useSyncStatus.ts": {
     "mtime": 1791564259.657688,
     "hash": "1d379574f5dcfa81183ea1bbd42c385f"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\lib\\api.ts": {
-    "mtime": 1791547243.609344,
-    "hash": "1963c4015fcdf3307b41a5ef429b1ccd"
+    "mtime": 1791789513.5531583,
+    "hash": "01160d06cd6583219ef35536ac60962f"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\lib\\breakdown.test.ts": {
     "mtime": 1791664001.7289965,
@@ -800,12 +968,12 @@
     "hash": "58a57ec0fe439dc40d1c38fac75f8b33"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\lib\\format.test.ts": {
-    "mtime": 1791539304.7042701,
-    "hash": "42db710529128b73b45226c0a5a24cde"
+    "mtime": 1791804817.2068057,
+    "hash": "a253dba02fb2bcc7493d1f3cc29537d0"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\lib\\format.ts": {
-    "mtime": 1791782251.5746136,
-    "hash": "0990585b90c46fc19b70add446dcd7ab"
+    "mtime": 1791804817.1163063,
+    "hash": "964c41ecdf382d34e2b7d9fc1322ff2d"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\lib\\freshness.test.ts": {
     "mtime": 1791610020.6990633,
@@ -847,6 +1015,26 @@
     "mtime": 1791668353.0228055,
     "hash": "f0a9f08f7845b35e666351ca8a19ecd9"
   },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\lib\\period-range.test.ts": {
+    "mtime": 1791805340.4210937,
+    "hash": "1d828cd265c8ed3ea479028b1b70fd01"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\lib\\period-range.ts": {
+    "mtime": 1791805340.348965,
+    "hash": "082c4e066c3c13299a38b2ed2ee44644"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\lib\\pnl-help.ts": {
+    "mtime": 1791791777.5233881,
+    "hash": "690e1d67b504ce04c49e7f5cbbe84f6a"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\lib\\pnl-lines.test.ts": {
+    "mtime": 1791791825.326399,
+    "hash": "d3f13e57a42028d5ed770fe7ddf5dd41"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\lib\\pnl-lines.ts": {
+    "mtime": 1791791825.2615628,
+    "hash": "c6e474059f03de6a7d9e5dd965d23619"
+  },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\lib\\query.test.ts": {
     "mtime": 1791781984.7149646,
     "hash": "dbc2d42590305afd17fda72702973ea7"
@@ -866,6 +1054,18 @@
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\lib\\series.ts": {
     "mtime": 1791565565.738393,
     "hash": "ad30fa44d3618628b46cb6c09b383862"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\lib\\shop-time.test.ts": {
+    "mtime": 1791791101.206369,
+    "hash": "0d6cf5e407b23a85ee03061babfd92cf"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\lib\\shop-time.ts": {
+    "mtime": 1791791027.2601073,
+    "hash": "ea55ac9c978ae0d3510e0b6a4a55c5bf"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\lib\\shopify-toast.ts": {
+    "mtime": 1791785820.826107,
+    "hash": "17f6898bcee1f5f325954d575c47a403"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\lib\\spend.test.ts": {
     "mtime": 1791543723.7267363,
@@ -968,12 +1168,12 @@
     "hash": "3d06b84f0c8b1ac0f53b42a4b6cadc3e"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\worker\\src\\profit\\recalculate.integration.test.ts": {
-    "mtime": 1791781458.1357722,
-    "hash": "d4c102c72066f8e693da8644531b399d"
+    "mtime": 1791800923.353356,
+    "hash": "6588f115ee0009e19fb7be0e8c75dd4d"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\worker\\src\\profit\\recalculate.ts": {
-    "mtime": 1791780945.342277,
-    "hash": "de84fc2dba47cc8f6864fd4f73522012"
+    "mtime": 1791800041.9280527,
+    "hash": "5272ffdeccf71f479c7329a124f42e52"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\worker\\src\\reports\\export.ts": {
     "mtime": 1791544421.1327605,
@@ -991,25 +1191,29 @@
     "mtime": 1791544421.1485155,
     "hash": "55871a936ad624446b5aa6f14941eddc"
   },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\worker\\src\\sync\\fetchers.test.ts": {
+    "mtime": 1791811208.1119914,
+    "hash": "bf5a75430eb8dab6e8b0dc092619a7aa"
+  },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\worker\\src\\sync\\fetchers.ts": {
-    "mtime": 1791611532.7433157,
-    "hash": "7df6ff2714e5b78176457b9cd82cf98a"
+    "mtime": 1791810778.5106869,
+    "hash": "02391486296336a29aabdaafe4c81107"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\worker\\src\\sync\\run-sync.integration.test.ts": {
     "mtime": 1791614167.7264676,
     "hash": "7b7a54bc2894e089edf3ecd380b7034e"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\worker\\src\\sync\\run-sync.ts": {
-    "mtime": 1791611470.860314,
-    "hash": "50bdbd9d3f09335239ccf7961072e8de"
+    "mtime": 1791810778.5974536,
+    "hash": "4e934a096721a60e773572c99288624f"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\worker\\src\\webhooks\\process-webhook.integration.test.ts": {
-    "mtime": 1791547132.5842953,
-    "hash": "229c270c83cfff2963eb994b4b991d8f"
+    "mtime": 1791811869.1621895,
+    "hash": "b61d6dac75da30fa847c8f65dd3d5140"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\worker\\src\\webhooks\\process-webhook.ts": {
-    "mtime": 1791546486.5517616,
-    "hash": "4337f7c827ff8f26f865d7e7e7ce2c94"
+    "mtime": 1791811208.231248,
+    "hash": "1bdc7faed936afb162eb74b885b687fd"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\config\\src\\index.test.ts": {
     "mtime": 1791526796.760352,
@@ -1040,8 +1244,8 @@
     "hash": "0ac6fc02b30b4eb773d3a2351a39a055"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\contracts\\src\\index.ts": {
-    "mtime": 1791782096.4365447,
-    "hash": "277b69847a125de372518b56f3c786c6"
+    "mtime": 1791810778.4769223,
+    "hash": "143d8eb5000db9875dd6c787f568be19"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\contracts\\src\\plans.test.ts": {
     "mtime": 1791546108.311282,
@@ -1167,6 +1371,22 @@
     "mtime": 1791737035.4119,
     "hash": "c59272c853a4b6e70ec1ba68c35df8cb"
   },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\migrations\\0028_expense_more_categories.sql": {
+    "mtime": 1791788421.248202,
+    "hash": "adffa41492efae97134f0b09f4cc0521"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\migrations\\0029_carrier_invoice_charges.sql": {
+    "mtime": 1791799889.8648767,
+    "hash": "ba71bc122eccec4cb0f12f0c958d952f"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\migrations\\0030_carrier_invoice_purge_grants.sql": {
+    "mtime": 1791800678.1730804,
+    "hash": "29768a25d14adb558374d6fd455ccaf5"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\migrations\\0031_order_customer_key.sql": {
+    "mtime": 1791810616.6834798,
+    "hash": "05ee1d178e51bef720c30ae90856347f"
+  },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\src\\ad-connections.ts": {
     "mtime": 1791737575.9878576,
     "hash": "363264039ab369c5f9e3b03d70fa1602"
@@ -1187,6 +1407,10 @@
     "mtime": 1791746745.3219328,
     "hash": "687ede936e38b559e492999175b3bb4d"
   },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\src\\carrier-invoices.ts": {
+    "mtime": 1791799971.962674,
+    "hash": "cb382a06622324551cad82fc25605f56"
+  },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\src\\cli.ts": {
     "mtime": 1791527597.0938182,
     "hash": "efdb4da53cf1668361dcec692ad560b8"
@@ -1194,6 +1418,10 @@
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\src\\client.ts": {
     "mtime": 1791534887.3891392,
     "hash": "0ce9e88b82e70d9a5e1aa7ae47c391e8"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\src\\customers.ts": {
+    "mtime": 1791811197.2959294,
+    "hash": "03ab921e4538c9f320e79215a39df9ac"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\src\\dashboard.ts": {
     "mtime": 1791611534.6773329,
@@ -1204,8 +1432,8 @@
     "hash": "7324528275cf8b500e18217d9c6d1447"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\src\\expenses.ts": {
-    "mtime": 1791737150.6368666,
-    "hash": "a5be59f419c00a9e9de76fb37eaf9468"
+    "mtime": 1791804268.862719,
+    "hash": "fe346b35e8c8f55c756d68c0f47e40b7"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\src\\fx.ts": {
     "mtime": 1791607241.125568,
@@ -1216,8 +1444,8 @@
     "hash": "cbd05f6f4401ab0e0060a04e96d48095"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\src\\index.ts": {
-    "mtime": 1791744229.8861117,
-    "hash": "2f1ab4eb9fff72cb0f3acdc89b2c1315"
+    "mtime": 1791810713.7913642,
+    "hash": "ac8d04c2551e5205e07ce2df56128a4e"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\src\\installations.ts": {
     "mtime": 1791529975.7442,
@@ -1255,9 +1483,13 @@
     "mtime": 1791544707.3901618,
     "hash": "257c740cbc6e2c9f67257b9227b02917"
   },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\src\\running-jobs.ts": {
+    "mtime": 1791789471.1422842,
+    "hash": "eb96cc8a1722f082585e53531120260d"
+  },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\src\\schema.ts": {
-    "mtime": 1791737155.6201298,
-    "hash": "38c3635c4a1492564022b56f42e1fed9"
+    "mtime": 1791811159.5124872,
+    "hash": "a0c4b1921314665d436dcadaba56221d"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\src\\seed.ts": {
     "mtime": 1791527538.901016,
@@ -1267,13 +1499,17 @@
     "mtime": 1791606795.3739805,
     "hash": "6f469d8857885b1c39d22fe1d446f19a"
   },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\src\\shipping-overview.ts": {
+    "mtime": 1791810273.7155619,
+    "hash": "b14e0f5e5284001777f1c89c35a4e3fd"
+  },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\src\\sync.ts": {
-    "mtime": 1791611442.7682712,
-    "hash": "bf9d8bd130002a18601f9d233fd763ca"
+    "mtime": 1791810620.356406,
+    "hash": "803e9f7dfc4930cbd2c6c8bd535e2679"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\src\\webhooks.ts": {
-    "mtime": 1791737051.6776817,
-    "hash": "d92f3dab48ea270f848186ca85fbbf19"
+    "mtime": 1791800678.4111876,
+    "hash": "cdb38dfea601595c0d2832859c7492b5"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\test\\dashboard.integration.test.ts": {
     "mtime": 1791539056.9726737,
@@ -1312,8 +1548,8 @@
     "hash": "ec85ceaf7244d3e72f5db9fb454b9679"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\test\\security.integration.test.ts": {
-    "mtime": 1791738049.3476145,
-    "hash": "88f23d340765106dbf86b56c2b73c6e6"
+    "mtime": 1791811899.436888,
+    "hash": "8c5fdb0f4fd1514224e32b2d3dfe4b9e"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\test\\sync.integration.test.ts": {
     "mtime": 1791534120.440628,
@@ -1334,6 +1570,10 @@
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\profit-engine\\src\\allocate.ts": {
     "mtime": 1791540321.180694,
     "hash": "f79cf32d25efa82ceeeda5864784fda6"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\profit-engine\\src\\carrier-cost.test.ts": {
+    "mtime": 1791800022.5277624,
+    "hash": "e05e3d820c501431cda27a0f818ae98d"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\profit-engine\\src\\convert.ts": {
     "mtime": 1791537431.420298,
@@ -1400,8 +1640,8 @@
     "hash": "4b791065d98c169aed23694197b9d0dc"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\profit-engine\\src\\order.ts": {
-    "mtime": 1791782805.3237474,
-    "hash": "eff2ec30cd75604bacb4bb15de07eccc"
+    "mtime": 1791799991.9622266,
+    "hash": "4460d7820ec8d0a3dec40a831d9dde2e"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\profit-engine\\src\\period.test.ts": {
     "mtime": 1791664583.1668854,
@@ -1448,8 +1688,8 @@
     "hash": "576e8d733aac643f39ff425615d66a35"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\profit-engine\\src\\types.ts": {
-    "mtime": 1791780892.0116682,
-    "hash": "5bb343ac6a2e3515afd40540253b439a"
+    "mtime": 1791799991.9587154,
+    "hash": "93efa58c866cb0792506326c4f241820"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\profit-engine\\src\\usd.test.ts": {
     "mtime": 1791780906.2836406,
@@ -1535,6 +1775,10 @@
     "mtime": 1791570291.9521012,
     "hash": "c4e5dcb8327c8d2412ef1eb0eec29c71"
   },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\seed\\src\\marketing.ts": {
+    "mtime": 1791802089.406215,
+    "hash": "5fd0e8c57a22832044f8484ce3f044b2"
+  },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\seed\\src\\plan.test.ts": {
     "mtime": 1791570460.1789017,
     "hash": "ca0f9491850d4caa24aae438eba60ac1"
@@ -1550,6 +1794,10 @@
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\seed\\src\\seed.ts": {
     "mtime": 1791570294.4763255,
     "hash": "e459514a142c52a00ed370a26010518f"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\seed\\src\\shipping.ts": {
+    "mtime": 1791807383.293956,
+    "hash": "30c0721c47f0536f400a0e2b9bd73ec8"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\seed\\src\\shopify.ts": {
     "mtime": 1791532713.9656646,
@@ -1600,20 +1848,20 @@
     "hash": "09f7c9050b0338a3dfb05c6a9b560690"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\shopify\\src\\sync-mappers.ts": {
-    "mtime": 1791611368.2905245,
-    "hash": "50c2c6f55da3809791ba415050e75d65"
+    "mtime": 1791810778.7853441,
+    "hash": "d899b7f4a7a15e5ad2a73825d32b4d5b"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\shopify\\src\\sync-queries.ts": {
-    "mtime": 1791612300.664632,
-    "hash": "9986026a18855c2260e83f89641fc93a"
+    "mtime": 1791810597.3007665,
+    "hash": "7eacfd558f6c0c6593db9d1bb47c0b29"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\shopify\\src\\webhooks.test.ts": {
     "mtime": 1791535001.3575954,
     "hash": "d7456bbccb35b4131c57914ac8015aad"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\shopify\\src\\webhooks.ts": {
-    "mtime": 1791546464.5373263,
-    "hash": "5ed1c63b507439f913b3a25e56fa96f8"
+    "mtime": 1791811197.430019,
+    "hash": "321dab250461f51963ec1f50e52af9bb"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\scripts\\backup.mjs": {
     "mtime": 1791548853.971123,
@@ -1648,8 +1896,8 @@
     "hash": "5c3a2e0d67e2e3cf25b08dd46441eda6"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\tests\\app-config.test.ts": {
-    "mtime": 1791612300.4692,
-    "hash": "da96c31340935f13096b44cf8712d98a"
+    "mtime": 1791811400.8036554,
+    "hash": "3df739c17dc325c2b388665eaa688394"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\tests\\backup.integration.test.ts": {
     "mtime": 1791548966.5037415,
@@ -1684,8 +1932,8 @@
     "hash": "b77e287a1f70ba45f37818e567a623d7"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\roadmap.md": {
-    "mtime": 1791782636.9029055,
-    "hash": "76b5e03ce7a11dba5727e36e4f8b909c"
+    "mtime": 1791812250.9867594,
+    "hash": "910a776a9f1fa8b90b209a4557f9fdbb"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\architecture\\billing.md": {
     "mtime": 1791549276.7097468,
@@ -1760,8 +2008,8 @@
     "hash": "82e30aac64f41b78248f3b599316c0ff"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\legal\\privacy-policy.md": {
-    "mtime": 1791615579.427913,
-    "hash": "50270dcb4cf2edd592557290d1df8595"
+    "mtime": 1791811251.1712246,
+    "hash": "2c6685b1fda944099294afd9c4d1ed6d"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\operations\\ad-platforms.md": {
     "mtime": 1791783151.2454178,
@@ -1796,8 +2044,8 @@
     "hash": "4c4b9cb54f946f68a37a1f2cfa07365d"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\privacy\\retention.md": {
-    "mtime": 1791664619.958809,
-    "hash": "be89f67e7e566b678f7e91dfad3fb663"
+    "mtime": 1791811251.174658,
+    "hash": "b1e97561da7d24d141bfeaa9f584e44c"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\security\\security-review.md": {
     "mtime": 1791613735.7144716,

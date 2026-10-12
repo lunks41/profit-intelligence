@@ -26,7 +26,10 @@ export default function Privacy() {
           code of an order and the weight of products are kept only to choose a shipping cost rule.
         </li>
         <li>
-          <strong>No customer names, emails, street addresses or phone numbers are stored.</strong>
+          <strong>No customer names, emails, street addresses or phone numbers are stored.</strong>{' '}
+          Each order keeps only a one-way key made from Shopify&apos;s customer id, so the app can
+          tell which orders came from the same customer for lifetime value. The key cannot be turned
+          back into the customer and is removed when Shopify asks for that customer to be erased.
         </li>
         <li>
           From you: product costs, fee and shipping rules, expenses, advertising account ids and
@@ -65,8 +68,8 @@ export default function Privacy() {
         ) : (
           ' using the support contact in the app listing'
         )}
-        . Shopify customer data requests are answered: the app holds no customer personal data to
-        export or erase.
+        . Shopify customer data requests are answered: nothing about a customer can be exported, and
+        an erase request removes the customer&apos;s key from their orders.
       </p>
     </main>
   );

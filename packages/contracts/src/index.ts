@@ -1720,3 +1720,61 @@ export const shippingOverviewResponseSchema = z.object({
   ),
 });
 export type ShippingOverviewResponse = z.infer<typeof shippingOverviewResponseSchema>;
+
+// ---- Customers: lifetime value ----
+
+export const ltvQuerySchema = z.object({
+  ...periodQuery,
+  /** the country of the customer's first order (two-letter code) */
+  country: z
+    .string()
+    .regex(/^[A-Za-z]{2}$/)
+    .transform((v) => v.toUpperCase())
+    .optional(),
+  /** where the customer's first order came from (Shopify's source name, e.g. web) */
+  source: z.string().trim().min(1).max(100).optional(),
+});
+
+export const ltvCohortSchema = z.object({
+  /** YYYY-MM of the customers' first order */
+  month: z.string(),
+  customers: z.number().int(),
+  repurchaseRate: z.string().nullable(),
+  revenue: money,
+  /** revenue per customer to date */
+  ltv: money.nullable(),
+  /** contribution profit per customer to date */
+  profitLtv: money.nullable(),
+  adSpend: money.nullable(),
+  /** ad spend of that month per new customer */
+  cac: money.nullable(),
+  /** ltv divided by cac, 2 decimals */
+  ratio: z.string().nullable(),
+  /** cumulative per customer, month 1 first; stops at the current month */
+  cumulative: z.array(z.object({ ltv: money, profitLtv: money })),
+});
+
+export const ltvResponseSchema = z.object({
+  period: z.object({ from: z.string(), to: z.string() }),
+  currency: z.string(),
+  kpis: z.object({
+    customers: z.number().int(),
+    repurchaseRate: z.string().nullable(),
+    revenue: money,
+    ltv: money.nullable(),
+    profitLtv: money.nullable(),
+    cac: money.nullable(),
+    ratio: z.string().nullable(),
+  }),
+  cohorts: z.array(ltvCohortSchema),
+  countries: z.array(z.string()),
+  sources: z.array(z.string()),
+  orders: z.object({ withCustomer: z.number().int(), withoutCustomer: z.number().int() }),
+  /** no order has a customer key yet: orders must be imported again with the customer permission */
+  customerDataMissing: z.boolean(),
+  /** ad spend in a month with no exchange rate was left out of CAC */
+  adFxGap: z.boolean(),
+  historyDays: z.number().int(),
+});
+export type LtvResponse = z.infer<typeof ltvResponseSchema>;
+export type LtvCohort = z.infer<typeof ltvCohortSchema>;

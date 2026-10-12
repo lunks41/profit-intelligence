@@ -358,7 +358,20 @@ describe('data deletion', () => {
        where table_schema = 'public' and (
          column_name ~* '(customer|buyer|first_?name|last_?name|phone|address|street|postal|zip|ip_?address)'
          or column_name ~* '^(email)$')
+         and not (table_name = 't_order' and column_name = 'customer_key') -- a one-way hash, checked below
          and table_name <> 'o_feedback' and table_name <> 's_report_schedule' and table_name <> 'o_report_delivery'`);
     expect(r.rows).toEqual([]);
+  });
+
+  it('the only customer column is a one-way key: 32 hex characters, enforced by the database', async () => {
+    const r = await admin.query(
+      `select pg_get_constraintdef(oid) as def from pg_constraint where conname = 'ck_t_order_customer_key'`,
+    );
+    expect(r.rows[0]?.def).toContain('[0-9a-f]{32}');
+    const col = await admin.query(
+      `select data_type, character_maximum_length from information_schema.columns
+        where table_name = 't_order' and column_name = 'customer_key'`,
+    );
+    expect(col.rows[0]).toMatchObject({ data_type: 'character', character_maximum_length: 32 });
   });
 });
