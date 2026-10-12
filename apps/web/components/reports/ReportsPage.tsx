@@ -3,27 +3,26 @@
 import { FileTypeDropdown, FilterSearch, ReportDropdown, ShowDropdown } from '../dropdown';
 
 import { useEffect, useState } from 'react';
-import type { PeriodPreset, ReportTableResponse } from '@pi/contracts';
-import { apiPost } from '../../lib/api';
+import type { ExportRowResponse, PeriodPreset, ReportTableResponse } from '@pi/contracts';
+import { apiGet, apiPost, downloadFile } from '../../lib/api';
 import { buildListQuery } from '../../lib/query';
 import { readParam } from '../../lib/url-params';
 import { FilterBar, type Filters } from '../overview/OverviewView';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormError, useAction } from '../settings/shared';
 import type { REPORTS } from './catalog';
-import { Downloads } from './Downloads';
 import { Notifications } from './Notifications';
 import { ReportTable } from './ReportTable';
 import { todayInShop } from '../../lib/shop-time';
 
-type Tab = 'reports' | 'downloads' | 'notifications';
+type Tab = 'reports' | 'notifications';
 
 const today = todayInShop;
 
 export function ReportsPage() {
   const [tab, setTab] = useState<Tab>('reports');
   useEffect(() => {
-    const t = readParam('tab', ['reports', 'downloads', 'notifications'] as const);
+    const t = readParam('tab', ['reports', 'notifications'] as const);
     if (t) setTab(t);
   }, []);
   const [version, setVersion] = useState(0);
@@ -35,7 +34,6 @@ export function ReportsPage() {
         {(
           [
             ['reports', 'Reports'],
-            ['downloads', 'Downloads'],
             ['notifications', 'Notifications'],
           ] as const
         ).map(([id, label]) => (
@@ -48,21 +46,13 @@ export function ReportsPage() {
           </s-button>
         ))}
       </s-stack>
-      {tab === 'reports' && (
-        <Preview
-          onQueued={() => {
-            refresh();
-            setTab('downloads');
-          }}
-        />
-      )}
-      {tab === 'downloads' && <Downloads version={version} onChanged={refresh} />}
+      {tab === 'reports' && <Preview />}
       {tab === 'notifications' && <Notifications version={version} onChanged={refresh} />}
     </>
   );
 }
 
-function Preview({ onQueued }: { onQueued: () => void }) {
+function Preview() {
   const [filters, setFilters] = useState<Filters>({
     preset: '30d' as PeriodPreset,
     from: today(),
@@ -99,14 +89,49 @@ function Preview({ onQueued }: { onQueued: () => void }) {
     orders ? null : `/reports/preview?${query}`,
   );
 
-  async function queueExport() {
-    const body = {
-      kind,
-      format,
-      preset: filters.preset,
-      ...(filters.preset === 'custom' ? { from: filters.from, to: filters.to } : {}),
-    };
-    if (await download.run(() => apiPost('/reports/exports', body))) onQueued();
+  const [preparing, setPreparing] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+
+  /**
+   * Asks for the file, waits while it is prepared in the background (the top bar says so), and downloads it as soon as
+   * it is ready. A big report can take a minute; after two minutes the merchant is told to try again.
+   */
+  async function downloadReport() {
+    setNote(null);
+    setPreparing(true);
+    try {
+      const body = {
+        kind,
+        format,
+        preset: filters.preset,
+        ...(filters.preset === 'custom' ? { from: filters.from, to: filters.to } : {}),
+      };
+      const queued = await download.run(() => apiPost<ExportRowResponse>('/reports/exports', body));
+      if (!queued) return;
+      let current = queued;
+      const deadline = Date.now() + 120_000;
+      while (
+        (current.status === 'queued' || current.status === 'running') &&
+        Date.now() < deadline
+      ) {
+        await new Promise((r) => setTimeout(r, 1500));
+        const list = await apiGet<{ rows: ExportRowResponse[] }>('/reports/exports');
+        current = list.rows.find((r) => r.id === queued.id) ?? current;
+      }
+      if (current.status === 'ready') {
+        await download.run(() =>
+          downloadFile(`/reports/exports/${queued.id}/download`, `${kind}.${format}`),
+        );
+      } else if (current.status === 'failed') {
+        setNote(
+          `The file could not be prepared${current.error ? `: ${current.error}` : ''}. Try again.`,
+        );
+      } else {
+        setNote('The file is taking longer than usual. Try again in a minute.');
+      }
+    } finally {
+      setPreparing(false);
+    }
   }
 
   return (
@@ -151,11 +176,16 @@ function Preview({ onQueued }: { onQueued: () => void }) {
           />
         )}
         <FileTypeDropdown chip value={format} onChange={setFormat} />
-        <s-button variant="primary" disabled={download.busy} onClick={() => void queueExport()}>
-          Prepare download
+        <s-button
+          variant="primary"
+          loading={preparing}
+          disabled={preparing}
+          onClick={() => void downloadReport()}
+        >
+          {preparing ? 'Preparing…' : 'Download'}
         </s-button>
       </FilterBar>
-      <FormError message={download.error} />
+      <FormError message={download.error ?? note} />
       {lists && (
         <s-text color="subdued">
           Search, filter and sort change what you see here. A download always has every row.
@@ -164,8 +194,8 @@ function Preview({ onQueued }: { onQueued: () => void }) {
       {orders && (
         <s-banner tone="info" heading="The order report is large">
           <s-paragraph>
-            It is prepared in the background. Choose a file type and press Prepare download, then
-            open it from the Downloads tab.
+            It is prepared in the background, which can take a minute. Choose a file type and press
+            Download; the file downloads by itself when it is ready.
           </s-paragraph>
         </s-banner>
       )}
