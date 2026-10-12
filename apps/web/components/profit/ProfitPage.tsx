@@ -82,7 +82,7 @@ export function ProfitPage() {
         <>
           {pnl.error && <ErrorBanner message={pnl.error} onRetry={() => void pnl.reload()} />}
           {pnl.loading && !pnl.data && <Loading what="the profit and loss" />}
-          {pnl.data && <ReportTable report={pnl.data} />}
+          {pnl.data && <ReportTable report={pnl.data} showType />}
         </>
       )}
       {tab === 'monthly' && <MonthlyPnl />}
