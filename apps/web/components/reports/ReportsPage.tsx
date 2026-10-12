@@ -14,17 +14,16 @@ import type { REPORTS } from './catalog';
 import { Downloads } from './Downloads';
 import { Notifications } from './Notifications';
 import { ReportTable } from './ReportTable';
-import { Schedules } from './Schedules';
 import { todayInShop } from '../../lib/shop-time';
 
-type Tab = 'reports' | 'downloads' | 'schedules' | 'notifications';
+type Tab = 'reports' | 'downloads' | 'notifications';
 
 const today = todayInShop;
 
 export function ReportsPage() {
   const [tab, setTab] = useState<Tab>('reports');
   useEffect(() => {
-    const t = readParam('tab', ['reports', 'downloads', 'schedules', 'notifications'] as const);
+    const t = readParam('tab', ['reports', 'downloads', 'notifications'] as const);
     if (t) setTab(t);
   }, []);
   const [version, setVersion] = useState(0);
@@ -37,7 +36,6 @@ export function ReportsPage() {
           [
             ['reports', 'Reports'],
             ['downloads', 'Downloads'],
-            ['schedules', 'Scheduled emails'],
             ['notifications', 'Notifications'],
           ] as const
         ).map(([id, label]) => (
@@ -59,7 +57,6 @@ export function ReportsPage() {
         />
       )}
       {tab === 'downloads' && <Downloads version={version} onChanged={refresh} />}
-      {tab === 'schedules' && <Schedules version={version} onChanged={refresh} />}
       {tab === 'notifications' && <Notifications version={version} onChanged={refresh} />}
     </>
   );
