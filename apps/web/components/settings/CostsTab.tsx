@@ -9,6 +9,7 @@ import { apiDelete, apiGet, apiPost, apiPut } from '../../lib/api';
 import { formatMoney, longDate } from '../../lib/format';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormError, Saved, isAmount, todayLocal, useAction, FormActions } from './shared';
+import { InfoTip } from '../common/info-tip';
 import { readParam } from '../../lib/url-params';
 import { DateField } from '../common/DateField';
 
@@ -329,7 +330,19 @@ function ApplyBanner({
       </s-banner>
       <FormError message={error} />
       <FormActions>
+        {!done && (
+          <InfoTip
+            label="Not now"
+            text="Closes this window. The cost stays saved and new orders use it. Past orders keep their figures until you apply it, which you can do later in Settings, Data."
+          />
+        )}
         <s-button onClick={onDone}>{done ? 'Done' : doneLabel}</s-button>
+        {!done && (
+          <InfoTip
+            label="Apply to existing orders"
+            text="Prices the past orders that had no cost, using the costs you have saved. Orders that already had a cost keep it, so figures you have seen do not move. It runs in the background and takes a minute or two. Safe to run again."
+          />
+        )}
         {!done && (
           <s-button
             variant="primary"

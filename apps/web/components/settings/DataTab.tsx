@@ -1,5 +1,6 @@
 'use client';
 
+import { InfoTip } from '../common/info-tip';
 import { useEffect, useState } from 'react';
 import type { AuditResponse, RecalcResultResponse } from '@pi/contracts';
 import { apiGet, apiPost } from '../../lib/api';
@@ -117,6 +118,10 @@ function Recalculate() {
           </s-banner>
         ) : (
           <FormActions>
+            <InfoTip
+              label="Apply to existing orders"
+              text="Prices the past orders that had no cost, using the costs you have saved. Orders that already had a cost keep it, so figures you have seen do not move. It runs in the background and takes a minute or two. Safe to run again."
+            />
             <s-button
               variant="primary"
               disabled={fill.busy}
@@ -174,11 +179,15 @@ function Recalculate() {
             </s-stack>
           </s-banner>
         ) : (
-          <div>
+          <FormActions>
+            <InfoTip
+              label="Recalculate everything"
+              text="Redoes every past order, including the ones that already had a cost, so figures you have already seen can change. Use it only after correcting costs that were wrong."
+            />
             <s-button tone="critical" onClick={() => setConfirming(true)}>
               Recalculate everything
             </s-button>
-          </div>
+          </FormActions>
         )}
         <RecalcResult since={startedAt} />
       </s-stack>
