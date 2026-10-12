@@ -90,7 +90,8 @@ export function ConnectPlatforms({
           !available || mine.length === 0 ? (
             !available ? (
               <s-text color="subdued">
-                The owner of this app has not added the {NAME[id]} app credentials on the server.
+                Connecting is switched off until the owner of this app adds the {NAME[id]} app
+                credentials (a developer app of the platform) to the server settings.
               </s-text>
             ) : undefined
           ) : (
@@ -143,7 +144,8 @@ export function ConnectPlatforms({
                 onClick: () => void connect(),
               },
             ]
-          : [],
+          : // the button is there but cannot be used until the server has the credentials of the platform
+            [{ label: 'Connect', variant: 'primary', disabled: true, onClick: () => undefined }],
       };
     }),
     // platforms that are not built yet, so the merchant can see what is planned
