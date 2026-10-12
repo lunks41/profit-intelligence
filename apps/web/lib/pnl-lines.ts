@@ -7,7 +7,9 @@ export type LineKind = 'Income' | 'Outgoing' | 'Result';
 export function lineKind(label: string): LineKind | null {
   const l = label.toLowerCase();
   if (
-    /^(revenue|contribution profit|estimated operating profit|net sales|operating profit)/.test(l)
+    /^(revenue|gross profit|contribution profit|estimated operating profit|net sales|operating profit)/.test(
+      l,
+    )
   )
     return 'Result';
   if (/^(sales before discounts|gross sales|shipping charged)/.test(l)) return 'Income';
@@ -25,3 +27,16 @@ export const KIND_TONE: Record<LineKind, 'success' | 'critical' | 'info'> = {
   Outgoing: 'critical',
   Result: 'info',
 };
+
+/**
+ * The sum of figures from a report, in cents so decimals add up exactly. A word instead of an amount (Missing, Not
+ * configured) means the figure is unknown, so the sum is unknown too: "Not available", never a number that leaves it out.
+ */
+export function sumFigures(parts: Array<string | undefined>): string {
+  let cents = 0;
+  for (const p of parts) {
+    if (p === undefined || p === '' || !Number.isFinite(Number(p))) return 'Not available';
+    cents += Math.round(Number(p) * 100);
+  }
+  return (cents / 100).toFixed(2);
+}

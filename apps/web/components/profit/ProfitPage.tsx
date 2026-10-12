@@ -11,6 +11,7 @@ import type {
 import { describeDelta, describePoints, formatMoney, formatPercent } from '../../lib/format';
 import { sparkSeries } from '../../lib/series';
 import { buildListQuery } from '../../lib/query';
+import { AccountingView } from './AccountingView';
 import { MonthlyPnl } from './MonthlyPnl';
 import { DataQualityCard } from '../overview/DataQualityCard';
 import { FilterBar, type Filters } from '../overview/OverviewView';
@@ -36,6 +37,7 @@ export function ProfitPage() {
     to: today(),
   });
   const [tab, setTab] = useState<Tab>('statement');
+  const [pnlView, setPnlView] = useState<'statement' | 'accounting'>('statement');
   useEffect(() => {
     const t = readParam('tab', ['statement', 'trend', 'leakage', 'quality'] as const);
     if (t) setTab(t);
@@ -84,7 +86,30 @@ export function ProfitPage() {
         <>
           {pnl.error && <ErrorBanner message={pnl.error} onRetry={() => void pnl.reload()} />}
           {pnl.loading && !pnl.data && <Loading what="the profit and loss" />}
-          {pnl.data && <ReportTable report={pnl.data} showType />}
+          {pnl.data && (
+            <s-stack direction="inline" gap="small">
+              {(
+                [
+                  ['statement', 'Statement view'],
+                  ['accounting', 'Accounting view'],
+                ] as const
+              ).map(([id, label]) => (
+                <s-button
+                  key={id}
+                  variant={pnlView === id ? 'primary' : 'secondary'}
+                  onClick={() => setPnlView(id)}
+                >
+                  {label}
+                </s-button>
+              ))}
+            </s-stack>
+          )}
+          {pnl.data &&
+            (pnlView === 'accounting' ? (
+              <AccountingView report={pnl.data} />
+            ) : (
+              <ReportTable report={pnl.data} showType />
+            ))}
         </>
       )}
       {tab === 'monthly' && <MonthlyPnl />}

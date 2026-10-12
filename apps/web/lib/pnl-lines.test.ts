@@ -43,3 +43,17 @@ describe('help for every line of the profit and loss', () => {
     expect(lineHelp('Unknown line')).toBeNull();
   });
 });
+
+import { sumFigures } from './pnl-lines';
+
+describe('a subtotal of the accounting view', () => {
+  it('adds amounts exactly, costs being negative', () => {
+    expect(sumFigures(['690612.18', '-434534.06'])).toBe('256078.12');
+    expect(sumFigures(['0.1', '0.2'])).toBe('0.30');
+  });
+  it('is not available when any part is unknown, never a number that leaves it out', () => {
+    expect(sumFigures(['690612.18', 'Missing'])).toBe('Not available');
+    expect(sumFigures(['100', undefined])).toBe('Not available');
+    expect(sumFigures(['100', ''])).toBe('Not available');
+  });
+});

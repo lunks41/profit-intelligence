@@ -34,6 +34,10 @@ const HELP: Array<[RegExp, string]> = [
     'Net sales plus shipping charged: the money the orders brought in, before any cost.',
   ],
   [
+    /^gross profit/,
+    'Revenue less the cost of the products sold. What is left before fees, shipping, advertising and expenses.',
+  ],
+  [
     /^contribution profit/,
     'Revenue less product cost, payment fees and shipping cost. Advertising and other expenses are not taken off yet.',
   ],
