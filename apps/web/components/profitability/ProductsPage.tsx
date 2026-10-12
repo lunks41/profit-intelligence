@@ -91,13 +91,32 @@ export function ProductsPage() {
 
   return (
     <>
-      {data && <SummaryCards data={data} />}
       <FilterBar
         chip
         filters={filters}
         onChange={(f) => {
           setFilters(f);
           setPage(1);
+        }}
+      />
+      {data && (
+        <SummaryCards
+          data={data}
+          filters={filters}
+          onView={(f) => {
+            setFilter(f);
+            setView('products');
+            setPage(1);
+            document.getElementById('products-table')?.scrollIntoView({ behavior: 'smooth' });
+          }}
+        />
+      )}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'flex-end',
+          flexWrap: 'wrap',
+          gap: '0.75rem',
         }}
       >
         <FilterSearch
@@ -146,10 +165,12 @@ export function ProductsPage() {
             setPage(1);
           }}
         />
-        <s-button variant="primary" onClick={() => setDialog({ kind: 'bulk' })}>
-          Bulk Product Cost
-        </s-button>
-      </FilterBar>
+        <div style={{ marginLeft: 'auto' }}>
+          <s-button variant="primary" onClick={() => setDialog({ kind: 'bulk' })}>
+            Bulk Product Cost
+          </s-button>
+        </div>
+      </div>
 
       {error && <ErrorBanner message={error} onRetry={() => void reload()} />}
       {loading && !data && <Loading what="products" />}
@@ -158,6 +179,7 @@ export function ProductsPage() {
           aria-busy={loading}
           style={{ opacity: loading ? 0.6 : 1, display: 'flex', flexDirection: 'column', gap: 16 }}
         >
+          <div id="products-table" />
           <ProductsTable
             data={data}
             filters={filters}
@@ -188,32 +210,72 @@ export function ProductsPage() {
 }
 
 /** The four figures that say how the products are doing: sales, profit, and what is missing or losing money. */
-function SummaryCards({ data }: { data: ProductListResponse }) {
+function SummaryCards({
+  data,
+  filters,
+  onView,
+}: {
+  data: ProductListResponse;
+  filters: Filters;
+  onView: (filter: string) => void;
+}) {
   const s = data.summary;
   const cur = data.currency;
+  // the names behind the two warning cards (the worst three of each)
+  const named = (filter: string, dir: 'asc' | 'desc', count: number) =>
+    count > 0
+      ? `/profitability/products?${buildListQuery(filters, { sort: 'profit', dir, filter, pageSize: 3 })}`
+      : null;
+  const missing = useApi<ProductListResponse>(named('missing_cost', 'desc', s.productsMissingCost));
+  const losing = useApi<ProductListResponse>(named('loss', 'asc', s.productsLosingMoney));
+  const names = (r: ProductListResponse | null, total: number) => {
+    if (!r || r.rows.length === 0) return null;
+    const list = r.rows.map((x) => x.title).join(', ');
+    return total > r.rows.length ? `${list} and ${total - r.rows.length} more` : list;
+  };
   return (
     <StatGrid>
       <StatCard
         label="Net sales"
         value={formatMoney(s.netSales, cur)}
         note={`${s.products} products, ${periodLabel(data.period.from, data.period.to)}`}
+        info="Gross sales minus discounts and product refunds, before any cost. Tax is never counted, and shipping charged to customers is not part of it."
       />
       <StatCard
         label="Contribution profit"
         value={formatMoney(s.contributionProfit, cur)}
         note="Of the products below"
+        info="Revenue (net sales plus shipping charged) minus product cost, payment fees and shipping cost. Advertising and operating expenses are not taken off, so it is the profit the products themselves make. A product with no cost yet is counted without one, so its profit is overstated until you set it."
       />
       <StatCard
         label="Missing costs"
         value={`${s.productsMissingCost} ${s.productsMissingCost === 1 ? 'product' : 'products'}`}
+        tone={s.productsMissingCost > 0 ? 'critical' : undefined}
+        info="Products sold in this period that have no cost, neither one you entered nor one from Shopify. Their profit is overstated, because a missing cost is never counted as zero."
+        action={
+          s.productsMissingCost > 0
+            ? { label: 'View', onClick: () => onView('missing_cost') }
+            : undefined
+        }
         note={
-          s.productsMissingCost > 0 ? 'Profit is overstated for these' : 'Every product has a cost'
+          s.productsMissingCost > 0
+            ? (names(missing.data, s.productsMissingCost) ?? 'Profit is overstated for these')
+            : 'Every product has a cost'
         }
       />
       <StatCard
         label="Loss-making products"
         value={`${s.productsLosingMoney} ${s.productsLosingMoney === 1 ? 'product' : 'products'}`}
-        note={s.productsLosingMoney > 0 ? 'They earned less than they cost' : 'None lost money'}
+        tone={s.productsLosingMoney > 0 ? 'critical' : undefined}
+        info="Products whose profit is below zero in this period: what they sold for was less than their cost, fees, shipping and refunds. Products with a missing cost are not counted here, because their real result is not known."
+        action={
+          s.productsLosingMoney > 0 ? { label: 'View', onClick: () => onView('loss') } : undefined
+        }
+        note={
+          s.productsLosingMoney > 0
+            ? (names(losing.data, s.productsLosingMoney) ?? 'They earned less than they cost')
+            : 'None lost money'
+        }
       />
     </StatGrid>
   );
