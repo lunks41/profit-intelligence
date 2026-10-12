@@ -266,6 +266,19 @@ function ExpenseForm({
   const currencyOk = foreign === '' || /^[A-Z]{3}$/.test(foreign);
   const picked = categories.find((c) => c.id === categoryId);
   const warning = picked ? overlapWarning(picked.class) : null;
+  // In plain words, how this expense will be counted: what a recurring expense does is easy to miss in a form.
+  const shown = amountOk
+    ? formatMoney(amount.trim(), foreign && !editing ? foreign : currency)
+    : null;
+  const until = end ? ` until ${longDate(end)}` : ', until you stop it';
+  const plan =
+    shown === null || !startOk
+      ? null
+      : kind === 'one_time'
+        ? `A one-time expense of ${shown}, counted in the month of ${longDate(start)}.`
+        : frequency === 'monthly'
+          ? `${shown} every month from ${longDate(start)}${until}. Each month counts the full amount.`
+          : `${shown} every year from ${longDate(start)}${until}. Each month counts one twelfth of it.`;
 
   async function save() {
     setTouched(true);
@@ -382,6 +395,36 @@ function ExpenseForm({
           />
         )}
       </s-grid>
+      {plan && (
+        <s-banner tone="info" heading="How it will count">
+          <s-paragraph>{plan}</s-paragraph>
+        </s-banner>
+      )}
+      {row && (
+        <s-stack gap="small-300">
+          <s-text color="subdued">
+            Status:{' '}
+            {row.status === 'active'
+              ? 'Active'
+              : row.status === 'scheduled'
+                ? 'Scheduled'
+                : 'Ended'}
+            {row.nextCharge ? ` · Next charge ${longDate(row.nextCharge)}` : ''} · This month{' '}
+            {formatMoney(row.thisMonth, currency)}
+            {row.overrides.length > 0
+              ? ` · ${row.overrides.length} month(s) changed on their own`
+              : ''}
+          </s-text>
+          {row.originalAmount && row.originalCurrency && (
+            <s-text color="subdued">
+              Entered as {formatMoney(row.originalAmount, row.originalCurrency)}
+              {row.fxRate ? ` at ${row.fxRate}` : ''}
+              {row.fxRateDate ? `, rate of ${longDate(row.fxRateDate)}` : ''}
+              {row.fxEstimated ? ' (an estimate)' : ''}.
+            </s-text>
+          )}
+        </s-stack>
+      )}
       {editing && recurringRow && (
         <s-text color="subdued">
           Earlier months keep the amount that applied then. Only the month you choose and later

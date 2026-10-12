@@ -171,7 +171,7 @@ export function DateField({
         label={label}
         value={text}
         disabled={disabled}
-        placeholder="12-Oct-2026"
+        placeholder="dd-MMM-yyyy"
         error={bad ? 'Use a date such as 12-Oct-2026' : error}
         onInput={(e) => {
           setText(e.currentTarget.value);
