@@ -10,7 +10,7 @@ import {
   shortDate,
 } from '../../lib/format';
 import { sparkSeries } from '../../lib/series';
-import { GradientTile, TILE_GRADIENT } from '../common/GradientTile';
+import { FigureTile, TILE_COLOR } from '../common/FigureTile';
 
 /**
  * Revenue, costs, contribution profit and contribution margin, one tile each so the Overview can place them. Each
@@ -31,10 +31,10 @@ export function overviewKpis(data: OverviewResponse) {
 
   return {
     revenue: (
-      <GradientTile
+      <FigureTile
         label="Revenue"
         value={money(s.revenue)}
-        gradient={TILE_GRADIENT.revenue}
+        color={TILE_COLOR.revenue}
         info="Sales after discounts and product refunds, plus shipping charged (net of shipping refunds). Tax is not included."
         delta={describeDelta(deltas.revenue)}
         compare={compare}
@@ -45,10 +45,10 @@ export function overviewKpis(data: OverviewResponse) {
       />
     ),
     costs: (
-      <GradientTile
+      <FigureTile
         label="Costs"
         value={money(s.totalCosts)}
-        gradient={TILE_GRADIENT.costs}
+        color={TILE_COLOR.costs}
         info="The costs of selling what you sold: product cost, payment fees and shipping cost. Advertising and other operating expenses are separate and come after contribution profit."
         delta={describeDelta(deltas.costs)}
         goodWhenUp={false}
@@ -66,10 +66,10 @@ export function overviewKpis(data: OverviewResponse) {
       />
     ),
     profit: (
-      <GradientTile
+      <FigureTile
         label="Contribution profit"
         value={money(s.contributionProfit)}
-        gradient={TILE_GRADIENT.profit}
+        color={TILE_COLOR.profit}
         info="Revenue minus product cost, payment fees and shipping cost. Advertising and other operating expenses are not taken off, so this is not operating profit."
         delta={describeDelta(deltas.contributionProfit)}
         compare={compare}
@@ -78,10 +78,10 @@ export function overviewKpis(data: OverviewResponse) {
       />
     ),
     margin: (
-      <GradientTile
+      <FigureTile
         label="Contribution margin"
         value={formatPercent(s.contributionMargin)}
-        gradient={TILE_GRADIENT.margin}
+        color={TILE_COLOR.margin}
         info="Contribution profit divided by revenue."
         delta={describePoints(deltas.marginPoints)}
         compare={compare}

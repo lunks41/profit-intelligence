@@ -130,44 +130,80 @@ s-button {
 }
 
 /*
- * The Overview board: three columns of cards that stack up and down (no card is stretched to a row, so no blank
- * space). Left: what to do and where the money goes. Middle: the figures and the trend. Right: ads, channels,
- * highlights. A narrower page puts the left and right columns beside the middle one; a phone has one column.
+ * The Overview board. Bands follow each other with no blank space. The figures are a grid that always fills its rows
+ * (the net profit tile takes two columns). Cards flow into balanced columns: the browser fills each column to the
+ * same height, so a short card is never left beside a tall one with a gap under it.
  */
 .pi-board-wrap {
   container-type: inline-size;
 }
 .pi-board {
-  display: grid;
-  gap: 0.5rem;
-  align-items: start;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-areas: 'main' 'left' 'right';
-}
-.pi-board > * {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+.pi-figures {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+.pi-figures > * {
   min-width: 0;
 }
-.pi-board-left {
-  grid-area: left;
+.pi-figures-hero {
+  display: grid;
 }
-.pi-board-main {
-  grid-area: main;
-}
-.pi-board-right {
-  grid-area: right;
-}
-@container (min-width: 760px) {
-  .pi-board {
-    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-    grid-template-areas: 'main left' 'main right';
+@container (min-width: 560px) {
+  .pi-figures {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .pi-figures-hero {
+    grid-column: 1 / -1;
   }
 }
-@container (min-width: 1180px) {
-  .pi-board {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 2.2fr) minmax(0, 1fr);
-    grid-template-areas: 'left main right';
+@container (min-width: 1000px) {
+  .pi-figures {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .pi-figures-hero {
+    grid-column: span 2;
+  }
+}
+.pi-mason {
+  column-gap: 0.5rem;
+  column-fill: balance;
+  column-count: 1;
+}
+.pi-mason-item {
+  break-inside: avoid;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+.pi-mason-item:empty {
+  display: none;
+}
+@container (min-width: 620px) {
+  .pi-mason-narrow {
+    column-count: 2;
+  }
+}
+@container (min-width: 1000px) {
+  .pi-mason-narrow {
+    column-count: 3;
+  }
+}
+@container (min-width: 1500px) {
+  .pi-mason-narrow {
+    column-count: 4;
+  }
+}
+@container (min-width: 900px) {
+  .pi-mason-wide {
+    column-count: 2;
+  }
+}
+@container (min-width: 1700px) {
+  .pi-mason-wide {
+    column-count: 3;
   }
 }

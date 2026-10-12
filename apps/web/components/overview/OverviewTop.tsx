@@ -5,7 +5,7 @@ import type { MarketingResponse, OverviewResponse } from '@pi/contracts';
 import { formatMoney, formatPercent } from '../../lib/format';
 import { Card } from '../common';
 import { CardHeader } from '../common/CardHeader';
-import { GradientTile, TILE_GRADIENT } from '../common/GradientTile';
+import { FigureTile, TILE_COLOR } from '../common/FigureTile';
 import { AdAccountsCard } from '../marketing/AdAccountsCard';
 import { MarketingSummaryCard } from '../marketing/MarketingSummaryCard';
 import { useApi } from '../profitability/shared';
@@ -22,10 +22,10 @@ import { TrendCard } from './TrendCard';
 import { WhatChangedCard } from './WhatChangedCard';
 
 /**
- * The Overview as three columns of cards that stack up and down, so no card is stretched to fill a row and nothing is
- * left blank: the things to do and where the money goes on the left, the figures and the trend in the middle, the
- * advertising, channels and highlights on the right. On a narrower page the left and right columns go beside the
- * middle one, and on a phone everything is one column.
+ * The Overview as a few bands that follow one another with no blank space: the figures across the top, the trend
+ * beside sales by channel, then cards that flow into balanced columns (a card goes under the one above it, never into
+ * a row of its own), and the tables last, in balanced columns too. The number of columns follows the width of the
+ * page, so a wide screen is full and a phone is one column.
  */
 export function OverviewBoard({
   data,
@@ -43,50 +43,52 @@ export function OverviewBoard({
   insights?: ReactNode;
 }) {
   const k = overviewKpis(data);
+  const item = (node: ReactNode) => <div className="pi-mason-item">{node}</div>;
   return (
     <div className="pi-board-wrap">
       <div className="pi-board">
-        <div className="pi-board-left">
-          <Reminders data={data} />
-          <MoneyFlow data={data} />
-          <CostBreakdownCard page={data} />
-          <WhatChangedCard data={data} />
-        </div>
-        <div className="pi-board-main">
-          <NetProfit data={data} />
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(14.5rem, 1fr))',
-              gap: '0.5rem',
-            }}
-          >
-            {k.revenue}
-            {k.costs}
-            {k.profit}
-            {k.margin}
-            <ExpensesTile data={data} />
-            <AdsTile data={data} />
+        <div className="pi-figures">
+          <div className="pi-figures-hero">
+            <NetProfit data={data} />
           </div>
-          <TrendCard page={data} />
-          {topSelling}
-          {topReturned}
-          {recentOrders}
-          <ProfitBreakdown data={data} />
-          <DataQualityCard quality={data.dataQuality} issues={data.issues} />
-          {insights}
+          {k.revenue}
+          {k.costs}
+          {k.profit}
+          {k.margin}
+          <ExpensesTile data={data} />
+          <AdsTile data={data} />
         </div>
-        <div className="pi-board-right">
-          <ConnectedAccounts data={data} />
+
+        <div className="pi-split-60-40">
+          <TrendCard page={data} />
           <ChannelDonut page={data} />
-          <Highlights data={data} />
-          {opportunities}
-          <MarketingSummaryCard
-            period={data.period}
-            currency={data.currency.code}
-            showSpend={false}
-            showAccounts={false}
-          />
+        </div>
+
+        <div className="pi-mason pi-mason-narrow">
+          {item(<Reminders data={data} />)}
+          {item(<MoneyFlow data={data} />)}
+          {item(<ConnectedAccounts data={data} />)}
+          {item(<Highlights data={data} />)}
+          {item(<CostBreakdownCard page={data} />)}
+          {item(<WhatChangedCard data={data} />)}
+          {item(opportunities)}
+          {item(
+            <MarketingSummaryCard
+              period={data.period}
+              currency={data.currency.code}
+              showSpend={false}
+              showAccounts={false}
+            />,
+          )}
+        </div>
+
+        <div className="pi-mason pi-mason-wide">
+          {item(topSelling)}
+          {item(topReturned)}
+          {item(recentOrders)}
+          {item(<ProfitBreakdown data={data} />)}
+          {item(<DataQualityCard quality={data.dataQuality} issues={data.issues} />)}
+          {item(insights)}
         </div>
       </div>
     </div>
@@ -108,7 +110,7 @@ function NetProfit({ data }: { data: OverviewResponse }) {
         gap: '1rem',
         fontSize: '0.85rem',
         fontWeight: strong ? 700 : 400,
-        borderTop: strong ? '1px solid rgba(255,255,255,0.45)' : undefined,
+        borderTop: strong ? '1px solid #e3e3e3' : undefined,
         paddingTop: strong ? '0.3rem' : undefined,
       }}
     >
@@ -117,17 +119,17 @@ function NetProfit({ data }: { data: OverviewResponse }) {
     </div>
   );
   return (
-    <GradientTile
+    <FigureTile
       hero
       label="Net profit"
       value={profit === null ? '—' : formatMoney(profit, cur)}
-      gradient={TILE_GRADIENT.net}
+      color={TILE_COLOR.net}
       info="What is left of revenue after product cost, payment fees, shipping, advertising and operating expenses. It is an estimate while any cost is estimated or missing, and it needs expenses to be set up."
       detail={
         s.operatingMargin !== null ? (
           `${formatPercent(s.operatingMargin)} of revenue${s.partial ? '. Some costs are missing.' : ''}`
         ) : (
-          <a href="/expenses" style={{ color: '#fff' }}>
+          <a href="/expenses" style={{ color: '#005bd3' }}>
             Add your expenses to see it
           </a>
         )
@@ -138,7 +140,7 @@ function NetProfit({ data }: { data: OverviewResponse }) {
       {row('less Advertising', money(s.adSpend))}
       {row('less Operating expenses', money(s.operatingExpenses))}
       {row('Net profit', money(profit), true)}
-    </GradientTile>
+    </FigureTile>
   );
 }
 
@@ -146,13 +148,13 @@ function ExpensesTile({ data }: { data: OverviewResponse }) {
   const s = data.summary;
   const cur = data.currency.code;
   return (
-    <GradientTile
+    <FigureTile
       label="All expenses"
       value={s.operatingExpenses === null ? '—' : formatMoney(s.operatingExpenses, cur)}
-      gradient={TILE_GRADIENT.expenses}
+      color={TILE_COLOR.expenses}
       info="Rent, salaries, software and other operating expenses for the period. Advertising is shown apart, and product cost, fees and shipping are already in Costs."
       detail={
-        <a href="/expenses" style={{ color: '#fff' }}>
+        <a href="/expenses" style={{ color: '#005bd3' }}>
           {s.operatingExpenses === null ? 'Add expenses' : 'Open Expenses'}
         </a>
       }
@@ -166,14 +168,14 @@ function AdsTile({ data }: { data: OverviewResponse }) {
   const roas =
     s.adSpend !== null && Number(s.adSpend) > 0 ? Number(s.revenue) / Number(s.adSpend) : null;
   return (
-    <GradientTile
+    <FigureTile
       label="All ads"
       value={s.adSpend === null ? '—' : formatMoney(s.adSpend, cur)}
-      gradient={TILE_GRADIENT.ads}
+      color={TILE_COLOR.ads}
       info="Advertising spend imported or entered for the period. It comes off contribution profit on the way to net profit."
       detail={
         s.adSpend === null ? (
-          <a href="/marketing" style={{ color: '#fff' }}>
+          <a href="/marketing" style={{ color: '#005bd3' }}>
             Connect ad accounts
           </a>
         ) : roas === null ? (
