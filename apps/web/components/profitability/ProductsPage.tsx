@@ -99,7 +99,9 @@ export function ProductsPage() {
           setFilters(f);
           setPage(1);
         }}
-      />
+      >
+        {data && <QualifiersBanner qualifiers={data.reconciliation.qualifiers} />}
+      </FilterBar>
       {data && (
         <SummaryCards
           data={data}
@@ -323,7 +325,6 @@ function ProductsTable({
   const query = buildListQuery(filters, {});
   return (
     <>
-      <QualifiersBanner qualifiers={rec.qualifiers} />
       <s-section
         padding="none"
         heading={`Products, ${periodLabel(data.period.from, data.period.to)}`}

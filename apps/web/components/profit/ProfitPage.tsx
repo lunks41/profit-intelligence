@@ -56,12 +56,12 @@ export function ProfitPage() {
     <>
       <FilterBar chip filters={filters} onChange={setFilters}>
         {overview.data && <Freshness data={overview.data} />}
+        {overview.data && <QualifiersBanner qualifiers={overview.data.summary.qualifiers} />}
       </FilterBar>
       {overview.data?.currency.note && (
         <s-text color="subdued">{overview.data.currency.note}</s-text>
       )}
       {overview.data && <Kpis data={overview.data} />}
-      {overview.data && <QualifiersBanner qualifiers={overview.data.summary.qualifiers} />}
       <s-stack direction="inline" gap="small">
         {(
           [
