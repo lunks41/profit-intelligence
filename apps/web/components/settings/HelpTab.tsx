@@ -1,16 +1,10 @@
 'use client';
 
-import { Dropdown } from '../dropdown';
-
 import { useState } from 'react';
 import type { SupportListResponse } from '@pi/contracts';
-import { apiPost } from '../../lib/api';
 import { longDate } from '../../lib/format';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
-import { FormError, useAction, FormActions } from './shared';
-
-const GRID = 'repeat(auto-fit, minmax(13.75rem, 1fr))';
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { SupportForm } from './SupportForm';
 
 const KIND = {
   feedback: 'Feedback',
@@ -40,15 +34,6 @@ const FAQ: Array<[string, string]> = [
 export function HelpTab() {
   const [version, setVersion] = useState(0);
   const list = useApi<SupportListResponse>(`/support?_=${version}`);
-  const [kind, setKind] = useState<'feedback' | 'question' | 'problem'>('question');
-  const [message, setMessage] = useState('');
-  const [email, setEmail] = useState('');
-  const [touched, setTouched] = useState(false);
-  const [sent, setSent] = useState(false);
-  const act = useAction();
-
-  const messageOk = message.trim().length >= 3 && message.trim().length <= 2000;
-  const emailOk = email.trim() === '' || EMAIL.test(email.trim());
 
   return (
     <>
@@ -66,75 +51,7 @@ export function HelpTab() {
       </s-section>
 
       <s-section heading="Send us a message">
-        <s-stack gap="base">
-          {sent && (
-            <s-banner tone="success">
-              <s-paragraph>Thank you. We received your message.</s-paragraph>
-            </s-banner>
-          )}
-          <s-grid gridTemplateColumns={GRID} gap="base" alignItems="end">
-            <Dropdown
-              label="This is a"
-              value={kind}
-              options={[
-                { value: 'question', label: 'Question' },
-                { value: 'problem', label: 'Problem' },
-                { value: 'feedback', label: 'Feedback or idea' },
-              ]}
-              onChange={(v) => setKind(v as typeof kind)}
-            />
-            <s-text-field
-              label="Your email, if you want a reply"
-              value={email}
-              error={touched && !emailOk ? 'Enter a valid email address' : undefined}
-              onInput={(e) => setEmail(e.currentTarget.value)}
-            />
-          </s-grid>
-          <s-text-area
-            label="Message"
-            rows={5}
-            value={message}
-            error={
-              touched && !messageOk
-                ? 'Write at least a few words (up to 2000 characters)'
-                : undefined
-            }
-            onInput={(e) => {
-              setMessage(e.currentTarget.value);
-              setSent(false);
-            }}
-          />
-          <s-text color="subdued">
-            Please do not include customer names, emails or addresses. Your store address is
-            attached automatically.
-          </s-text>
-          <FormError message={act.error} />
-          <FormActions>
-            <s-button
-              variant="primary"
-              disabled={act.busy}
-              onClick={async () => {
-                setTouched(true);
-                if (!messageOk || !emailOk) return;
-                const ok = await act.run(() =>
-                  apiPost('/support', {
-                    kind,
-                    message: message.trim(),
-                    ...(email.trim() ? { contactEmail: email.trim() } : {}),
-                  }),
-                );
-                if (ok) {
-                  setMessage('');
-                  setTouched(false);
-                  setSent(true);
-                  setVersion((v) => v + 1);
-                }
-              }}
-            >
-              Send message
-            </s-button>
-          </FormActions>
-        </s-stack>
+        <SupportForm onSent={() => setVersion((v) => v + 1)} />
       </s-section>
 
       <s-section heading="Your messages">

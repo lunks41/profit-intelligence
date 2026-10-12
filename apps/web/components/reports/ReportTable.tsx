@@ -28,16 +28,18 @@ function cell(
 export function ReportTable({
   report,
   showType = false,
+  headerExtra,
 }: {
   report: ReportTableResponse;
   showType?: boolean;
+  /** something beside the title inside the card, such as a switch between two views */
+  headerExtra?: React.ReactNode;
 }) {
   const empty = report.rows.length === 0 && report.totalRows.length === 0;
+  const title = `${report.title}, ${report.from === report.to ? formatDate(report.from) : `${formatDate(report.from)} to ${formatDate(report.to)}`}`;
   return (
-    <s-section
-      padding="none"
-      heading={`${report.title}, ${report.from === report.to ? formatDate(report.from) : `${formatDate(report.from)} to ${formatDate(report.to)}`}`}
-    >
+    <s-section padding="none" heading={headerExtra ? undefined : title}>
+      {headerExtra && <CardTitle title={title}>{headerExtra}</CardTitle>}
       <s-stack gap="base">
         {empty ? (
           <s-box padding="base">
@@ -210,5 +212,15 @@ function TrendCell({ report, row }: { report: ReportTableResponse; row: string[]
         )}
       </span>
     </s-table-cell>
+  );
+}
+
+/** The title of a card with something beside it (a switch, a filter), on one row inside the card. */
+function CardTitle({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem' }}>
+      <s-heading>{title}</s-heading>
+      {children}
+    </div>
   );
 }

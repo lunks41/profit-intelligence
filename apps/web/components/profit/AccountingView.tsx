@@ -49,7 +49,14 @@ const GROUPS: Group[] = [
 const num = (v: string | undefined) =>
   v !== undefined && v !== '' && Number.isFinite(Number(v)) ? Number(v) : null;
 
-export function AccountingView({ report }: { report: ReportTableResponse }) {
+export function AccountingView({
+  report,
+  headerExtra,
+}: {
+  report: ReportTableResponse;
+  /** something beside the title inside the card, such as the switch between the two views */
+  headerExtra?: React.ReactNode;
+}) {
   const [closed, setClosed] = useState<Record<string, boolean>>({});
   const all = [...report.rows, ...report.totalRows];
   const find = (label: string) => all.find((r) => r[0] === label);
@@ -82,7 +89,15 @@ export function AccountingView({ report }: { report: ReportTableResponse }) {
   const heading = `Profit and loss, ${report.from === report.to ? formatDate(report.from) : `${formatDate(report.from)} to ${formatDate(report.to)}`}`;
 
   return (
-    <s-section padding="none" heading={heading}>
+    <s-section padding="none" heading={headerExtra ? undefined : heading}>
+      {headerExtra && (
+        <div
+          style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem' }}
+        >
+          <s-heading>{heading}</s-heading>
+          {headerExtra}
+        </div>
+      )}
       <s-table>
         <s-table-header-row>
           <s-table-header listSlot="primary">Line</s-table-header>

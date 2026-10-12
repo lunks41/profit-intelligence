@@ -87,29 +87,18 @@ export function ProfitPage() {
           {pnl.error && <ErrorBanner message={pnl.error} onRetry={() => void pnl.reload()} />}
           {pnl.loading && !pnl.data && <Loading what="the profit and loss" />}
           {pnl.data && (
-            <s-stack direction="inline" gap="small">
-              {(
-                [
-                  ['statement', 'Statement view'],
-                  ['accounting', 'Accounting view'],
-                ] as const
-              ).map(([id, label]) => (
-                <s-button
-                  key={id}
-                  variant={pnlView === id ? 'primary' : 'secondary'}
-                  onClick={() => setPnlView(id)}
-                >
-                  {label}
-                </s-button>
-              ))}
-            </s-stack>
+            <ViewSwitch
+              value={pnlView}
+              onChange={setPnlView}
+              render={(switcher) =>
+                pnlView === 'accounting' ? (
+                  <AccountingView report={pnl.data!} headerExtra={switcher} />
+                ) : (
+                  <ReportTable report={pnl.data!} showType headerExtra={switcher} />
+                )
+              }
+            />
           )}
-          {pnl.data &&
-            (pnlView === 'accounting' ? (
-              <AccountingView report={pnl.data} />
-            ) : (
-              <ReportTable report={pnl.data} showType />
-            ))}
         </>
       )}
       {tab === 'monthly' && <MonthlyPnl />}
@@ -403,5 +392,39 @@ function Findings({
         ))}
       </s-stack>
     </s-section>
+  );
+}
+
+/** The Statement and Accounting buttons; the card shows them beside its title. */
+function ViewSwitch({
+  value,
+  onChange,
+  render,
+}: {
+  value: 'statement' | 'accounting';
+  onChange: (v: 'statement' | 'accounting') => void;
+  render: (switcher: React.ReactNode) => React.ReactNode;
+}) {
+  return (
+    <>
+      {render(
+        <s-stack direction="inline" gap="small">
+          {(
+            [
+              ['statement', 'Statement view'],
+              ['accounting', 'Accounting view'],
+            ] as const
+          ).map(([id, label]) => (
+            <s-button
+              key={id}
+              variant={value === id ? 'primary' : 'secondary'}
+              onClick={() => onChange(id)}
+            >
+              {label}
+            </s-button>
+          ))}
+        </s-stack>,
+      )}
+    </>
   );
 }

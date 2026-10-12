@@ -1,5 +1,7 @@
 'use client';
 
+import { Modal } from './common/Modal';
+import { SupportForm } from './settings/SupportForm';
 import { ActivityIndicator } from './ActivityIndicator';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { NotificationListResponse, SessionResponse } from '@pi/contracts';
@@ -21,7 +23,7 @@ function IconButton({
   label,
   onClick,
 }: {
-  icon: 'notification' | 'external';
+  icon: 'notification' | 'external' | 'question-circle' | 'settings';
   label: string;
   onClick: () => void;
 }) {
@@ -56,6 +58,7 @@ function IconButton({
  */
 export function TopBar() {
   const [notes, setNotes] = useState<NotificationListResponse | null>(null);
+  const [support, setSupport] = useState(false);
   const [shop, setShop] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -134,6 +137,14 @@ export function TopBar() {
       }}
     >
       <ActivityIndicator />
+      <IconButton icon="question-circle" label="Contact support" onClick={() => setSupport(true)} />
+      {support && (
+        <Modal heading="Contact support" onClose={() => setSupport(false)}>
+          <s-section>
+            <SupportForm onCancel={() => setSupport(false)} />
+          </s-section>
+        </Modal>
+      )}
       <div ref={box} style={{ position: 'relative' }}>
         <IconButton
           icon="notification"
@@ -229,6 +240,23 @@ export function TopBar() {
           </div>
         )}
       </div>
+      <s-link href="/settings" accessibilityLabel="Settings">
+        <span
+          title="Settings"
+          style={{
+            width: '2.5rem',
+            height: '2.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: '0.5rem',
+            border: '1px solid #babfc3',
+            background: '#ffffff',
+          }}
+        >
+          <s-icon type="settings" size="base" />
+        </span>
+      </s-link>
       {shop && (
         <IconButton
           icon="external"
