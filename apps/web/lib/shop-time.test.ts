@@ -44,3 +44,15 @@ describe('typed dates are read back to YYYY-MM-DD', () => {
     expect(parseDate('')).toBeNull();
   });
 });
+
+import { prettyDates } from './shop-time';
+
+describe('dates inside a sentence from the server', () => {
+  it('are written as dd-MMM-yyyy', () => {
+    expect(prettyDates('Changed expense "Rent" to 1500 from 2026-09-01 (was 1000)')).toBe(
+      'Changed expense "Rent" to 1500 from 01-Sep-2026 (was 1000)',
+    );
+    expect(prettyDates('2026-01-05 to 2026-02-06')).toBe('05-Jan-2026 to 06-Feb-2026');
+    expect(prettyDates('order 20261012345 stays')).toBe('order 20261012345 stays');
+  });
+});

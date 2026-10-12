@@ -21,7 +21,7 @@ import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { ReportTable } from '../reports/ReportTable';
 import { Change, Kpi } from '../common/kpi';
 import { readParam } from '../../lib/url-params';
-import { todayInShop } from '../../lib/shop-time';
+import { todayInShop, prettyDates } from '../../lib/shop-time';
 import { formatDateTime } from '../../lib/shop-time';
 
 type Tab = 'statement' | 'monthly' | 'trend' | 'leakage' | 'quality';
@@ -51,8 +51,12 @@ export function ProfitPage() {
 
   return (
     <>
-      <FilterBar chip filters={filters} onChange={setFilters} />
-      {overview.data && <Freshness data={overview.data} />}
+      <FilterBar chip filters={filters} onChange={setFilters}>
+        {overview.data && <Freshness data={overview.data} />}
+      </FilterBar>
+      {overview.data?.currency.note && (
+        <s-text color="subdued">{overview.data.currency.note}</s-text>
+      )}
       {overview.data && <Kpis data={overview.data} />}
       {overview.data && <QualifiersBanner qualifiers={overview.data.summary.qualifiers} />}
       <s-stack direction="inline" gap="small">
@@ -122,16 +126,16 @@ export function ProfitPage() {
 
 function Freshness({ data }: { data: OverviewResponse }) {
   const view = describeFreshness(data.freshness, data.period, new Date());
+  // one line, level with the period dropdown
   return (
-    <s-stack gap="small">
+    <div style={{ display: 'flex', alignItems: 'center', minHeight: '28px' }}>
       <s-text color="subdued">
         Last successful import:{' '}
         {data.freshness.lastSuccessAt ? formatDateTime(data.freshness.lastSuccessAt) : 'never'}.{' '}
         {view.badge}
-        {view.detail ? `. ${view.detail}` : ''}
+        {view.detail ? `. ${prettyDates(view.detail)}` : ''}
       </s-text>
-      {data.currency.note && <s-text color="subdued">{data.currency.note}</s-text>}
-    </s-stack>
+    </div>
   );
 }
 
@@ -359,7 +363,7 @@ function Findings({
                 <ul style={{ margin: '4px 0', paddingInlineStart: 20 }}>
                   {f.items.map((i) => (
                     <li key={`${i.label}-${i.detail}`}>
-                      {i.label}: {i.detail}
+                      {i.label}: {prettyDates(i.detail)}
                     </li>
                   ))}
                 </ul>

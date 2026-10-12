@@ -5,6 +5,7 @@ import type { SessionResponse } from '@pi/contracts';
 import { ApiRequestError, apiGet } from '../lib/api';
 import { GetStarted } from './GetStarted';
 import { Notice } from './notices/Notice';
+import { prettyDates } from '../lib/shop-time';
 
 type State =
   | { kind: 'loading' }
@@ -43,7 +44,7 @@ export function ConnectionStatus({ setup = false }: { setup?: boolean }) {
     return (
       <Notice tone="critical">
         <s-text type="strong">Could not connect your store.</s-text>
-        <s-text>{state.message}</s-text>
+        <s-text>{prettyDates(state.message)}</s-text>
         {state.code !== 'not_embedded' && (
           <s-button variant="tertiary" onClick={() => window.location.reload()}>
             Try again

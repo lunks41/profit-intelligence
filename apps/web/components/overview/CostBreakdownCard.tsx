@@ -8,6 +8,7 @@ import { costBreakdown } from '../../lib/costs';
 import { formatMoney, formatPercent } from '../../lib/format';
 import { Card } from '../common';
 import { CardHeader, CardPeriodFilter, useCardOverview } from './card-parts';
+import { prettyDates } from '../../lib/shop-time';
 
 const BAR: Record<string, string> = {
   cogs: '#d72c0d',
@@ -83,7 +84,7 @@ export function CostBreakdownCard({ page }: { page: OverviewResponse }) {
                         <s-text type="strong">{r.text}</s-text>
                       </s-stack>
                     </s-stack>
-                    {r.detail && <s-text color="subdued">{r.detail}</s-text>}
+                    {r.detail && <s-text color="subdued">{prettyDates(r.detail)}</s-text>}
                     <div
                       aria-hidden="true"
                       style={{

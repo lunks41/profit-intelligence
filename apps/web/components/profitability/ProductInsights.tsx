@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { ProductInsight } from '@pi/contracts';
 import { formatMoney, formatPercent } from '../../lib/format';
+import { prettyDates } from '../../lib/shop-time';
 
 const TONE = { critical: 'critical', warning: 'caution', info: 'info' } as const;
 /** The findings shown at first; the rest open on request. */
@@ -63,7 +64,7 @@ export function ProductInsights({
                 <s-text color="subdued">{i.fix}</s-text>
                 {open === i.id && (
                   <s-stack gap="small-300">
-                    <s-text>{i.detail}</s-text>
+                    <s-text>{prettyDates(i.detail)}</s-text>
                     {impact && <s-text color="subdued">{impact}</s-text>}
                     {i.examples.length > 0 && (
                       <s-text color="subdued">

@@ -3,6 +3,7 @@
 import type { LeakageResponse, OverviewResponse, ProductListResponse } from '@pi/contracts';
 import { buildOpportunities } from '../../lib/opportunities';
 import { useApi } from '../profitability/shared';
+import { prettyDates } from '../../lib/shop-time';
 
 const TONE = { critical: 'critical', warning: 'warning', info: 'neutral' } as const;
 const LABEL = { critical: 'Act now', warning: 'Check', info: 'Worth knowing' } as const;
@@ -42,7 +43,7 @@ export function Opportunities({ data, query }: { data: OverviewResponse; query: 
                 <s-badge tone={TONE[x.tone]}>{LABEL[x.tone]}</s-badge>
                 <s-text type="strong">{x.title}</s-text>
               </s-stack>
-              <s-text>{x.detail}</s-text>
+              <s-text>{prettyDates(x.detail)}</s-text>
               <s-text color="subdued">Why it matters: {x.why}</s-text>
               <s-link href={x.action.href}>{x.action.label}</s-link>
             </s-stack>

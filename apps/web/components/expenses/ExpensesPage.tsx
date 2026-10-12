@@ -21,7 +21,7 @@ import { Kpi } from '../common/kpi';
 import { CardHeader } from '../common/CardHeader';
 import { Modal } from '../common/Modal';
 import { BulkExpenseTools } from './BulkExpenseDialog';
-import { formatDateTime } from '../../lib/shop-time';
+import { formatDateTime, prettyDates } from '../../lib/shop-time';
 import { DateField } from '../common/DateField';
 
 type Tab = 'all' | 'recurring' | 'history';
@@ -868,7 +868,7 @@ function History({ version }: { version: number }) {
               <s-table-row key={r.id}>
                 <s-table-cell>{formatDateTime(r.createdAt)}</s-table-cell>
                 <s-table-cell>{r.actor.replace('shopify-user:', 'User ')}</s-table-cell>
-                <s-table-cell>{r.summary}</s-table-cell>
+                <s-table-cell>{prettyDates(r.summary)}</s-table-cell>
               </s-table-row>
             ))}
           </s-table-body>

@@ -4,7 +4,7 @@ import type { NotificationListResponse } from '@pi/contracts';
 import { apiPost } from '../../lib/api';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormError, useAction } from '../settings/shared';
-import { formatDateTime } from '../../lib/shop-time';
+import { formatDateTime, prettyDates } from '../../lib/shop-time';
 
 const TONE = {
   info: 'info',
@@ -42,7 +42,7 @@ export function Notifications({ version, onChanged }: { version: number; onChang
         {data?.rows.map((n) => (
           <s-banner key={n.id} tone={TONE[n.severity]} heading={`${n.read ? '' : '● '}${n.title}`}>
             <s-stack gap="small-300">
-              <s-text>{n.body}</s-text>
+              <s-text>{prettyDates(n.body)}</s-text>
               <s-text color="subdued">{formatDateTime(n.createdAt)}</s-text>
               <s-stack direction="inline" gap="small">
                 {n.link && <s-link href={n.link}>Open</s-link>}

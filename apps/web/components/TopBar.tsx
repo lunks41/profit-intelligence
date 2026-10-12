@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { NotificationListResponse, SessionResponse } from '@pi/contracts';
 import { apiGet, apiPost } from '../lib/api';
 import { newTabUrl } from '../lib/new-tab-url';
+import { prettyDates } from '../lib/shop-time';
 
 const REFRESH_MS = 60_000;
 const TONE = {
@@ -208,7 +209,7 @@ export function TopBar() {
                       {n.title}
                     </s-text>
                   </s-stack>
-                  <s-text color="subdued">{n.body}</s-text>
+                  <s-text color="subdued">{prettyDates(n.body)}</s-text>
                   <s-stack direction="inline" gap="small">
                     {n.link && <s-link href={n.link}>Open</s-link>}
                     {!n.read && (

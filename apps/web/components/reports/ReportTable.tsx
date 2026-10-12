@@ -3,6 +3,7 @@
 import type { ReportTableResponse } from '@pi/contracts';
 import { formatMoney, formatPercent } from '../../lib/format';
 import { KIND_TONE, lineKind } from '../../lib/pnl-lines';
+import { formatDate, prettyDates } from '../../lib/shop-time';
 import { lineHelp } from '../../lib/pnl-help';
 import { InfoTip } from '../common/info-tip';
 import { Sparkline } from '../common/sparkline';
@@ -35,7 +36,7 @@ export function ReportTable({
   return (
     <s-section
       padding="none"
-      heading={`${report.title}, ${report.from === report.to ? report.from : `${report.from} to ${report.to}`}`}
+      heading={`${report.title}, ${report.from === report.to ? formatDate(report.from) : `${formatDate(report.from)} to ${formatDate(report.to)}`}`}
     >
       <s-stack gap="base">
         {empty ? (
@@ -124,7 +125,7 @@ export function ReportTable({
               )}
               {report.notes.map((n) => (
                 <s-text key={n} color="subdued">
-                  {n}
+                  {prettyDates(n)}
                 </s-text>
               ))}
               {(report.audit?.dataNotes ?? []).map((n) => (

@@ -5,6 +5,7 @@ import { whatChanged } from '../../lib/drivers';
 import { formatMoney } from '../../lib/format';
 import { Card } from '../common';
 import { CardHeader } from './card-parts';
+import { formatDate } from '../../lib/shop-time';
 
 /**
  * Why profit moved against the previous period: the biggest movers among sales, discounts, refunds,
@@ -40,7 +41,7 @@ export function WhatChangedCard({ data }: { data: OverviewResponse }) {
                 <div style={{ minWidth: 0 }}>
                   <s-text type="strong">{d.label}</s-text>{' '}
                   <s-text color="subdued">
-                    {d.from} to {d.to}
+                    {formatDate(d.from)} to {formatDate(d.to)}
                   </s-text>
                   {d.note && (
                     <div>

@@ -110,3 +110,11 @@ export function daysBefore(date: string, days: number): string {
   d.setUTCDate(d.getUTCDate() - days);
   return d.toISOString().slice(0, 10);
 }
+
+/**
+ * Writes every date in a sentence from the server in the one display format: "from 2026-09-01" becomes "from
+ * 01-Sep-2026". Messages the server writes (history, notes, notifications) carry dates as YYYY-MM-DD.
+ */
+export function prettyDates(text: string): string {
+  return text.replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, (m) => formatDate(m));
+}

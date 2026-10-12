@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { DataQuality, Issue } from '@pi/contracts';
 import { formatPercent } from '../../lib/format';
+import { prettyDates } from '../../lib/shop-time';
 
 type Tone = 'success' | 'caution' | 'neutral' | 'critical' | 'warning' | 'info';
 
@@ -89,7 +90,7 @@ function IssueItem({ issue }: { issue: Issue }) {
         <s-badge tone={SEVERITY_TONE[issue.severity]}>{SEVERITY_LABEL[issue.severity]}</s-badge>
         <s-text type="strong">{issue.title}</s-text>
       </s-stack>
-      <s-text color="subdued">{issue.detail}</s-text>
+      <s-text color="subdued">{prettyDates(issue.detail)}</s-text>
       <s-link href={issue.action.href}>{issue.action.label}</s-link>
     </s-stack>
   );

@@ -14,6 +14,7 @@ import { ProfitBreakdown } from './ProfitBreakdown';
 import { TrendSection } from './TrendCard';
 import { WhatChangedCard } from './WhatChangedCard';
 import { DateField } from '../common/DateField';
+import { prettyDates } from '../../lib/shop-time';
 
 export interface Filters {
   preset: PeriodPreset;
@@ -142,7 +143,7 @@ export function OverviewView({
                 : 'info'
           }
         >
-          <s-paragraph>{`${freshness.badge}. ${freshness.detail}`}</s-paragraph>
+          <s-paragraph>{prettyDates(`${freshness.badge}. ${freshness.detail}`)}</s-paragraph>
         </s-banner>
       )}
       {empty ? (

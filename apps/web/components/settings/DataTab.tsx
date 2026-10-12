@@ -10,7 +10,7 @@ import { SyncNotice } from '../sync/SyncNotice';
 import { SyncSection } from '../sync/SyncSection';
 import { useSyncStatus } from '../sync/useSyncStatus';
 import { FormError, useAction, FormActions } from './shared';
-import { formatDateTime } from '../../lib/shop-time';
+import { formatDateTime, prettyDates } from '../../lib/shop-time';
 
 export function DataTab({ reloadKey }: { reloadKey: number }) {
   const sync = useSyncStatus();
@@ -218,7 +218,7 @@ function History({ reloadKey }: { reloadKey: number }) {
               <s-table-row key={r.id}>
                 <s-table-cell>{formatDateTime(r.createdAt)}</s-table-cell>
                 <s-table-cell>{r.actor.replace('shopify-user:', 'User ')}</s-table-cell>
-                <s-table-cell>{r.summary}</s-table-cell>
+                <s-table-cell>{prettyDates(r.summary)}</s-table-cell>
               </s-table-row>
             ))}
           </s-table-body>
