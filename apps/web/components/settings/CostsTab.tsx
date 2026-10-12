@@ -84,15 +84,10 @@ export function CostsTab({
   if (focused) {
     return (
       <>
-        {justSaved && <ApplyBanner onDone={() => setJustSaved(false)} />}
         {error && <ErrorBanner message={error} onRetry={() => void reload()} />}
         {loading && !data && <Loading what="product" />}
         {justSaved ? (
-          <FormActions>
-            <s-button variant="primary" onClick={onClose}>
-              Done
-            </s-button>
-          </FormActions>
+          <ApplyBanner onDone={() => onClose?.()} />
         ) : selected && data ? (
           <s-stack gap="base">
             {matches.length > 1 && (
@@ -314,38 +309,41 @@ export function CostsTab({
   );
 }
 
-function ApplyBanner({ onDone }: { onDone: () => void }) {
+function ApplyBanner({
+  onDone,
+  doneLabel = 'Not now',
+}: {
+  onDone: () => void;
+  doneLabel?: string;
+}) {
   const { busy, error, run } = useAction();
   const [done, setDone] = useState(false);
   return (
-    <s-banner tone="success" heading="Cost saved">
-      <s-stack gap="small">
+    <s-stack gap="base">
+      <s-banner tone="success" heading="Cost saved">
         <s-paragraph>
-          New orders use it straight away. To fill in existing orders that had no cost, apply it
-          now. Costs already used on past orders stay as they are.
+          {done
+            ? 'Started. Figures on the screen update in a minute or two.'
+            : 'New orders use it straight away. Orders already calculated keep their figures until you apply the cost to them, which fills in the ones that had no cost. Costs already used on past orders stay as they are.'}
         </s-paragraph>
-        <FormError message={error} />
-        {done ? (
-          <s-text>Started. Figures update in a minute or two.</s-text>
-        ) : (
-          <s-stack direction="inline" gap="small">
-            <s-button
-              variant="primary"
-              disabled={busy}
-              onClick={async () => {
-                if (await run(() => apiPost('/settings/recalculate', { mode: 'fill_gaps' })))
-                  setDone(true);
-              }}
-            >
-              Apply to existing orders
-            </s-button>
-            <s-button variant="tertiary" onClick={onDone}>
-              Not now
-            </s-button>
-          </s-stack>
+      </s-banner>
+      <FormError message={error} />
+      <FormActions>
+        <s-button onClick={onDone}>{done ? 'Done' : doneLabel}</s-button>
+        {!done && (
+          <s-button
+            variant="primary"
+            disabled={busy}
+            onClick={async () => {
+              if (await run(() => apiPost('/settings/recalculate', { mode: 'fill_gaps' })))
+                setDone(true);
+            }}
+          >
+            Apply to existing orders
+          </s-button>
         )}
-      </s-stack>
-    </s-banner>
+      </FormActions>
+    </s-stack>
   );
 }
 
