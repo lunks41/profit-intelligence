@@ -25,7 +25,7 @@ export function KpiCards({ data }: { data: OverviewResponse }) {
 
   return (
     <s-stack gap="small">
-      <s-grid gridTemplateColumns="repeat(auto-fit, minmax(15rem, 1fr))" gap="base">
+      <s-grid gridTemplateColumns="repeat(auto-fit, minmax(15rem, 1fr))" gap="small">
         <Kpi
           icon="cart"
           label="Revenue"

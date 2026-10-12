@@ -61,7 +61,7 @@ export function StatCard({
 /** The row of StatCards at the top of a screen. */
 export function StatGrid({ children, minWidth = 200 }: { children: ReactNode; minWidth?: number }) {
   return (
-    <s-grid gridTemplateColumns={`repeat(auto-fit, minmax(${minWidth / 16}rem, 1fr))`} gap="base">
+    <s-grid gridTemplateColumns={`repeat(auto-fit, minmax(${minWidth / 16}rem, 1fr))`} gap="small">
       {children}
     </s-grid>
   );

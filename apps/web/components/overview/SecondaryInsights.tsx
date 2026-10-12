@@ -113,7 +113,7 @@ export function SecondaryInsights({ data, query }: { data: OverviewResponse; que
     <s-stack gap="base">
       <ProductTable heading="Lowest-profit products" state={lowest} currency={cur} showQuality />
       <s-section heading="Supporting metrics">
-        <s-grid gridTemplateColumns="repeat(auto-fit, minmax(13.75rem, 1fr))" gap="base">
+        <s-grid gridTemplateColumns="repeat(auto-fit, minmax(13.75rem, 1fr))" gap="small">
           <Metric
             label="Orders"
             value={formatCount(s.orders)}

@@ -32,7 +32,7 @@ export function ExpensesSummaryCard({ data }: { data: OverviewResponse }) {
 
   const profit = s.estimatedOperatingProfit;
   return (
-    <s-grid gridTemplateColumns="repeat(auto-fit, minmax(15rem, 1fr))" gap="base">
+    <s-grid gridTemplateColumns="repeat(auto-fit, minmax(15rem, 1fr))" gap="small">
       <Kpi
         icon="wallet"
         label="Operating expenses"

@@ -200,7 +200,7 @@ export function OverviewSkeleton() {
       <s-text color="subdued" accessibilityVisibility="exclusive">
         Loading your profit overview…
       </s-text>
-      <s-grid gridTemplateColumns="repeat(auto-fit, minmax(13.75rem, 1fr))" gap="base">
+      <s-grid gridTemplateColumns="repeat(auto-fit, minmax(13.75rem, 1fr))" gap="small">
         {['Revenue', 'Costs', 'Contribution profit', 'Contribution margin'].map((label) => (
           <s-section key={label}>
             <s-stack gap="small-300">

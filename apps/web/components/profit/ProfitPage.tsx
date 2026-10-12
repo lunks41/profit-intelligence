@@ -144,7 +144,7 @@ function Kpis({ data }: { data: OverviewResponse }) {
   const cur = data.currency.code;
   const spark = sparkSeries(data.trend);
   return (
-    <s-grid gridTemplateColumns="repeat(auto-fit, minmax(15rem, 1fr))" gap="base">
+    <s-grid gridTemplateColumns="repeat(auto-fit, minmax(15rem, 1fr))" gap="small">
       <Kpi
         icon="cart"
         label="Revenue"

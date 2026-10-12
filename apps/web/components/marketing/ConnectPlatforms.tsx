@@ -109,7 +109,7 @@ export function ConnectPlatforms({
         />
       ))}
       <FormError message={start.error ?? disconnect.error} />
-      <s-grid gridTemplateColumns="repeat(auto-fit, minmax(16rem, 1fr))" gap="base">
+      <s-grid gridTemplateColumns="repeat(auto-fit, minmax(16rem, 1fr))" gap="small">
         {PLATFORMS.map((id) => {
           const info = providers.providers.find((p) => p.id === id);
           const mine = data.accounts.filter(

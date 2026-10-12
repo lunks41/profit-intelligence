@@ -123,7 +123,7 @@ function Summary({
           </s-paragraph>
         </s-banner>
       )}
-      <s-grid gridTemplateColumns="repeat(auto-fit, minmax(15rem, 1fr))" gap="base">
+      <s-grid gridTemplateColumns="repeat(auto-fit, minmax(15rem, 1fr))" gap="small">
         <Kpi
           icon="wallet"
           label="Expenses this month"

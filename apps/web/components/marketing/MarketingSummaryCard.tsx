@@ -45,7 +45,7 @@ export function MarketingSummaryCard({
   const spark = data.daily.map((d) => Number(d.spend));
   return (
     <s-stack gap="small">
-      <s-grid gridTemplateColumns="repeat(auto-fit, minmax(15rem, 1fr))" gap="base">
+      <s-grid gridTemplateColumns="repeat(auto-fit, minmax(15rem, 1fr))" gap="small">
         <Kpi
           icon="receipt"
           label="Ad spend"
