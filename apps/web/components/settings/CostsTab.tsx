@@ -11,6 +11,8 @@ import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormError, Saved, isAmount, todayLocal, useAction } from './shared';
 import { readParam } from '../../lib/url-params';
 
+const ALL = 'all-variants';
+
 const QUALITY = {
   actual: { label: 'Entered by you', tone: 'success' },
   estimated: { label: 'Shopify cost (estimate)', tone: 'caution' },
@@ -42,6 +44,7 @@ export function CostsTab({
   const [justSaved, setJustSaved] = useState(false);
   // opened from one product's Set cost button: show that product's form, not the whole list
   const [focused, setFocused] = useState(initialSearch !== '');
+  const [allVariants, setAllVariants] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -94,23 +97,29 @@ export function CostsTab({
             {matches.length > 1 && (
               <Dropdown
                 label="Variant"
-                value={String(selected.variantShopifyId)}
-                options={matches.map((r) => ({
-                  value: String(r.variantShopifyId),
-                  label: `${r.variantTitle || 'Default'} (${
-                    (r.merchantCost?.amount ?? r.shopifyCost)
-                      ? formatMoney((r.merchantCost?.amount ?? r.shopifyCost)!, data.currency)
-                      : 'no cost'
-                  })`,
-                }))}
-                onChange={(v) =>
-                  setSelected(matches.find((r) => String(r.variantShopifyId) === v) ?? selected)
-                }
+                value={allVariants ? ALL : String(selected.variantShopifyId)}
+                options={[
+                  { value: ALL, label: `All ${matches.length} variants (one cost for all)` },
+                  ...matches.map((r) => ({
+                    value: String(r.variantShopifyId),
+                    label: `${r.variantTitle || 'Default'} (${
+                      (r.merchantCost?.amount ?? r.shopifyCost)
+                        ? formatMoney((r.merchantCost?.amount ?? r.shopifyCost)!, data.currency)
+                        : 'no cost'
+                    })`,
+                  })),
+                ]}
+                onChange={(v) => {
+                  setAllVariants(v === ALL);
+                  if (v !== ALL)
+                    setSelected(matches.find((r) => String(r.variantShopifyId) === v) ?? selected);
+                }}
               />
             )}
             <CostEditor
-              key={selected.variantShopifyId}
+              key={allVariants ? ALL : selected.variantShopifyId}
               row={selected}
+              allIds={allVariants ? matches.map((r) => r.variantShopifyId) : undefined}
               currency={data.currency}
               onSaved={saved}
               onCancel={() => onClose?.()}
@@ -341,16 +350,21 @@ function ApplyBanner({ onDone }: { onDone: () => void }) {
 
 function CostEditor({
   row,
+  allIds,
   currency,
   onSaved,
   onCancel,
 }: {
   row: CostRow;
+  /** set when one cost is saved for every variant of the product */
+  allIds?: string[];
   currency: string;
   onSaved: () => void;
   onCancel: () => void;
 }) {
-  const [amount, setAmount] = useState(row.merchantCost?.amount.replace(/\.?0+$/, '') ?? '');
+  const [amount, setAmount] = useState(
+    allIds ? '' : (row.merchantCost?.amount.replace(/\.?0+$/, '') ?? ''),
+  );
   const [from, setFrom] = useState(todayLocal());
   const [reason, setReason] = useState('');
   const [touched, setTouched] = useState(false);
@@ -375,40 +389,66 @@ function CostEditor({
     setTouched(true);
     if (!amountOk || !dateOk) return;
     const ok = await run(() =>
-      apiPut(`/settings/costs/${row.variantShopifyId}`, {
-        amount: amount.trim(),
-        effectiveFrom: from,
-        ...(reason.trim() ? { reason: reason.trim() } : {}),
-      }),
+      allIds
+        ? apiPost('/settings/costs/bulk', {
+            amount: amount.trim(),
+            effectiveFrom: from,
+            by: 'variants',
+            value: allIds.join(','),
+          })
+        : apiPut(`/settings/costs/${row.variantShopifyId}`, {
+            amount: amount.trim(),
+            effectiveFrom: from,
+            ...(reason.trim() ? { reason: reason.trim() } : {}),
+          }),
     );
     if (ok) onSaved();
   }
 
   return (
-    <s-section heading={`Cost for ${row.productTitle}`}>
+    <s-section
+      heading={
+        allIds
+          ? `Cost for all ${allIds.length} variants of ${row.productTitle}`
+          : `Cost for ${row.productTitle}`
+      }
+    >
       <s-stack gap="base">
-        <s-text color="subdued">
-          Price {formatMoney(row.price, currency)}
-          {row.shopifyCost !== null
-            ? ` · Shopify cost ${formatMoney(row.shopifyCost, currency)}`
-            : ''}
-        </s-text>
-        <s-banner
-          tone={row.merchantCost ? 'info' : row.quality === 'estimated' ? 'warning' : 'critical'}
-          heading={
-            row.merchantCost
-              ? `Current cost ${formatMoney(row.merchantCost.amount, currency)} (entered by you)`
-              : row.quality === 'estimated'
-                ? 'No cost entered: Shopify\u2019s cost is used as an estimate'
-                : 'No cost yet: profit for this product is overstated'
-          }
-        >
-          <s-paragraph>
-            {row.merchantCost
-              ? `Applies from ${longDate(row.merchantCost.effectiveFrom)}. Saving a new cost adds it to the history from the date you choose; it never rewrites earlier orders.`
-              : 'A missing cost is never treated as zero. Enter the cost per unit in US dollars (USD).'}
-          </s-paragraph>
-        </s-banner>
+        {allIds && (
+          <s-banner tone="info" heading={`One cost for all ${allIds.length} variants`}>
+            <s-paragraph>
+              The cost you enter is saved for every variant of this product, from the date you
+              choose. Variants that already have a cost get a new entry in their history; earlier
+              orders keep the cost they used. Use the variant list to set one variant on its own.
+            </s-paragraph>
+          </s-banner>
+        )}
+        {!allIds && (
+          <s-text color="subdued">
+            Price {formatMoney(row.price, currency)}
+            {row.shopifyCost !== null
+              ? ` · Shopify cost ${formatMoney(row.shopifyCost, currency)}`
+              : ''}
+          </s-text>
+        )}
+        {!allIds && (
+          <s-banner
+            tone={row.merchantCost ? 'info' : row.quality === 'estimated' ? 'warning' : 'critical'}
+            heading={
+              row.merchantCost
+                ? `Current cost ${formatMoney(row.merchantCost.amount, currency)} (entered by you)`
+                : row.quality === 'estimated'
+                  ? 'No cost entered: Shopify\u2019s cost is used as an estimate'
+                  : 'No cost yet: profit for this product is overstated'
+            }
+          >
+            <s-paragraph>
+              {row.merchantCost
+                ? `Applies from ${longDate(row.merchantCost.effectiveFrom)}. Saving a new cost adds it to the history from the date you choose; it never rewrites earlier orders.`
+                : 'A missing cost is never treated as zero. Enter the cost per unit in US dollars (USD).'}
+            </s-paragraph>
+          </s-banner>
+        )}
         <s-grid
           gridTemplateColumns="repeat(auto-fit, minmax(10.625rem, 1fr))"
           gap="base"
@@ -444,7 +484,7 @@ function CostEditor({
           <s-button onClick={onCancel}>Cancel</s-button>
         </s-stack>
 
-        {history && history.rows.length > 0 && (
+        {!allIds && history && history.rows.length > 0 && (
           <s-stack gap="small">
             <s-text type="strong">History</s-text>
             <s-table>
