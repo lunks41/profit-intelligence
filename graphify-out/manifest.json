@@ -524,12 +524,12 @@
     "hash": "89ae2266fe1ca89d0dcfb3b5ef36863a"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\ConnectionStatus.tsx": {
-    "mtime": 1791791027.3478642,
-    "hash": "c27ef3fac29c0d9156fa5e231f795bd2"
+    "mtime": 1791825040.2035182,
+    "hash": "b84a618b49813d2b71f2dd7d8c22a7eb"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\GetStarted.tsx": {
-    "mtime": 1791744229.943812,
-    "hash": "eef1d53b3e2966986629cd09e8907836"
+    "mtime": 1791825087.659718,
+    "hash": "02023a84ac022472bd93b8b01587b7b6"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\NotificationPanel.tsx": {
     "mtime": 1791804820.0003762,
@@ -538,6 +538,14 @@
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\PageBody.tsx": {
     "mtime": 1791784468.2728078,
     "hash": "9c32eaec38513bfdf03c5d81a12f1818"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\SetupGuide.test.tsx": {
+    "mtime": 1791825127.7148924,
+    "hash": "999b2da575f117f88a3c5612a7856baa"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\SetupGuide.tsx": {
+    "mtime": 1791825146.1515112,
+    "hash": "8d550eb3cb8ec57d176119e625ddb462"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\ShopTimeZone.tsx": {
     "mtime": 1791784671.1021323,
@@ -559,9 +567,9 @@
     "mtime": 1791793767.4271355,
     "hash": "afbc2089ea969f1fb3d1a5632d9b2a8f"
   },
-  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\common\\GradientTile.tsx": {
-    "mtime": 1791813508.9050217,
-    "hash": "4b2a6e4eae6ed88f6b645d676cb9392b"
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\common\\FigureTile.tsx": {
+    "mtime": 1791813905.534733,
+    "hash": "8bbc06436db0e4767273f3532ee18572"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\common\\index.ts": {
     "mtime": 1791568231.668765,
@@ -708,8 +716,8 @@
     "hash": "eee8a72f4a798c61603a3bc1ab8c8b71"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\KpiCards.tsx": {
-    "mtime": 1791813493.2515795,
-    "hash": "9e29f8bcddefa561807944d0e20272b6"
+    "mtime": 1791813905.725789,
+    "hash": "400fa2bd51f466ef136c0c6611b706ad"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\MoneyFlow.tsx": {
     "mtime": 1791813509.3164372,
@@ -728,8 +736,8 @@
     "hash": "3db20a2cb2a64b2f643be2d5f9004085"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\OverviewTop.tsx": {
-    "mtime": 1791813580.0889683,
-    "hash": "0005b6498b74281154d87c279df608dc"
+    "mtime": 1791813921.4659505,
+    "hash": "8c4f836b5fb768dd2289cd82f02bbdc2"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\OverviewView.tsx": {
     "mtime": 1791813549.8970785,
@@ -1952,8 +1960,8 @@
     "hash": "b77e287a1f70ba45f37818e567a623d7"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\roadmap.md": {
-    "mtime": 1791812250.9867594,
-    "hash": "910a776a9f1fa8b90b209a4557f9fdbb"
+    "mtime": 1791825213.7559555,
+    "hash": "da1c5e87a02d19fbcdf4c86787b23720"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\architecture\\billing.md": {
     "mtime": 1791549276.7097468,

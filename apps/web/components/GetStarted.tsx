@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { SessionResponse } from '@pi/contracts';
+import { SetupGuide } from './SetupGuide';
 import { Notice } from './notices/Notice';
 
 type Step = SessionResponse['onboarding']['steps'][number];
 
 const DISMISS_KEY = 'pi-setup-dismissed';
+const GUIDE_KEY = 'pi-guide-seen';
 
 /**
  * The setup card at the top of the Overview. While a required step is open it shows the progress and the next
@@ -14,8 +16,10 @@ const DISMISS_KEY = 'pi-setup-dismissed';
  * required steps are done it stays only for the optional ones, such as connecting the ad platforms, and the
  * merchant can say "Not now". It is gone when everything is done.
  */
-export function GetStarted({ steps }: { steps: Step[] }) {
+export function GetStarted({ steps, onChanged }: { steps: Step[]; onChanged?: () => void }) {
   const [open, setOpen] = useState(false);
+  const [guide, setGuide] = useState(false);
+  const offered = useRef(false);
   const [dismissed, setDismissed] = useState(false);
   useEffect(() => {
     try {
@@ -25,6 +29,22 @@ export function GetStarted({ steps }: { steps: Step[] }) {
     }
   }, []);
 
+  // the first time, while a required step is open, the guide is offered once; closing it loses nothing
+  useEffect(() => {
+    if (offered.current) return;
+    try {
+      if (
+        window.localStorage.getItem(GUIDE_KEY) !== '1' &&
+        steps.some((s) => !s.optional && s.status === 'pending' && s.id !== 'import_orders')
+      ) {
+        offered.current = true;
+        setGuide(true);
+      }
+    } catch {
+      // no storage: the card still has the button
+    }
+  }, [steps]);
+
   const required = steps.filter((s) => !s.optional);
   const done = required.filter((s) => s.status === 'done').length;
   const pendingRequired = required.filter((s) => s.status === 'pending');
@@ -32,9 +52,23 @@ export function GetStarted({ steps }: { steps: Step[] }) {
     ...pendingRequired,
     ...steps.filter((s) => s.optional && s.status === 'pending'),
   ];
-  if (pending.length === 0) return null;
+  const guideEl = guide && (
+    <SetupGuide
+      steps={steps}
+      onChanged={() => onChanged?.()}
+      onClose={() => {
+        setGuide(false);
+        try {
+          window.localStorage.setItem(GUIDE_KEY, '1');
+        } catch {
+          // not remembered
+        }
+      }}
+    />
+  );
+  if (pending.length === 0) return guideEl || null;
   const onlyOptional = pendingRequired.length === 0;
-  if (onlyOptional && dismissed) return null;
+  if (onlyOptional && dismissed) return guideEl || null;
   const next = pending.slice(0, 2);
 
   return (
@@ -50,6 +84,9 @@ export function GetStarted({ steps }: { steps: Step[] }) {
           {step.href && <s-link href={step.href}>Open</s-link>}
         </s-text>
       ))}
+      <s-button variant="primary" onClick={() => setGuide(true)}>
+        Guided setup
+      </s-button>
       <s-button variant="tertiary" onClick={() => setOpen((v) => !v)}>
         {open ? 'Hide steps' : 'Show all steps'}
       </s-button>
@@ -85,6 +122,7 @@ export function GetStarted({ steps }: { steps: Step[] }) {
           </s-stack>
         </div>
       )}
+      {guideEl}
     </Notice>
   );
 }

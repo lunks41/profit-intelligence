@@ -14,6 +14,7 @@ type State =
 
 export function ConnectionStatus({ setup = false }: { setup?: boolean }) {
   const [state, setState] = useState<State>({ kind: 'loading' });
+  const [version, setVersion] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -35,7 +36,7 @@ export function ConnectionStatus({ setup = false }: { setup?: boolean }) {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, []);
+  }, [version]);
 
   // nothing while connecting: a notice that flashes in and out would push the page around
   if (state.kind === 'loading') return null;
@@ -72,7 +73,12 @@ export function ConnectionStatus({ setup = false }: { setup?: boolean }) {
           <s-link href="/settings?tab=currency">How the conversion works</s-link>
         </Notice>
       )}
-      {setup && <GetStarted steps={state.session.onboarding.steps} />}
+      {setup && (
+        <GetStarted
+          steps={state.session.onboarding.steps}
+          onChanged={() => setVersion((v) => v + 1)}
+        />
+      )}
     </>
   );
 }
