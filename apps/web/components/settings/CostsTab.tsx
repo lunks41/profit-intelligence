@@ -67,7 +67,7 @@ export function CostsTab({
       : data.rows
     : [];
   useEffect(() => {
-    if (focused && !selected && !justSaved && matches.length === 1) setSelected(matches[0]!);
+    if (focused && !selected && !justSaved && matches.length > 0) setSelected(matches[0]!);
   }, [focused, selected, justSaved, matches]);
 
   function saved() {
@@ -90,12 +90,32 @@ export function CostsTab({
             </s-button>
           </div>
         ) : selected && data ? (
-          <CostEditor
-            row={selected}
-            currency={data.currency}
-            onSaved={saved}
-            onCancel={() => (matches.length > 1 ? setSelected(null) : onClose?.())}
-          />
+          <>
+            {matches.length > 1 && (
+              <Dropdown
+                label="Variant"
+                value={String(selected.variantShopifyId)}
+                options={matches.map((r) => ({
+                  value: String(r.variantShopifyId),
+                  label: `${r.variantTitle || 'Default'} (${
+                    (r.merchantCost?.amount ?? r.shopifyCost)
+                      ? formatMoney((r.merchantCost?.amount ?? r.shopifyCost)!, data.currency)
+                      : 'no cost'
+                  })`,
+                }))}
+                onChange={(v) =>
+                  setSelected(matches.find((r) => String(r.variantShopifyId) === v) ?? selected)
+                }
+              />
+            )}
+            <CostEditor
+              key={selected.variantShopifyId}
+              row={selected}
+              currency={data.currency}
+              onSaved={saved}
+              onCancel={() => onClose?.()}
+            />
+          </>
         ) : (
           data && (
             <s-section heading={initialSearch}>
