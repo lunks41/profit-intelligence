@@ -11,7 +11,7 @@ import { apiDelete, apiPost } from '../../lib/api';
 import { formatMoney, longDate } from '../../lib/format';
 import { readParam } from '../../lib/url-params';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
-import { FormError, useAction } from '../settings/shared';
+import { FormError, useAction, FormActions } from '../settings/shared';
 
 const PLATFORMS = ['meta', 'google', 'tiktok'] as const;
 type Platform = (typeof PLATFORMS)[number];
@@ -233,7 +233,17 @@ function Choose({
           />
         ))}
         <FormError message={save.error ?? cancel.error} />
-        <s-stack direction="inline" gap="small">
+        <FormActions>
+          <s-button
+            variant="tertiary"
+            disabled={cancel.busy}
+            onClick={async () => {
+              if (await cancel.run(() => apiDelete(`/marketing/connections/${connection.id}`)))
+                onDone();
+            }}
+          >
+            Cancel
+          </s-button>
           <s-button
             variant="primary"
             disabled={save.busy || picked.length === 0}
@@ -250,17 +260,7 @@ function Choose({
           >
             Connect {picked.length || ''} {picked.length === 1 ? 'account' : 'accounts'}
           </s-button>
-          <s-button
-            variant="tertiary"
-            disabled={cancel.busy}
-            onClick={async () => {
-              if (await cancel.run(() => apiDelete(`/marketing/connections/${connection.id}`)))
-                onDone();
-            }}
-          >
-            Cancel
-          </s-button>
-        </s-stack>
+        </FormActions>
       </s-stack>
     </s-banner>
   );

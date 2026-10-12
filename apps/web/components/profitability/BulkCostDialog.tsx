@@ -4,7 +4,7 @@ import { useRef, useState } from 'react';
 import { apiGet, apiPost } from '../../lib/api';
 import { downloadText, importSummaryCsv } from '../../lib/import-summary';
 import { Dropdown } from '../dropdown';
-import { FormError, isAmount, todayLocal, useAction } from '../settings/shared';
+import { FormError, isAmount, todayLocal, useAction, FormActions } from '../settings/shared';
 
 type Tab = 'import' | 'edit' | 'export';
 type Preview = { matched: number; skipped: number; invalid: number; messages: string[] };
@@ -173,11 +173,11 @@ function ImportTab({ onSaved }: { onSaved: () => void }) {
       <s-text color="subdued">
         Nothing is saved until you confirm. Earlier orders keep the cost they used.
       </s-text>
-      <div>
+      <FormActions>
         <s-button variant="primary" disabled={busy || !ready} onClick={() => void confirm()}>
           {ready ? `Import ${preview!.matched} costs` : 'Import costs'}
         </s-button>
-      </div>
+      </FormActions>
       {imported && (
         <s-banner tone="success" heading="Costs imported">
           <s-paragraph>
@@ -275,11 +275,11 @@ function EditTab({ onSaved }: { onSaved: () => void }) {
         />
       </s-grid>
       <FormError message={error} />
-      <div>
+      <FormActions>
         <s-button variant="primary" disabled={busy} onClick={() => void apply()}>
           Apply cost
         </s-button>
-      </div>
+      </FormActions>
       {done && (
         <s-banner tone="success" heading="Cost applied">
           <s-paragraph>
@@ -300,7 +300,7 @@ function ExportTab() {
         date it applies from. The same file works as the import template.
       </s-text>
       <FormError message={catalogue.error} />
-      <div>
+      <FormActions>
         <s-button
           variant="primary"
           disabled={catalogue.busy}
@@ -308,7 +308,7 @@ function ExportTab() {
         >
           Export costs
         </s-button>
-      </div>
+      </FormActions>
     </s-stack>
   );
 }

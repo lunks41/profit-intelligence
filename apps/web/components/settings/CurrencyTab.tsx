@@ -11,7 +11,7 @@ import { longDate } from '../../lib/format';
 import { Dropdown } from '../dropdown';
 import { CategoriesSection } from '../expenses/CategoriesSection';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
-import { FormError, useAction } from './shared';
+import { FormError, useAction, FormActions } from './shared';
 
 const RATE_STATUS: Record<CurrencySettingsResponse['rateStatus'], string> = {
   missing:
@@ -152,7 +152,7 @@ function ExpenseDefaults() {
         />
         <FormError message={error} />
         {saved && <s-text color="subdued">Saved.</s-text>}
-        <div>
+        <FormActions>
           <s-button
             variant="primary"
             disabled={busy || value === stored}
@@ -174,7 +174,7 @@ function ExpenseDefaults() {
           >
             Save default
           </s-button>
-        </div>
+        </FormActions>
       </s-stack>
     </s-section>
   );

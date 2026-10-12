@@ -8,7 +8,7 @@ import { apiDelete, apiGet, apiPost } from '../../lib/api';
 import { downloadText, importSummaryCsv } from '../../lib/import-summary';
 import { formatMoney, longDate } from '../../lib/format';
 import { CoverageSummary, RuleCheck } from './RuleCoverage';
-import { FormError, isAmount, isPercent, todayLocal, useAction } from './shared';
+import { FormError, isAmount, isPercent, todayLocal, useAction, FormActions } from './shared';
 
 type Reload = () => void;
 
@@ -157,11 +157,11 @@ export function FeesTab({ rules, onChanged }: { rules: RulesResponse; onChanged:
                 : null
             }
           />
-          <div>
+          <FormActions>
             <s-button variant="primary" disabled={busy} onClick={() => void add()}>
               Add rule
             </s-button>
-          </div>
+          </FormActions>
           <s-text color="subdued">
             A rule for a specific gateway wins over the all-gateways rule. {RECALC_NOTE}
           </s-text>
@@ -433,11 +433,11 @@ export function ShippingTab({ rules, onChanged }: { rules: RulesResponse; onChan
                 : null
             }
           />
-          <div>
+          <FormActions>
             <s-button variant="primary" disabled={busy} onClick={() => void add()}>
               Add rule
             </s-button>
-          </div>
+          </FormActions>
           <s-text color="subdued">
             A country rule wins over a rule for every country, and a weight band wins over a rule
             with no weight. Per kilogram needs a product weight. Only orders that ship have a
@@ -482,7 +482,10 @@ export function ShippingTab({ rules, onChanged }: { rules: RulesResponse; onChan
               </s-stack>
             </s-banner>
           )}
-          <s-stack direction="inline" gap="base">
+          <FormActions>
+            <s-button variant="tertiary" disabled={busy} onClick={() => void exportCsv()}>
+              Export CSV
+            </s-button>
             <s-button disabled={busy || !csv.trim()} onClick={() => void previewCsv()}>
               Preview
             </s-button>
@@ -495,10 +498,7 @@ export function ShippingTab({ rules, onChanged }: { rules: RulesResponse; onChan
             >
               Import CSV
             </s-button>
-            <s-button variant="tertiary" disabled={busy} onClick={() => void exportCsv()}>
-              Export CSV
-            </s-button>
-          </s-stack>
+          </FormActions>
         </s-stack>
       </s-section>
     </>

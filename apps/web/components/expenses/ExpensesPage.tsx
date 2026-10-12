@@ -17,7 +17,7 @@ import { CLASS_LABEL, overlapWarning } from '../../lib/expense-class';
 import { formatMoney, formatPercent, longDate } from '../../lib/format';
 import { SampleBars } from '../preview/ui';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
-import { FormError, isAmount, todayLocal, useAction } from '../settings/shared';
+import { FormError, isAmount, todayLocal, useAction, FormActions } from '../settings/shared';
 import { Kpi } from '../common/kpi';
 
 type Tab = 'all' | 'recurring' | 'categories' | 'history';
@@ -358,11 +358,11 @@ function AddExpense({
           </s-text>
         )}
         <FormError message={error} />
-        <div>
+        <FormActions>
           <s-button variant="primary" disabled={busy} onClick={() => void save()}>
             Save expense
           </s-button>
-        </div>
+        </FormActions>
       </s-stack>
     </s-section>
   );
@@ -654,7 +654,7 @@ function Manage({
           </s-text>
         )}
         <FormError message={change.error} />
-        <div>
+        <FormActions>
           <s-button
             variant="primary"
             disabled={change.busy || !amountOk}
@@ -680,7 +680,7 @@ function Manage({
           >
             Save change
           </s-button>
-        </div>
+        </FormActions>
 
         {recurring && (
           <>
@@ -796,7 +796,8 @@ function Manage({
         </s-text>
         <FormError message={rm.error} />
         {confirmRemove ? (
-          <s-stack direction="inline" gap="small">
+          <FormActions>
+            <s-button onClick={() => setConfirmRemove(false)}>Cancel</s-button>
             <s-button
               tone="critical"
               disabled={rm.busy}
@@ -809,8 +810,7 @@ function Manage({
             >
               Yes, remove it
             </s-button>
-            <s-button onClick={() => setConfirmRemove(false)}>Cancel</s-button>
-          </s-stack>
+          </FormActions>
         ) : (
           <div>
             <s-button tone="critical" onClick={() => setConfirmRemove(true)}>

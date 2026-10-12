@@ -48,3 +48,23 @@ export const isAmount = (v: string) => /^\d{1,12}(\.\d{1,4})?$/.test(v.trim());
 export const isPercent = (v: string) => /^\d{1,3}(\.\d{1,4})?$/.test(v.trim()) && Number(v) <= 100;
 
 export const todayLocal = () => new Date().toISOString().slice(0, 10);
+
+/**
+ * The row of buttons at the foot of a form or dialog. Always at the right end, the way out (Cancel, Close,
+ * Keep it) first and the main action last, so every screen puts Save where the eye expects it.
+ */
+export function FormActions({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '0.5rem',
+      }}
+    >
+      {children}
+    </div>
+  );
+}

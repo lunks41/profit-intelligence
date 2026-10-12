@@ -13,7 +13,7 @@ import { ConnectPlatforms } from './ConnectPlatforms';
 import { FilterBar, type Filters } from '../overview/OverviewView';
 import { SampleLines } from '../preview/ui';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
-import { FormError, isAmount, todayLocal, useAction } from '../settings/shared';
+import { FormError, isAmount, todayLocal, useAction, FormActions } from '../settings/shared';
 import { StatCard, StatGrid } from '../common';
 
 const GRID = 'repeat(auto-fit, minmax(10.625rem, 1fr))';
@@ -364,7 +364,7 @@ function AddSpend({ data, onChanged }: { data: MarketingResponse; onChanged: () 
           />
         </s-grid>
         <FormError message={one.error} />
-        <div>
+        <FormActions>
           <s-button
             variant="primary"
             disabled={one.busy || !spendOk || !salesOk}
@@ -391,7 +391,7 @@ function AddSpend({ data, onChanged }: { data: MarketingResponse; onChanged: () 
           >
             Save this day
           </s-button>
-        </div>
+        </FormActions>
 
         <s-text type="strong">Or paste many days</s-text>
         <s-text color="subdued">

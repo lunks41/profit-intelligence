@@ -7,7 +7,7 @@ import type { SupportListResponse } from '@pi/contracts';
 import { apiPost } from '../../lib/api';
 import { longDate } from '../../lib/format';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
-import { FormError, useAction } from './shared';
+import { FormError, useAction, FormActions } from './shared';
 
 const GRID = 'repeat(auto-fit, minmax(13.75rem, 1fr))';
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -109,7 +109,7 @@ export function HelpTab() {
             attached automatically.
           </s-text>
           <FormError message={act.error} />
-          <div>
+          <FormActions>
             <s-button
               variant="primary"
               disabled={act.busy}
@@ -133,7 +133,7 @@ export function HelpTab() {
             >
               Send message
             </s-button>
-          </div>
+          </FormActions>
         </s-stack>
       </s-section>
 

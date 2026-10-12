@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import type { RulesResponse } from '@pi/contracts';
 import { apiPut } from '../../lib/api';
-import { FormError, useAction } from './shared';
+import { FormError, useAction, FormActions } from './shared';
 
 const GRID = 'repeat(auto-fit, minmax(13.75rem, 1fr))';
 const pct = (v: string, max: number) => /^\d{1,4}(\.\d{1,2})?$/.test(v.trim()) && Number(v) <= max;
@@ -58,7 +58,7 @@ function EmailAlerts({ rules, onChanged }: { rules: RulesResponse; onChanged: ()
             </s-paragraph>
           </s-banner>
         )}
-        <div>
+        <FormActions>
           <s-button
             variant="primary"
             disabled={busy || !!problem}
@@ -75,7 +75,7 @@ function EmailAlerts({ rules, onChanged }: { rules: RulesResponse; onChanged: ()
           >
             Save email alerts
           </s-button>
-        </div>
+        </FormActions>
       </s-stack>
     </s-section>
   );
@@ -138,7 +138,7 @@ export function AlertsTab({ rules, onChanged }: { rules: RulesResponse; onChange
               </s-paragraph>
             </s-banner>
           )}
-          <div>
+          <FormActions>
             <s-button
               variant="primary"
               disabled={busy || !ok}
@@ -160,7 +160,7 @@ export function AlertsTab({ rules, onChanged }: { rules: RulesResponse; onChange
             >
               Save limits
             </s-button>
-          </div>
+          </FormActions>
           <s-text color="subdued">
             Small samples are never judged: a margin or refund rate needs at least 10 orders, and a
             product margin at least 3 units sold.

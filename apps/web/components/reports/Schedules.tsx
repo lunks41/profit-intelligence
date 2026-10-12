@@ -7,7 +7,7 @@ import type { ScheduleRowResponse } from '@pi/contracts';
 import { apiDelete, apiPatch, apiPost } from '../../lib/api';
 import { longDate } from '../../lib/format';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
-import { FormError, useAction } from '../settings/shared';
+import { FormError, useAction, FormActions } from '../settings/shared';
 import { REPORTS } from './catalog';
 
 const GRID = 'repeat(auto-fit, minmax(10.625rem, 1fr))';
@@ -197,7 +197,7 @@ function Create({ onCreated, timezone }: { onCreated: () => void; timezone?: str
           Times use your store time zone{timezone ? ` (${timezone})` : ''}.
         </s-text>
         <FormError message={act.error} />
-        <div>
+        <FormActions>
           <s-button
             variant="primary"
             disabled={act.busy}
@@ -223,7 +223,7 @@ function Create({ onCreated, timezone }: { onCreated: () => void; timezone?: str
           >
             Add schedule
           </s-button>
-        </div>
+        </FormActions>
       </s-stack>
     </s-section>
   );

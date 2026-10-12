@@ -8,7 +8,7 @@ import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { SyncNotice } from '../sync/SyncNotice';
 import { SyncSection } from '../sync/SyncSection';
 import { useSyncStatus } from '../sync/useSyncStatus';
-import { FormError, useAction } from './shared';
+import { FormError, useAction, FormActions } from './shared';
 
 export function DataTab({ reloadKey }: { reloadKey: number }) {
   const sync = useSyncStatus();
@@ -115,7 +115,7 @@ function Recalculate() {
             <s-paragraph>Started. The result appears below when it finishes.</s-paragraph>
           </s-banner>
         ) : (
-          <div>
+          <FormActions>
             <s-button
               variant="primary"
               disabled={fill.busy}
@@ -131,7 +131,7 @@ function Recalculate() {
             >
               Apply to existing orders
             </s-button>
-          </div>
+          </FormActions>
         )}
 
         <s-text type="strong">Recalculate everything</s-text>
@@ -149,7 +149,8 @@ function Recalculate() {
           <s-banner tone="warning" heading="Change past figures?">
             <s-stack gap="small">
               <s-paragraph>Profit for past periods may change. This cannot be undone.</s-paragraph>
-              <s-stack direction="inline" gap="small">
+              <FormActions>
+                <s-button onClick={() => setConfirming(false)}>Cancel</s-button>
                 <s-button
                   tone="critical"
                   disabled={all.busy}
@@ -168,8 +169,7 @@ function Recalculate() {
                 >
                   Yes, recalculate everything
                 </s-button>
-                <s-button onClick={() => setConfirming(false)}>Cancel</s-button>
-              </s-stack>
+              </FormActions>
             </s-stack>
           </s-banner>
         ) : (

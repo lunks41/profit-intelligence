@@ -8,7 +8,7 @@ import { apiDelete, apiGet, apiPost, apiPut } from '../../lib/api';
 
 import { formatMoney, longDate } from '../../lib/format';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
-import { FormError, Saved, isAmount, todayLocal, useAction } from './shared';
+import { FormError, Saved, isAmount, todayLocal, useAction, FormActions } from './shared';
 import { readParam } from '../../lib/url-params';
 
 const ALL = 'all-variants';
@@ -87,13 +87,13 @@ export function CostsTab({
         {error && <ErrorBanner message={error} onRetry={() => void reload()} />}
         {loading && !data && <Loading what="product" />}
         {justSaved ? (
-          <div>
+          <FormActions>
             <s-button variant="primary" onClick={onClose}>
               Done
             </s-button>
-          </div>
+          </FormActions>
         ) : selected && data ? (
-          <>
+          <s-stack gap="base">
             {matches.length > 1 && (
               <Dropdown
                 label="Variant"
@@ -124,7 +124,7 @@ export function CostsTab({
               onSaved={saved}
               onCancel={() => onClose?.()}
             />
-          </>
+          </s-stack>
         ) : (
           data && (
             <s-section heading={initialSearch}>
@@ -477,12 +477,12 @@ function CostEditor({
           day.
         </s-text>
         <FormError message={error} />
-        <s-stack direction="inline" gap="small">
+        <FormActions>
+          <s-button onClick={onCancel}>Cancel</s-button>
           <s-button variant="primary" disabled={busy} onClick={() => void save()}>
             Save cost
           </s-button>
-          <s-button onClick={onCancel}>Cancel</s-button>
-        </s-stack>
+        </FormActions>
 
         {!allIds && history && history.rows.length > 0 && (
           <s-stack gap="small">
