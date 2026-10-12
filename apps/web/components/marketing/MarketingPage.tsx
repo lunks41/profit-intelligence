@@ -173,17 +173,42 @@ function Campaigns({ data, onChanged }: { data: MarketingResponse; onChanged: ()
   // the spend of a hand-entered account can be corrected or removed; an imported one comes from the platform
   const [editing, setEditing] = useState<CampaignRow | null>(null);
   const [removing, setRemoving] = useState<CampaignRow | null>(null);
+  const [entering, setEntering] = useState(false);
   const manual = new Set(data.accounts.filter((a) => a.provider === 'manual').map((a) => a.id));
   const anyEditable = data.campaigns.some((c) => manual.has(c.accountId));
+  // spend typed in by hand: the button is here, beside the campaigns it adds to
+  const header = (
+    <CardHeader
+      title="Campaigns"
+      action={
+        <s-button variant="primary" disabled={manual.size === 0} onClick={() => setEntering(true)}>
+          Enter spend
+        </s-button>
+      }
+    />
+  );
+  const enterDialog = entering && (
+    <Modal heading="Enter spend" onClose={() => setEntering(false)}>
+      <AddSpend data={data} onChanged={onChanged} onClose={() => setEntering(false)} />
+    </Modal>
+  );
   if (data.campaigns.length === 0) {
     return (
-      <s-section heading="Campaigns">
-        <s-text color="subdued">No campaign spend in this period.</s-text>
+      <s-section>
+        <s-stack gap="small">
+          {header}
+          <s-text color="subdued">
+            No campaign spend in this period.
+            {manual.size === 0 ? ' Add an ad account below to enter spend by hand.' : ''}
+          </s-text>
+        </s-stack>
+        {enterDialog}
       </s-section>
     );
   }
   return (
-    <s-section heading="Campaigns">
+    <s-section>
+      {header}
       <s-table>
         <s-table-header-row>
           <s-table-header listSlot="primary">Campaign</s-table-header>
@@ -232,6 +257,7 @@ function Campaigns({ data, onChanged }: { data: MarketingResponse; onChanged: ()
           ))}
         </s-table-body>
       </s-table>
+      {enterDialog}
       {editing && (
         <Modal
           heading={`Edit spend: ${editing.campaign || 'No campaign name'}`}
@@ -493,12 +519,11 @@ function RemoveSpend({
 
 function Accounts({ data, onChanged }: { data: MarketingResponse; onChanged: () => void }) {
   // the add forms open in a dialog: a new account, or spend typed in by hand
-  const [dialog, setDialog] = useState<'account' | 'spend' | null>(null);
+  const [dialog, setDialog] = useState<'account' | null>(null);
   // an account being renamed, or one about to be removed
   const [editing, setEditing] = useState<MarketingResponse['accounts'][number] | null>(null);
   const [removing, setRemoving] = useState<MarketingResponse['accounts'][number] | null>(null);
   const del = useAction();
-  const hasManual = data.accounts.some((a) => a.provider === 'manual');
 
   return (
     <>
@@ -507,14 +532,9 @@ function Accounts({ data, onChanged }: { data: MarketingResponse; onChanged: () 
           <CardHeader
             title="Ad accounts"
             action={
-              <s-stack direction="inline" gap="small">
-                <s-button variant="primary" onClick={() => setDialog('account')}>
-                  Add account
-                </s-button>
-                <s-button disabled={!hasManual} onClick={() => setDialog('spend')}>
-                  Enter spend
-                </s-button>
-              </s-stack>
+              <s-button variant="primary" onClick={() => setDialog('account')}>
+                Add account
+              </s-button>
             }
           />
           {data.accounts.length > 0 && (
@@ -638,11 +658,6 @@ function Accounts({ data, onChanged }: { data: MarketingResponse; onChanged: () 
           />
         </Modal>
       )}
-      {dialog === 'spend' && (
-        <Modal heading="Enter spend" onClose={() => setDialog(null)}>
-          <AddSpend data={data} onChanged={onChanged} onClose={() => setDialog(null)} />
-        </Modal>
-      )}
     </>
   );
 }
@@ -671,7 +686,8 @@ function AddAccount({
         />
         {!account && (
           <s-text color="subdued">
-            You can then enter its spend day by day, or paste many days at once, under Enter spend.
+            You can then enter its spend day by day, or paste many days at once, with Enter spend on
+            the Campaigns card.
           </s-text>
         )}
         <FormError message={add.error} />
