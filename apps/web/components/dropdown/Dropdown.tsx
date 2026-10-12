@@ -74,7 +74,18 @@ export function Dropdown({
           command="--toggle"
           accessibilityLabel={`${label}: ${current?.label ?? 'none selected'}`}
         >
-          {`${name}  ▾`}
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: compact ? 'flex-start' : 'space-between',
+              gap: '0.35rem',
+              width: '100%',
+            }}
+          >
+            {name}
+            <s-icon type="chevron-down" size="small" />
+          </span>
         </s-button>
       )}
       <s-popover id={id} minInlineSize="200px" maxBlockSize="256px">

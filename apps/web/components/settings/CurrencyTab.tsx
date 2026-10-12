@@ -8,6 +8,7 @@ import type {
 } from '@pi/contracts';
 import { apiPut } from '../../lib/api';
 import { longDate } from '../../lib/format';
+import { Dropdown } from '../dropdown';
 import { CategoriesSection } from '../expenses/CategoriesSection';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormError, useAction } from './shared';
@@ -140,20 +141,15 @@ function ExpenseDefaults() {
           What the Add expense form starts as. A monthly expense counts in every calendar month from
           its start month to its end month. Expenses you already added do not change.
         </s-text>
-        <s-select
+        <Dropdown
           label="A new expense starts as"
           value={value}
-          onChange={(e) => {
-            setChoice(e.currentTarget.value);
+          options={CHOICES.map((c) => ({ value: c.id, label: c.label }))}
+          onChange={(v) => {
+            setChoice(v);
             setSaved(false);
           }}
-        >
-          {CHOICES.map((c) => (
-            <s-option key={c.id} value={c.id}>
-              {c.label}
-            </s-option>
-          ))}
-        </s-select>
+        />
         <FormError message={error} />
         {saved && <s-text color="subdued">Saved.</s-text>}
         <div>
