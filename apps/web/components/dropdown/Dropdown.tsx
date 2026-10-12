@@ -8,7 +8,7 @@ export interface DropdownOption {
 }
 
 /** Closes the Polaris list. The page browser has no commandfor on a plain button. */
-function closePopover(id: string) {
+export function closePopover(id: string) {
   const host = document.getElementById(id);
   const panel = host?.shadowRoot?.querySelector('[popover]');
   if (panel instanceof HTMLElement && panel.matches(':popover-open')) panel.hidePopover();
