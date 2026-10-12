@@ -25,7 +25,7 @@ html {
   gap: 0.35rem;
   box-sizing: border-box;
   width: 14rem;
-  height: 1.75rem;
+  height: 28px;
   margin: 0;
   padding: 0 0.75rem;
   border-radius: 0.5rem;
@@ -109,4 +109,12 @@ html {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* In a filter bar the dropdown is as high as the inputs, and only as wide as its words. */
+.pi-field-short {
+  width: auto;
+  justify-content: flex-start;
+  gap: 0.35rem;
+  padding: 0 0.5rem 0 0.75rem;
 }

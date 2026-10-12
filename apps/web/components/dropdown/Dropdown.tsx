@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export interface DropdownOption {
   value: string;
@@ -27,94 +27,6 @@ export function closePopover(id: string) {
  *
  * `chip` is the short left-aligned button with a chevron, and the same list underneath.
  */
-function ChipDropdown({
-  label,
-  value,
-  options,
-  onChange,
-  disabled,
-  compact,
-  chip,
-}: {
-  label: string;
-  value: string;
-  options: DropdownOption[];
-  onChange: (value: string) => void;
-  disabled?: boolean;
-  compact?: boolean;
-  chip?: boolean;
-}) {
-  const id = `dd-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
-  const current = options.find((o) => o.value === value);
-  const name = current?.label ?? 'Select';
-
-  const control = (
-    <s-stack gap="small-300">
-      {!compact && !chip && <s-text>{label}</s-text>}
-      <s-button
-        variant="secondary"
-        inlineSize="auto"
-        disabled={disabled}
-        commandFor={id}
-        command="--toggle"
-        accessibilityLabel={`${label}: ${current?.label ?? 'none selected'}`}
-      >
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
-          {name}
-          <s-icon type="chevron-down" size="small" />
-        </span>
-      </s-button>
-      <s-popover id={id} minInlineSize="200px" maxBlockSize="256px">
-        <s-stack gap="none" padding="small-300">
-          {options.map((o) => {
-            const selected = o.value === value;
-            return (
-              <button
-                key={o.value}
-                type="button"
-                className="pi-dd-option"
-                aria-current={selected ? 'true' : undefined}
-                onClick={() => {
-                  onChange(o.value);
-                  closePopover(id);
-                }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  width: '100%',
-                  margin: 0,
-                  padding: '0.35rem 0.5rem',
-                  border: selected ? '2px solid #2c6ecb' : '2px solid transparent',
-                  borderRadius: '0.5rem',
-                  color: '#303030',
-                  font: 'inherit',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                }}
-              >
-                <span
-                  style={{
-                    width: '1rem',
-                    flex: '0 0 1rem',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  {selected ? <s-icon type="check" size="small" /> : null}
-                </span>
-                <span>{o.label}</span>
-              </button>
-            );
-          })}
-        </s-stack>
-      </s-popover>
-    </s-stack>
-  );
-  return <div style={{ width: 'fit-content' }}>{control}</div>;
-}
-
 interface DropdownProps {
   label: string;
   value: string;
@@ -125,16 +37,17 @@ interface DropdownProps {
   chip?: boolean;
 }
 
-/**
- * The dropdown of the app. In a form (label above) it is a field: as wide and as high as the text inputs beside it,
- * with the chosen words on the left and a chevron on the right. In a filter bar (`chip` or `compact`) it is the
- * short button with a chevron. Both open the same list, with a check and a blue outline on the chosen row.
- */
-export function Dropdown(props: DropdownProps) {
-  return props.compact || props.chip ? <ChipDropdown {...props} /> : <FieldDropdown {...props} />;
-}
-
-function FieldDropdown({ label, value, options, onChange, disabled }: DropdownProps) {
+export function Dropdown({
+  label,
+  value,
+  options,
+  onChange,
+  disabled,
+  compact,
+  chip,
+}: DropdownProps) {
+  // in a filter bar (chip or compact) the button is short and has no label above it
+  const short = Boolean(chip || compact);
   const [open, setOpen] = useState(false);
   const [at, setAt] = useState({ top: 0, left: 0, width: 0 });
   const button = useRef<HTMLButtonElement>(null);
@@ -162,13 +75,13 @@ function FieldDropdown({ label, value, options, onChange, disabled }: DropdownPr
     };
   }, [open]);
 
-  return (
+  const control = (
     <s-stack gap="small-300">
-      <s-text>{label}</s-text>
+      {!short && <s-text>{label}</s-text>}
       <button
         ref={button}
         type="button"
-        className="pi-field-select"
+        className={short ? 'pi-field-select pi-field-short' : 'pi-field-select'}
         disabled={disabled}
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -190,7 +103,7 @@ function FieldDropdown({ label, value, options, onChange, disabled }: DropdownPr
             position: 'fixed',
             top: at.top,
             left: at.left,
-            minWidth: at.width,
+            minWidth: short ? Math.max(at.width, 192) : at.width,
             maxHeight: '16rem',
             overflowY: 'auto',
             zIndex: 2147483000,
@@ -248,4 +161,5 @@ function FieldDropdown({ label, value, options, onChange, disabled }: DropdownPr
       )}
     </s-stack>
   );
+  return short ? <div style={{ width: 'fit-content' }}>{control}</div> : control;
 }
