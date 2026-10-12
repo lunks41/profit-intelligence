@@ -333,52 +333,62 @@ function ExpenseForm({
           error={touched && !amountOk ? 'Enter a number such as 1200.00' : undefined}
           onInput={(e) => setAmount(e.currentTarget.value)}
         />
-        <s-text-field
-          label={`Currency (blank = ${currency})`}
-          placeholder={currency}
-          value={foreign}
-          disabled={editing}
-          error={touched && !currencyOk ? 'Use a three-letter code such as EUR' : undefined}
-          onInput={(e) => setForeign(e.currentTarget.value.toUpperCase())}
-        />
+        {!editing && (
+          <s-text-field
+            label={`Currency (blank = ${currency})`}
+            placeholder={currency}
+            value={foreign}
+            disabled={editing}
+            error={touched && !currencyOk ? 'Use a three-letter code such as EUR' : undefined}
+            onInput={(e) => setForeign(e.currentTarget.value.toUpperCase())}
+          />
+        )}
         <CategoryDropdown value={categoryId} categories={categories} onChange={setCategoryId} />
-        <s-text-field
-          label="Reference (optional)"
-          placeholder="Invoice 1042"
-          value={reference}
-          disabled={editing}
-          onInput={(e) => setReference(e.currentTarget.value)}
-        />
-        <s-text-field
-          label="Description (optional)"
-          value={description}
-          disabled={editing}
-          onInput={(e) => setDescription(e.currentTarget.value)}
-        />
-        <Dropdown
-          label="Repeats"
-          value={kind === 'one_time' ? 'once' : frequency}
-          disabled={editing}
-          options={[
-            { value: 'once', label: 'One time' },
-            { value: 'monthly', label: 'Every month' },
-            { value: 'yearly', label: 'Every year' },
-          ]}
-          onChange={(v) => {
-            if (v === 'once') setKind('one_time');
-            else {
-              setKind('recurring');
-              setFrequency(v as 'monthly' | 'yearly');
-            }
-          }}
-        />
-        <DateField
-          label={kind === 'one_time' ? 'Date' : 'Starts'}
-          value={start}
-          disabled={editing && recurringRow}
-          onChange={(v) => setStart(v)}
-        />
-        {kind === 'recurring' && (
+        {!editing && (
+          <s-text-field
+            label="Reference (optional)"
+            placeholder="Invoice 1042"
+            value={reference}
+            disabled={editing}
+            onInput={(e) => setReference(e.currentTarget.value)}
+          />
+        )}
+        {!editing && (
+          <s-text-field
+            label="Description (optional)"
+            value={description}
+            disabled={editing}
+            onInput={(e) => setDescription(e.currentTarget.value)}
+          />
+        )}
+        {!editing && (
+          <Dropdown
+            label="Repeats"
+            value={kind === 'one_time' ? 'once' : frequency}
+            disabled={editing}
+            options={[
+              { value: 'once', label: 'One time' },
+              { value: 'monthly', label: 'Every month' },
+              { value: 'yearly', label: 'Every year' },
+            ]}
+            onChange={(v) => {
+              if (v === 'once') setKind('one_time');
+              else {
+                setKind('recurring');
+                setFrequency(v as 'monthly' | 'yearly');
+              }
+            }}
+          />
+        )}
+        {(!editing || !recurringRow) && (
+          <DateField
+            label={kind === 'one_time' ? 'Date' : 'Starts'}
+            value={start}
+            disabled={editing && recurringRow}
+            onChange={(v) => setStart(v)}
+          />
+        )}
+        {!editing && kind === 'recurring' && (
           <DateField
             label="Ends (optional)"
             value={end}
@@ -395,13 +405,24 @@ function ExpenseForm({
           />
         )}
       </s-grid>
-      {plan && (
+      {plan && !editing && (
         <s-banner tone="info" heading="How it will count">
           <s-paragraph>{plan}</s-paragraph>
         </s-banner>
       )}
       {row && (
         <s-stack gap="small-300">
+          <s-text color="subdued">
+            {row.kind === 'one_time'
+              ? 'One time'
+              : row.frequency === 'yearly'
+                ? 'Every year'
+                : 'Every month'}
+            {' · Starts '}
+            {longDate(row.startDate)}
+            {row.endDate ? ` · Ends ${longDate(row.endDate)}` : ''}
+            {row.reference ? ` · Ref ${row.reference}` : ''}
+          </s-text>
           <s-text color="subdued">
             Status:{' '}
             {row.status === 'active'
@@ -691,16 +712,17 @@ function Manage({
   onChanged: () => void;
 }) {
   const recurring = row.kind === 'recurring';
+  // one panel at a time under the form: a single month, stopping, or removing
+  const [panel, setPanel] = useState<'month' | 'stop' | 'remove' | null>(null);
   const [stopDay, setStopDay] = useState(todayLocal());
   const [month, setMonth] = useState(`${todayLocal().slice(0, 7)}-01`);
   const [monthAmount, setMonthAmount] = useState('');
-  const [confirmRemove, setConfirmRemove] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const stop = useAction();
   const mo = useAction();
   const rm = useAction();
-
   const monthAmountOk = isAmount(monthAmount);
+  const toggle = (p: 'month' | 'stop' | 'remove') => setPanel((v) => (v === p ? null : p));
 
   return (
     <s-section>
@@ -721,9 +743,25 @@ function Manage({
           }}
         />
 
-        {recurring && (
-          <>
-            <s-text type="strong">Change one month only</s-text>
+        <s-stack direction="inline" gap="small" alignItems="center">
+          <s-text color="subdued">More:</s-text>
+          {recurring && (
+            <s-button variant="tertiary" onClick={() => toggle('month')}>
+              Change one month
+            </s-button>
+          )}
+          {recurring && row.status !== 'ended' && (
+            <s-button variant="tertiary" onClick={() => toggle('stop')}>
+              Stop it
+            </s-button>
+          )}
+          <s-button variant="tertiary" tone="critical" onClick={() => toggle('remove')}>
+            Remove
+          </s-button>
+        </s-stack>
+
+        {panel === 'month' && (
+          <s-stack gap="small">
             <s-grid gridTemplateColumns={FILTER_GRID} gap="base" alignItems="end">
               <DateField label="Month (first day)" value={month} onChange={(v) => setMonth(v)} />
               <s-text-field
@@ -734,8 +772,24 @@ function Manage({
               />
             </s-grid>
             <FormError message={mo.error} />
-            <s-stack direction="inline" gap="small">
+            <FormActions>
               <s-button
+                disabled={mo.busy}
+                onClick={async () => {
+                  if (
+                    await mo.run(() =>
+                      apiPut(`/expenses/${row.id}/months/${month.slice(0, 7)}-01`, { skip: true }),
+                    )
+                  ) {
+                    setMessage(`Skipped ${month.slice(0, 7)}.`);
+                    onChanged();
+                  }
+                }}
+              >
+                Skip this month
+              </s-button>
+              <s-button
+                variant="primary"
                 disabled={mo.busy || !monthAmountOk}
                 onClick={async () => {
                   if (
@@ -752,22 +806,7 @@ function Manage({
               >
                 Set amount
               </s-button>
-              <s-button
-                disabled={mo.busy}
-                onClick={async () => {
-                  if (
-                    await mo.run(() =>
-                      apiPut(`/expenses/${row.id}/months/${month.slice(0, 7)}-01`, { skip: true }),
-                    )
-                  ) {
-                    setMessage(`Skipped ${month.slice(0, 7)}.`);
-                    onChanged();
-                  }
-                }}
-              >
-                Skip this month
-              </s-button>
-            </s-stack>
+            </FormActions>
             {row.overrides.length > 0 && (
               <s-stack gap="small-300">
                 <s-text type="strong">Months changed</s-text>
@@ -790,68 +829,63 @@ function Manage({
                 ))}
               </s-stack>
             )}
-
-            {row.status !== 'ended' && (
-              <>
-                <s-text type="strong">Stop this expense</s-text>
-                <s-grid gridTemplateColumns={FILTER_GRID} gap="base" alignItems="end">
-                  <DateField
-                    label="Last day it applies"
-                    value={stopDay}
-                    onChange={(v) => setStopDay(v)}
-                  />
-                </s-grid>
-                <FormError message={stop.error} />
-                <div>
-                  <s-button
-                    disabled={stop.busy}
-                    onClick={async () => {
-                      if (
-                        await stop.run(() =>
-                          apiPost(`/expenses/${row.id}/stop`, { lastDay: stopDay }),
-                        )
-                      ) {
-                        onChanged();
-                        onClose();
-                      }
-                    }}
-                  >
-                    Stop after this day
-                  </s-button>
-                </div>
-              </>
-            )}
-          </>
+          </s-stack>
         )}
 
-        <s-text type="strong">Remove</s-text>
-        <s-text color="subdued">
-          Removing erases the expense from every period, including past months. To keep past months,
-          stop it instead.
-        </s-text>
-        <FormError message={rm.error} />
-        {confirmRemove ? (
-          <FormActions>
-            <s-button onClick={() => setConfirmRemove(false)}>Cancel</s-button>
-            <s-button
-              tone="critical"
-              disabled={rm.busy}
-              onClick={async () => {
-                if (await rm.run(() => apiDelete(`/expenses/${row.id}`))) {
-                  onChanged();
-                  onClose();
-                }
-              }}
-            >
-              Yes, remove it
-            </s-button>
-          </FormActions>
-        ) : (
-          <div>
-            <s-button tone="critical" onClick={() => setConfirmRemove(true)}>
-              Remove expense
-            </s-button>
-          </div>
+        {panel === 'stop' && (
+          <s-stack gap="small">
+            <s-grid gridTemplateColumns={FILTER_GRID} gap="base" alignItems="end">
+              <DateField
+                label="Last day it applies"
+                value={stopDay}
+                onChange={(v) => setStopDay(v)}
+              />
+            </s-grid>
+            <FormError message={stop.error} />
+            <FormActions>
+              <s-button
+                variant="primary"
+                disabled={stop.busy}
+                onClick={async () => {
+                  if (
+                    await stop.run(() => apiPost(`/expenses/${row.id}/stop`, { lastDay: stopDay }))
+                  ) {
+                    onChanged();
+                    onClose();
+                  }
+                }}
+              >
+                Stop after this day
+              </s-button>
+            </FormActions>
+          </s-stack>
+        )}
+
+        {panel === 'remove' && (
+          <s-stack gap="small">
+            <s-banner tone="critical" heading="Remove this expense?">
+              <s-paragraph>
+                It is erased from every period, including past months. To keep past months, stop it
+                instead.
+              </s-paragraph>
+            </s-banner>
+            <FormError message={rm.error} />
+            <FormActions>
+              <s-button onClick={() => setPanel(null)}>Cancel</s-button>
+              <s-button
+                tone="critical"
+                disabled={rm.busy}
+                onClick={async () => {
+                  if (await rm.run(() => apiDelete(`/expenses/${row.id}`))) {
+                    onChanged();
+                    onClose();
+                  }
+                }}
+              >
+                Yes, remove it
+              </s-button>
+            </FormActions>
+          </s-stack>
         )}
       </s-stack>
     </s-section>
