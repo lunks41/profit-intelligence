@@ -1,5 +1,6 @@
 'use client';
 
+import { finishToast, toastProgress } from '../../lib/toast';
 import { Dropdown, ShowDropdown } from '../dropdown';
 
 import { useEffect, useState } from 'react';
@@ -75,10 +76,15 @@ export function CostsTab({
     if (focused && !selected && !justSaved && matches.length > 0) setSelected(matches[0]!);
   }, [focused, selected, justSaved, matches]);
 
-  // the recalculation runs in the background: load the figures of the page again a little later, and once more
+  // the recalculation runs in the background: say so with a small message at the top right, load the figures
+  // of the page again a little later, and once more when it should be finished
   const onApplied = () => {
-    setTimeout(onChanged, 8_000);
-    setTimeout(onChanged, 25_000);
+    const id = toastProgress('Applying the cost to existing orders');
+    setTimeout(onChanged, 6_000);
+    setTimeout(() => {
+      onChanged();
+      finishToast(id, 'Figures updated');
+    }, 20_000);
   };
 
   function saved() {
@@ -351,13 +357,6 @@ function ApplyBanner({
           disabled={busy}
           onClick={async () => {
             if (await run(() => apiPost('/settings/recalculate', { mode: 'fill_gaps' }))) {
-              try {
-                window.shopify?.toast?.show(
-                  'Applying the cost to existing orders. Figures update in a minute or two.',
-                );
-              } catch {
-                // the message is a courtesy; the work has started either way
-              }
               onDone();
               onApplied();
             }
