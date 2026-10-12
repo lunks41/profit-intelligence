@@ -4,6 +4,7 @@ import type { MarketingResponse } from '@pi/contracts';
 import { formatMoney } from '../../lib/format';
 import { Kpi } from '../common/kpi';
 import { useApi } from '../profitability/shared';
+import { AdAccountsCard } from './AdAccountsCard';
 
 /**
  * The advertising picture on the Overview: ad spend, profit after ads and blended return for the period on the
@@ -81,6 +82,7 @@ export function MarketingSummaryCard({
           change={<s-link href="/marketing">Open Marketing</s-link>}
         />
       </s-grid>
+      <AdAccountsCard data={data} />
     </s-stack>
   );
 }

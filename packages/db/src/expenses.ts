@@ -737,6 +737,53 @@ export async function createAdAccount(
   });
 }
 
+/** Renames an ad account. 'exists' when another active account of the platform already has that name. */
+export async function renameAdAccount(
+  db: Db,
+  scope: ShopScope,
+  id: string,
+  name: string,
+  actor: string,
+): Promise<'ok' | 'not_found' | 'exists'> {
+  return withTenant(db, scope.tenantId, async (tx) => {
+    const [old] = await tx
+      .select({ name: fAdAccount.name, provider: fAdAccount.provider })
+      .from(fAdAccount)
+      .where(
+        and(
+          eq(fAdAccount.id, id),
+          eq(fAdAccount.shopId, scope.shopId),
+          isNull(fAdAccount.archivedAt),
+        ),
+      );
+    if (!old) return 'not_found';
+    const clean = name.trim();
+    const [clash] = await tx
+      .select({ id: fAdAccount.id })
+      .from(fAdAccount)
+      .where(
+        and(
+          eq(fAdAccount.shopId, scope.shopId),
+          eq(fAdAccount.provider, old.provider),
+          isNull(fAdAccount.archivedAt),
+          sql`lower(${fAdAccount.name}) = lower(${clean})`,
+          sql`${fAdAccount.id} <> ${id}::uuid`,
+        ),
+      );
+    if (clash) return 'exists';
+    await tx.update(fAdAccount).set({ name: clean }).where(eq(fAdAccount.id, id));
+    await audit(tx, scope, {
+      actor,
+      action: 'ad_account.rename',
+      entity: 'f_ad_account',
+      entityId: id,
+      oldValue: { name: old.name },
+      newValue: { name: clean },
+    });
+    return 'ok';
+  });
+}
+
 export async function archiveAdAccount(
   db: Db,
   scope: ShopScope,
@@ -770,6 +817,93 @@ export async function archiveAdAccount(
       oldValue: row,
     });
     return true;
+  });
+}
+
+export interface SpendRow {
+  date: string;
+  campaign: string;
+  spend: string;
+  reportedSales: string | null;
+}
+
+/**
+ * The daily spend rows of one account in a period, for the screen that edits them. Only an account whose spend is
+ * typed in by hand can be edited (an imported one is written again by the next import); 'imported' says it is not.
+ */
+export async function listAdSpendRows(
+  db: Db,
+  scope: ShopScope,
+  accountId: string,
+  range: { from: string; to: string; campaign?: string },
+): Promise<SpendRow[] | 'not_found' | 'imported'> {
+  return withTenant(db, scope.tenantId, async (tx) => {
+    const [acct] = await tx
+      .select({ provider: fAdAccount.provider })
+      .from(fAdAccount)
+      .where(
+        and(
+          eq(fAdAccount.id, accountId),
+          eq(fAdAccount.shopId, scope.shopId),
+          isNull(fAdAccount.archivedAt),
+        ),
+      );
+    if (!acct) return 'not_found';
+    if (acct.provider !== 'manual') return 'imported';
+    const res = await tx.execute(sql`
+      select to_char(spend_date, 'YYYY-MM-DD') as d, campaign, spend::text as spend, reported_sales::text as sales
+        from f_ad_spend_daily
+       where account_id = ${accountId}::uuid and shop_id = ${scope.shopId}
+         and spend_date between ${range.from}::date and ${range.to}::date
+         ${range.campaign === undefined ? sql`` : sql`and campaign = ${range.campaign}`}
+       order by spend_date, campaign`);
+    return (res.rows as Array<Record<string, unknown>>).map((r) => ({
+      date: String(r.d),
+      campaign: String(r.campaign),
+      spend: String(r.spend),
+      reportedSales: r.sales === null ? null : String(r.sales),
+    }));
+  });
+}
+
+/** Removes the spend rows of one campaign of a hand-entered account in a period. Returns how many went. */
+export async function deleteAdSpendRows(
+  db: Db,
+  scope: ShopScope,
+  accountId: string,
+  range: { from: string; to: string; campaign: string },
+  actor: string,
+): Promise<number | 'not_found' | 'imported'> {
+  return withTenant(db, scope.tenantId, async (tx) => {
+    const [acct] = await tx
+      .select({ provider: fAdAccount.provider })
+      .from(fAdAccount)
+      .where(
+        and(
+          eq(fAdAccount.id, accountId),
+          eq(fAdAccount.shopId, scope.shopId),
+          isNull(fAdAccount.archivedAt),
+        ),
+      );
+    if (!acct) return 'not_found';
+    if (acct.provider !== 'manual') return 'imported';
+    const res = await tx.execute(sql`
+      delete from f_ad_spend_daily
+       where account_id = ${accountId}::uuid and shop_id = ${scope.shopId}
+         and campaign = ${range.campaign}
+         and spend_date between ${range.from}::date and ${range.to}::date
+      returning id`);
+    const n = res.rows.length;
+    if (n > 0) {
+      await audit(tx, scope, {
+        actor,
+        action: 'ad_spend.delete',
+        entity: 'f_ad_spend_daily',
+        entityId: accountId,
+        oldValue: { campaign: range.campaign, from: range.from, to: range.to, rows: n },
+      });
+    }
+    return n;
   });
 }
 

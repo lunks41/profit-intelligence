@@ -169,6 +169,16 @@ const ACTIVITIES: Record<string, Maker> = {
     'You can now enter spend for it.',
     '/marketing',
   ),
+  'PATCH /marketing/accounts/:id': a(
+    'Ad account renamed',
+    'The new name shows everywhere.',
+    '/marketing',
+  ),
+  'DELETE /marketing/accounts/:id/spend': a(
+    'Ad spend removed',
+    'It no longer counts in profit.',
+    '/marketing',
+  ),
   'DELETE /marketing/accounts/:id': a(
     'Ad account removed',
     'Its spend no longer counts.',

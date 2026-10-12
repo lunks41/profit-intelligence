@@ -13,6 +13,7 @@ import { readParam } from '../../lib/url-params';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormError, useAction, FormActions } from '../settings/shared';
 import { IntegrationList } from '../common/IntegrationList';
+import { PLATFORM_MARKS } from '../common/platform-marks';
 import type { Integration } from '../common/IntegrationList';
 
 const PLATFORMS = ['meta', 'google', 'tiktok'] as const;
@@ -61,11 +62,6 @@ export function ConnectPlatforms({
     (a) => a.provider !== 'manual' && a.status !== 'disconnected',
   ).length;
 
-  const MARK: Record<Platform, Integration['mark']> = {
-    meta: { text: 'f', background: '#1877f2' },
-    google: { text: 'G', background: '#e8f0fe', color: '#1a73e8' },
-    tiktok: { text: 'Tt', background: '#000000' },
-  };
   const items: Integration[] = [
     ...PLATFORMS.map((id): Integration => {
       const info = providers.providers.find((p) => p.id === id);
@@ -87,7 +83,7 @@ export function ConnectPlatforms({
         id,
         name: NAME[id],
         description: WHAT[id],
-        mark: MARK[id],
+        mark: PLATFORM_MARKS[id]!,
         status: !available ? 'unavailable' : mine.length > 0 ? 'connected' : 'idle',
         detail:
           !available || mine.length === 0 ? (

@@ -7,6 +7,7 @@ import {
   HttpCode,
   Inject,
   Param,
+  Patch,
   Post,
   Query,
   Res,
@@ -14,9 +15,11 @@ import {
 } from '@nestjs/common';
 import {
   adSpendBodySchema,
+  adSpendRangeQuerySchema,
   connectAdAccountsBodySchema,
   createAdAccountBodySchema,
   marketingQuerySchema,
+  renameAdAccountBodySchema,
 } from '@pi/contracts';
 import type { AdProvidersResponse, MarketingResponse } from '@pi/contracts';
 import { z } from 'zod';
@@ -105,9 +108,34 @@ export class MarketingController {
     return this.service.addAccount(t, parse(createAdAccountBodySchema, body));
   }
 
+  @Patch('accounts/:id')
+  renameAccount(@Tenant() t: TenantContext, @Param('id') id: string, @Body() body: unknown) {
+    return this.service.renameAccount(t, uuid(id), parse(renameAdAccountBodySchema, body).name);
+  }
+
   @Delete('accounts/:id')
   removeAccount(@Tenant() t: TenantContext, @Param('id') id: string) {
     return this.service.removeAccount(t, uuid(id));
+  }
+
+  /** The daily spend rows of one campaign of a hand-entered account, to edit them. */
+  @Get('accounts/:id/spend')
+  spendRows(
+    @Tenant() t: TenantContext,
+    @Param('id') id: string,
+    @Query() raw: Record<string, unknown>,
+  ) {
+    return this.service.spendRows(t, uuid(id), parse(adSpendRangeQuerySchema, raw));
+  }
+
+  /** Removes the spend of one campaign of a hand-entered account in a period. */
+  @Delete('accounts/:id/spend')
+  removeSpend(
+    @Tenant() t: TenantContext,
+    @Param('id') id: string,
+    @Query() raw: Record<string, unknown>,
+  ) {
+    return this.service.removeSpend(t, uuid(id), parse(adSpendRangeQuerySchema, raw));
   }
 
   @Post('accounts/:id/spend')

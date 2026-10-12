@@ -1162,6 +1162,15 @@ export const adProvidersResponseSchema = z.object({
 });
 export type AdProvidersResponse = z.infer<typeof adProvidersResponseSchema>;
 
+export const adSpendRangeQuerySchema = z.object({
+  from: isoDate,
+  to: isoDate,
+  /** the campaign; empty for spend entered without one */
+  campaign: z.string().max(200).default(''),
+});
+
+export const renameAdAccountBodySchema = z.object({ name: z.string().trim().min(1).max(80) });
+
 export const createAdAccountBodySchema = z.object({
   provider: adProviderSchema.default('manual'),
   name: z.string().trim().min(1).max(80),

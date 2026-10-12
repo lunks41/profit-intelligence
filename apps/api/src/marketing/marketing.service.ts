@@ -7,6 +7,9 @@ import type {
 } from '@pi/contracts';
 import {
   archiveAdAccount,
+  renameAdAccount,
+  listAdSpendRows,
+  deleteAdSpendRows,
   connectPendingAccounts,
   createAdAccount,
   createPendingConnection,
@@ -446,6 +449,58 @@ export class MarketingService {
       encryptedAccessToken: encrypted,
       actor: actorOf(scope),
     });
+  }
+
+  async renameAccount(scope: TenantContext, id: string, name: string) {
+    const r = await renameAdAccount(this.db, scope, id, name, actorOf(scope));
+    if (r === 'not_found') {
+      throw new NotFoundException({ code: 'not_found', message: 'Advertising account not found' });
+    }
+    if (r === 'exists') {
+      throw new BadRequestException({
+        code: 'name_taken',
+        message: 'Another account of this platform already has that name.',
+      });
+    }
+    return { renamed: true };
+  }
+
+  async spendRows(
+    scope: TenantContext,
+    id: string,
+    q: { from: string; to: string; campaign: string },
+  ) {
+    const r = await listAdSpendRows(this.db, scope, id, q);
+    if (r === 'not_found') {
+      throw new NotFoundException({ code: 'not_found', message: 'Advertising account not found' });
+    }
+    if (r === 'imported') {
+      throw new BadRequestException({
+        code: 'imported_account',
+        message:
+          'The spend of a connected account comes from the platform and cannot be edited here.',
+      });
+    }
+    return { rows: r };
+  }
+
+  async removeSpend(
+    scope: TenantContext,
+    id: string,
+    q: { from: string; to: string; campaign: string },
+  ) {
+    const r = await deleteAdSpendRows(this.db, scope, id, q, actorOf(scope));
+    if (r === 'not_found') {
+      throw new NotFoundException({ code: 'not_found', message: 'Advertising account not found' });
+    }
+    if (r === 'imported') {
+      throw new BadRequestException({
+        code: 'imported_account',
+        message:
+          'The spend of a connected account comes from the platform and cannot be removed here.',
+      });
+    }
+    return { removed: r };
   }
 
   async removeAccount(scope: TenantContext, id: string) {

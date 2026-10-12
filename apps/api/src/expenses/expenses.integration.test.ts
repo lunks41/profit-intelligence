@@ -186,7 +186,7 @@ afterAll(async () => {
 });
 
 const call = (
-  method: 'GET' | 'PUT' | 'POST' | 'DELETE',
+  method: 'GET' | 'PUT' | 'POST' | 'PATCH' | 'DELETE',
   url: string,
   token = 'id-exp-a',
   body?: unknown,
@@ -960,6 +960,79 @@ describe('advertising', () => {
     json('POST', `/marketing/accounts/${id}/spend`, token, { rows });
   const marketing = async (qs = SEP, token?: string) =>
     marketingResponseSchema.parse((await json('GET', `/marketing/overview${qs}`, token)).body);
+
+  it('an account can be renamed; a name another account of the platform has is refused', async () => {
+    const first = await account('Meta one');
+    const second = await account('Meta two');
+    const ok = await json('PATCH', `/marketing/accounts/${first.id}`, 'id-exp-a', {
+      name: '  Meta renamed ',
+    });
+    expect(ok.res.statusCode).toBe(200);
+    const names = (await marketing()).accounts.map((x) => x.name);
+    expect(names).toContain('Meta renamed');
+    expect(names).not.toContain('Meta one');
+    const clash = await json('PATCH', `/marketing/accounts/${second.id}`, 'id-exp-a', {
+      name: 'meta RENAMED',
+    });
+    expect(clash.res.statusCode).toBe(400);
+    expect(clash.body.error.code).toBe('name_taken');
+    expect(
+      (await call('PATCH', `/marketing/accounts/${second.id}`, 'id-exp-a', { name: '' }))
+        .statusCode,
+    ).toBe(400);
+    // the shop of someone else cannot rename it
+    expect(
+      (await call('PATCH', `/marketing/accounts/${first.id}`, 'id-exp-b', { name: 'Taken over' }))
+        .statusCode,
+    ).toBe(404);
+  });
+
+  it('the daily spend of a hand-entered account can be listed, corrected and removed', async () => {
+    const acct = await account('Meta typed');
+    await spend(acct.id, [
+      { date: '2026-09-01', campaign: 'Autumn', spend: '100', reportedSales: '300' },
+      { date: '2026-09-02', campaign: 'Autumn', spend: '120' },
+      { date: '2026-09-02', campaign: 'Other', spend: '50' },
+    ]);
+    const q = 'from=2026-09-01&to=2026-09-30&campaign=Autumn';
+    const rows = (await json('GET', `/marketing/accounts/${acct.id}/spend?${q}`)).body.rows;
+    expect(rows.map((r: { date: string }) => r.date)).toEqual(['2026-09-01', '2026-09-02']);
+    // a correction is the same call as an entry: the row of that day and campaign is replaced
+    await spend(acct.id, [{ date: '2026-09-02', campaign: 'Autumn', spend: '130' }]);
+    expect(
+      (await json('GET', `/marketing/accounts/${acct.id}/spend?${q}`)).body.rows[1].spend,
+    ).toBe('130.0000');
+    const gone = await json('DELETE', `/marketing/accounts/${acct.id}/spend?${q}`);
+    expect(gone.res.statusCode).toBe(200);
+    expect(gone.body.removed).toBe(2);
+    expect((await json('GET', `/marketing/accounts/${acct.id}/spend?${q}`)).body.rows).toEqual([]);
+    // the other campaign is untouched
+    const other = 'from=2026-09-01&to=2026-09-30&campaign=Other';
+    expect(
+      (await json('GET', `/marketing/accounts/${acct.id}/spend?${other}`)).body.rows,
+    ).toHaveLength(1);
+    // somebody else's shop, and a bad request
+    expect(
+      (await call('GET', `/marketing/accounts/${acct.id}/spend?${q}`, 'id-exp-b')).statusCode,
+    ).toBe(404);
+    expect(
+      (await call('DELETE', `/marketing/accounts/${acct.id}/spend?from=x&to=y`)).statusCode,
+    ).toBe(400);
+  });
+
+  it('the spend of a connected account comes from the platform and cannot be edited or removed here', async () => {
+    const id = (
+      await admin.query(
+        `insert into f_ad_account (tenant_id, shop_id, provider, name, currency, connected_via) values ($1,$2,'meta','Meta signed in','USD','oauth') returning id`,
+        [a.tenantId, a.shopId],
+      )
+    ).rows[0].id;
+    const q = 'from=2026-09-01&to=2026-09-30&campaign=x';
+    const got = await json('GET', `/marketing/accounts/${id}/spend?${q}`);
+    expect(got.res.statusCode).toBe(400);
+    expect(got.body.error.code).toBe('imported_account');
+    expect((await call('DELETE', `/marketing/accounts/${id}/spend?${q}`)).statusCode).toBe(400);
+  });
 
   it('lists providers and says plainly which are not set up on the server', async () => {
     const { body } = await json('GET', '/marketing/providers');

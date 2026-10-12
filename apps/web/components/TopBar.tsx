@@ -198,7 +198,7 @@ export function TopBar() {
                 <s-text type="strong">Notifications</s-text>
                 {unread > 0 && (
                   <s-button
-                    variant="tertiary"
+                    variant="secondary"
                     disabled={busy}
                     onClick={() => void act('/notifications/read-all')}
                   >
@@ -222,10 +222,14 @@ export function TopBar() {
                   </s-stack>
                   <s-text color="subdued">{prettyDates(n.body)}</s-text>
                   <s-stack direction="inline" gap="small">
-                    {n.link && <s-link href={n.link}>Open</s-link>}
+                    {n.link && (
+                      <s-button variant="secondary" href={n.link}>
+                        Open
+                      </s-button>
+                    )}
                     {!n.read && (
                       <s-button
-                        variant="tertiary"
+                        variant="secondary"
                         disabled={busy}
                         onClick={() => void act(`/notifications/${n.id}/read`)}
                       >
