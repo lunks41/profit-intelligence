@@ -2,14 +2,12 @@
 
 import { useState } from 'react';
 import type { CarrierId, CarrierInvoiceListResponse, CarrierInvoiceResult } from '@pi/contracts';
-import { apiDelete, apiPost } from '../../lib/api';
+import { apiPost } from '../../lib/api';
 import { formatMoney } from '../../lib/format';
-import { formatDate } from '../../lib/shop-time';
 import { IntegrationList } from '../common/IntegrationList';
 import type { Integration } from '../common/IntegrationList';
 import { Modal } from '../common/Modal';
 import { Dropdown } from '../dropdown';
-import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormActions, FormError, useAction } from '../settings/shared';
 
 const CARRIERS: Array<{
@@ -65,23 +63,21 @@ const SOON: Array<[string, string, string, string, string]> = [
 type Invoice = CarrierInvoiceListResponse['rows'][number];
 
 /**
- * The carriers on the Shipping screen, in the same list as the ad platforms on Marketing. A carrier's own invoice
- * file is the real shipping cost: import it, the rows are matched to orders by the order number on the label, and
- * what the carrier charged replaces the estimate of the shipping rules for those orders.
+ * The carriers as a list, in the same layout as the ad platforms on Marketing: a mark, the name, a capsule that says
+ * whether invoices are imported, and an Import invoice button. A carrier's own invoice file is the real shipping cost:
+ * the rows are matched to orders by the order number on the label, and what the carrier charged replaces the
+ * estimate of the shipping rules for those orders.
  */
-export function CarrierIntegrations() {
-  const [version, setVersion] = useState(0);
-  const list = useApi<CarrierInvoiceListResponse>(`/shipping/carrier-invoices?_=${version}`);
-  const [importing, setImporting] = useState<CarrierId | null>(null);
-  const back = useAction();
-  const reload = () => setVersion((v) => v + 1);
-
-  const invoicesOf = (id: CarrierId) =>
-    (list.data?.rows ?? []).filter((r) => r.carrier === id && !r.revoked);
-
+export function CarrierList({
+  invoices,
+  onImport,
+}: {
+  invoices: Invoice[];
+  onImport: (carrier: CarrierId) => void;
+}) {
   const items: Integration[] = [
     ...CARRIERS.map((c): Integration => {
-      const mine = invoicesOf(c.id);
+      const mine = invoices.filter((r) => r.carrier === c.id && !r.revoked);
       const orders = mine.reduce((t, r) => t + r.matchedOrders, 0);
       return {
         id: c.id,
@@ -93,30 +89,16 @@ export function CarrierIntegrations() {
         idleLabel: 'No invoices yet',
         detail:
           mine.length > 0 ? (
-            <s-stack gap="small-300">
-              <s-text color="subdued">
-                {mine.length} {mine.length === 1 ? 'invoice' : 'invoices'} covering {orders}{' '}
-                {orders === 1 ? 'order' : 'orders'}
-              </s-text>
-              {mine.slice(0, 3).map((r) => (
-                <InvoiceLine
-                  key={r.id}
-                  r={r}
-                  busy={back.busy}
-                  onBack={async () => {
-                    if (await back.run(() => apiDelete(`/shipping/carrier-invoices/${r.id}`)))
-                      reload();
-                  }}
-                />
-              ))}
-              {mine.length > 3 && <s-text color="subdued">and {mine.length - 3} more</s-text>}
-            </s-stack>
+            <s-text color="subdued">
+              {mine.length} {mine.length === 1 ? 'invoice' : 'invoices'} covering {orders}{' '}
+              {orders === 1 ? 'order' : 'orders'}
+            </s-text>
           ) : undefined,
         actions: [
           {
             label: 'Import invoice',
             variant: mine.length > 0 ? 'secondary' : 'primary',
-            onClick: () => setImporting(c.id),
+            onClick: () => onImport(c.id),
           },
         ],
       };
@@ -125,67 +107,63 @@ export function CarrierIntegrations() {
       id,
       name,
       description,
-      mark: { text, background, color: id === 'shipstation' || id === 'shippo' ? '#fff' : '#fff' },
+      mark: { text, background },
       status: 'soon',
     })),
   ];
-
   return (
-    <s-section heading="Carriers">
+    <s-section heading="Your carriers">
       <s-stack gap="small">
         <s-text color="subdued">
           Import the invoice file of your carrier and the shipping cost of each order becomes what
-          the carrier really charged, instead of an estimate from the rules below. Rows are matched
-          to orders by the order number on the label. Connecting a carrier account directly is
-          planned.
+          the carrier really charged, instead of an estimate from the rules. Rows are matched to
+          orders by the order number on the label. Connecting a carrier account directly is planned.
         </s-text>
-        {list.data && list.data.coveredOrders > 0 && (
-          <s-text>
-            <s-text type="strong">{list.data.coveredOrders}</s-text> orders use the cost from a
-            carrier invoice.
-          </s-text>
-        )}
-        {list.error && <ErrorBanner message={list.error} onRetry={() => void list.reload()} />}
-        {list.loading && !list.data && <Loading what="carriers" />}
-        <FormError message={back.error} />
         <IntegrationList items={items} />
       </s-stack>
-      {importing && (
-        <Modal
-          heading={`Import ${CARRIERS.find((c) => c.id === importing)?.name ?? ''} invoice`}
-          onClose={() => setImporting(null)}
-        >
-          <ImportInvoice
-            carrier={importing}
-            onClose={() => setImporting(null)}
-            onImported={reload}
-          />
-        </Modal>
-      )}
     </s-section>
   );
 }
 
-function InvoiceLine({ r, busy, onBack }: { r: Invoice; busy: boolean; onBack: () => void }) {
+/** The dialog that imports one invoice file. With no carrier given it asks which one the file is from. */
+export function ImportInvoiceDialog({
+  carrier: given,
+  onClose,
+  onImported,
+}: {
+  carrier: CarrierId | null;
+  onClose: () => void;
+  onImported: () => void;
+}) {
+  const [chosen, setChosen] = useState<CarrierId>(given ?? 'dhl');
+  const carrier = given ?? chosen;
+  const name = CARRIERS.find((c) => c.id === carrier)?.name ?? '';
   return (
-    <s-stack direction="inline" gap="small" alignItems="center">
-      <s-text>
-        {r.fileName ?? 'Invoice'} · {formatDate(r.createdAt.slice(0, 10))} · {r.matchedOrders}{' '}
-        orders · {formatMoney(r.totalAmount, 'USD')}
-      </s-text>
-      <s-button variant="tertiary" tone="critical" disabled={busy} onClick={onBack}>
-        Take back
-      </s-button>
-    </s-stack>
+    <Modal
+      heading={given ? `Import ${name} invoice` : 'Import a carrier invoice'}
+      onClose={onClose}
+    >
+      <ImportInvoice
+        carrier={carrier}
+        askCarrier={given === null}
+        onCarrier={setChosen}
+        onClose={onClose}
+        onImported={onImported}
+      />
+    </Modal>
   );
 }
 
 function ImportInvoice({
   carrier,
+  askCarrier,
+  onCarrier,
   onClose,
   onImported,
 }: {
   carrier: CarrierId;
+  askCarrier: boolean;
+  onCarrier: (c: CarrierId) => void;
   onClose: () => void;
   onImported: () => void;
 }) {
@@ -263,6 +241,18 @@ function ImportInvoice({
   return (
     <s-section>
       <s-stack gap="base">
+        {askCarrier && (
+          <Dropdown
+            label="Carrier"
+            value={carrier}
+            options={CARRIERS.map((c) => ({ value: c.id, label: c.name }))}
+            onChange={(v) => {
+              onCarrier(v as CarrierId);
+              setResult(null);
+              setMapping({});
+            }}
+          />
+        )}
         <s-text color="subdued">
           Choose the invoice or charges file from the carrier (CSV). Amounts must be in US dollars
           (USD). Each row needs the order number you put on the label, for example 1001 or #1001,
