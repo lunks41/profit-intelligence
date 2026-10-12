@@ -1,15 +1,16 @@
 'use client';
 
-import { Dropdown } from '../dropdown';
-
 import { useState } from 'react';
 import type { RulesResponse } from '@pi/contracts';
 import { apiDelete, apiGet, apiPost } from '../../lib/api';
 import { downloadText, importSummaryCsv } from '../../lib/import-summary';
 import { formatMoney, longDate } from '../../lib/format';
-import { CoverageSummary, RuleCheck } from './RuleCoverage';
-import { FormError, isAmount, isPercent, todayLocal, useAction, FormActions } from './shared';
-import { DateField } from '../common/DateField';
+import { CoverageSummary } from './RuleCoverage';
+import { FeeRuleForm, ShippingRuleForm } from './RuleForms';
+import type { ShipMode } from './RuleForms';
+import { CardHeader } from '../common/CardHeader';
+import { Modal } from '../common/Modal';
+import { FormActions, FormError, useAction } from './shared';
 import { ScrollTable } from '../common/ScrollTable';
 
 type Reload = () => void;
@@ -34,40 +35,10 @@ function RemoveRule({ path, onDone, label }: { path: string; onDone: Reload; lab
   );
 }
 
-const RECALC_NOTE =
-  'New rules apply to new orders straight away. Use "Apply to existing orders" on the Store and data tab to update past orders.';
-
 export function FeesTab({ rules, onChanged }: { rules: RulesResponse; onChanged: Reload }) {
-  const [gateway, setGateway] = useState('');
-  const [percent, setPercent] = useState('');
-  const [fixed, setFixed] = useState('0');
-  const [from, setFrom] = useState(todayLocal());
-  const [touched, setTouched] = useState(false);
-  const { busy, error, run } = useAction();
+  // none: closed; 'new': adding; a rule: changing it
+  const [dialog, setDialog] = useState<'new' | RulesResponse['feeRules'][number] | null>(null);
   const cur = rules.currency;
-
-  const percentOk = isPercent(percent);
-  const fixedOk = isAmount(fixed);
-  const dateOk = from <= todayLocal() && /^\d{4}-\d{2}-\d{2}$/.test(from);
-
-  async function add() {
-    setTouched(true);
-    if (!percentOk || !fixedOk || !dateOk) return;
-    const ok = await run(() =>
-      apiPost('/settings/fee-rules', {
-        gateway: gateway || null,
-        percent: percent.trim(),
-        fixedAmount: fixed.trim(),
-        effectiveFrom: from,
-      }),
-    );
-    if (ok) {
-      setPercent('');
-      setFixed('0');
-      setTouched(false);
-      onChanged();
-    }
-  }
 
   return (
     <>
@@ -80,9 +51,21 @@ export function FeesTab({ rules, onChanged }: { rules: RulesResponse; onChanged:
         </s-banner>
       )}
       <CoverageSummary kind="fees" reloadKey={rules.feeRules.length} />
-      <s-section heading="Payment fee rules">
-        <s-stack gap="base">
-          {rules.feeRules.length > 0 && (
+      <s-section>
+        <s-stack gap="small">
+          <CardHeader
+            title="Payment fee rules"
+            action={
+              <s-button variant="primary" onClick={() => setDialog('new')}>
+                Add rule
+              </s-button>
+            }
+          />
+          {rules.feeRules.length === 0 ? (
+            <s-text color="subdued">
+              No rule yet. Add the rate your payment provider charges.
+            </s-text>
+          ) : (
             <ScrollTable>
               <s-table>
                 <s-table-header-row>
@@ -100,11 +83,20 @@ export function FeesTab({ rules, onChanged }: { rules: RulesResponse; onChanged:
                       <s-table-cell>{formatMoney(r.fixedAmount, cur)}</s-table-cell>
                       <s-table-cell>{longDate(r.effectiveFrom)}</s-table-cell>
                       <s-table-cell>
-                        <RemoveRule
-                          path={`/settings/fee-rules/${r.id}`}
-                          onDone={onChanged}
-                          label={`Remove fee rule for ${r.gateway ?? 'all gateways'}`}
-                        />
+                        <s-stack direction="inline" gap="small-300">
+                          <s-button
+                            variant="tertiary"
+                            accessibilityLabel={`Edit fee rule for ${r.gateway ?? 'all gateways'}`}
+                            onClick={() => setDialog(r)}
+                          >
+                            Edit
+                          </s-button>
+                          <RemoveRule
+                            path={`/settings/fee-rules/${r.id}`}
+                            onDone={onChanged}
+                            label={`Remove fee rule for ${r.gateway ?? 'all gateways'}`}
+                          />
+                        </s-stack>
                       </s-table-cell>
                     </s-table-row>
                   ))}
@@ -112,70 +104,27 @@ export function FeesTab({ rules, onChanged }: { rules: RulesResponse; onChanged:
               </s-table>
             </ScrollTable>
           )}
-          <s-text type="strong">Add a rule</s-text>
-          <s-grid
-            gridTemplateColumns="repeat(auto-fit, minmax(10.625rem, 1fr))"
-            gap="base"
-            alignItems="end"
-          >
-            <Dropdown
-              label="Gateway"
-              value={gateway}
-              options={[
-                { value: '', label: 'All gateways' },
-                ...rules.gateways.map((g) => ({ value: g, label: g })),
-              ]}
-              onChange={(v) => setGateway(v)}
-            />
-            <s-text-field
-              label="Percent of each payment"
-              placeholder="2.9"
-              value={percent}
-              error={touched && !percentOk ? 'Enter a number from 0 to 100' : undefined}
-              onInput={(e) => setPercent(e.currentTarget.value)}
-            />
-            <s-text-field
-              label={`Fixed amount per payment (${cur})`}
-              value={fixed}
-              error={touched && !fixedOk ? 'Enter a number such as 0.30' : undefined}
-              onInput={(e) => setFixed(e.currentTarget.value)}
-            />
-            <DateField
-              label="Applies from"
-              value={from}
-              error={touched && !dateOk ? 'Choose a date that is not in the future' : undefined}
-              onChange={(v) => setFrom(v)}
-            />
-          </s-grid>
-          <FormError message={error} />
-          <RuleCheck
-            kind="fee"
-            body={
-              percentOk && fixedOk && dateOk
-                ? {
-                    gateway: gateway || null,
-                    percent: percent.trim(),
-                    fixedAmount: fixed.trim(),
-                    effectiveFrom: from,
-                  }
-                : null
-            }
-          />
-          <FormActions>
-            <s-button variant="primary" disabled={busy} onClick={() => void add()}>
-              Add rule
-            </s-button>
-          </FormActions>
-          <s-text color="subdued">
-            A rule for a specific gateway wins over the all-gateways rule. {RECALC_NOTE}
-          </s-text>
         </s-stack>
+        {dialog && (
+          <Modal
+            heading={dialog === 'new' ? 'Add payment fee rule' : 'Edit payment fee rule'}
+            onClose={() => setDialog(null)}
+          >
+            <FeeRuleForm
+              rules={rules}
+              rule={dialog === 'new' ? undefined : dialog}
+              onCancel={() => setDialog(null)}
+              onSaved={() => {
+                setDialog(null);
+                onChanged();
+              }}
+            />
+          </Modal>
+        )}
       </s-section>
     </>
   );
 }
-
-type ShipMode = 'flat' | 'percent_of_shipping_charged' | 'per_kilogram';
 
 function shipMethod(mode: ShipMode): string {
   if (mode === 'flat') return 'Flat amount per order';
@@ -190,30 +139,9 @@ function shipWhere(r: RulesResponse['shippingRules'][number]): string {
   return `${place}, ${r.weightMinGrams ?? 0}g to ${max}`;
 }
 
-function parseCountries(raw: string): string[] | null {
-  const codes = raw
-    .split(/[, ]+/)
-    .map((c) => c.trim().toUpperCase())
-    .filter(Boolean);
-  if (codes.some((c) => !/^[A-Z]{2}$/.test(c))) return null;
-  return [...new Set(codes)].sort();
-}
-
-function parseGrams(raw: string): number | null | undefined {
-  const text = raw.trim();
-  if (!text) return null;
-  if (!/^\d{1,7}$/.test(text)) return undefined;
-  return Number(text);
-}
-
 export function ShippingTab({ rules, onChanged }: { rules: RulesResponse; onChanged: Reload }) {
-  const [mode, setMode] = useState<ShipMode>('flat');
-  const [value, setValue] = useState('');
-  const [from, setFrom] = useState(todayLocal());
-  const [zone, setZone] = useState('');
-  const [countries, setCountries] = useState('');
-  const [weightMin, setWeightMin] = useState('');
-  const [weightMax, setWeightMax] = useState('');
+  // none: closed; 'new': adding; a rule: changing it
+  const [dialog, setDialog] = useState<'new' | RulesResponse['shippingRules'][number] | null>(null);
   const [csv, setCsv] = useState('');
   const [preview, setPreview] = useState<{
     matched: number;
@@ -221,48 +149,8 @@ export function ShippingTab({ rules, onChanged }: { rules: RulesResponse; onChan
     invalid: number;
     messages: string[];
   } | null>(null);
-  const [touched, setTouched] = useState(false);
   const { busy, error, run } = useAction();
   const cur = rules.currency;
-
-  const valueOk =
-    mode === 'percent_of_shipping_charged'
-      ? /^\d{1,4}(\.\d{1,4})?$/.test(value.trim()) && Number(value) <= 1000
-      : isAmount(value);
-  const dateOk = from <= todayLocal() && /^\d{4}-\d{2}-\d{2}$/.test(from);
-  const countryList = parseCountries(countries);
-  const minG = parseGrams(weightMin);
-  const maxG = parseGrams(weightMax);
-  const weightOk =
-    minG !== undefined &&
-    maxG !== undefined &&
-    maxG !== 0 &&
-    (minG == null || maxG == null || minG < maxG);
-
-  async function add() {
-    setTouched(true);
-    if (!valueOk || !dateOk || countryList === null || !weightOk) return;
-    const match = {
-      zone: zone.trim() || null,
-      countries: countryList,
-      weightMinGrams: minG,
-      weightMaxGrams: maxG,
-      effectiveFrom: from,
-    };
-    const body =
-      mode === 'percent_of_shipping_charged'
-        ? { mode, percent: value.trim(), ...match }
-        : { mode, amount: value.trim(), ...match };
-    if (await run(() => apiPost('/settings/shipping-rules', body))) {
-      setValue('');
-      setZone('');
-      setCountries('');
-      setWeightMin('');
-      setWeightMax('');
-      setTouched(false);
-      onChanged();
-    }
-  }
 
   async function previewCsv() {
     if (!csv.trim()) return;
@@ -308,9 +196,21 @@ export function ShippingTab({ rules, onChanged }: { rules: RulesResponse; onChan
         </s-banner>
       )}
       <CoverageSummary kind="shipping" reloadKey={rules.shippingRules.length} />
-      <s-section heading="Shipping cost rules">
+      <s-section>
         <s-stack gap="base">
-          {rules.shippingRules.length > 0 && (
+          <CardHeader
+            title="Shipping cost rules"
+            action={
+              <s-button variant="primary" onClick={() => setDialog('new')}>
+                Add rule
+              </s-button>
+            }
+          />
+          {rules.shippingRules.length === 0 ? (
+            <s-text color="subdued">
+              No rule yet. Add one for every order, or for a country and a weight.
+            </s-text>
+          ) : (
             <ScrollTable>
               <s-table>
                 <s-table-header-row>
@@ -334,11 +234,20 @@ export function ShippingTab({ rules, onChanged }: { rules: RulesResponse; onChan
                       </s-table-cell>
                       <s-table-cell>{longDate(r.effectiveFrom)}</s-table-cell>
                       <s-table-cell>
-                        <RemoveRule
-                          path={`/settings/shipping-rules/${r.id}`}
-                          onDone={onChanged}
-                          label="Remove shipping cost rule"
-                        />
+                        <s-stack direction="inline" gap="small-300">
+                          <s-button
+                            variant="tertiary"
+                            accessibilityLabel={`Edit the rule for ${shipWhere(r)}`}
+                            onClick={() => setDialog(r)}
+                          >
+                            Edit
+                          </s-button>
+                          <RemoveRule
+                            path={`/settings/shipping-rules/${r.id}`}
+                            onDone={onChanged}
+                            label="Remove shipping cost rule"
+                          />
+                        </s-stack>
                       </s-table-cell>
                     </s-table-row>
                   ))}
@@ -346,109 +255,6 @@ export function ShippingTab({ rules, onChanged }: { rules: RulesResponse; onChan
               </s-table>
             </ScrollTable>
           )}
-          <s-text type="strong">Add a rule</s-text>
-          <s-grid
-            gridTemplateColumns="repeat(auto-fit, minmax(10.625rem, 1fr))"
-            gap="base"
-            alignItems="end"
-          >
-            <s-text-field
-              label="Zone name"
-              placeholder="Domestic"
-              value={zone}
-              onInput={(e) => setZone(e.currentTarget.value)}
-            />
-            <s-text-field
-              label="Countries"
-              placeholder="US, CA"
-              details="Leave blank for every country"
-              value={countries}
-              error={
-                touched && countryList === null ? 'Use two-letter codes such as US' : undefined
-              }
-              onInput={(e) => setCountries(e.currentTarget.value)}
-            />
-            <s-text-field
-              label="From grams"
-              placeholder="0"
-              value={weightMin}
-              error={touched && !weightOk ? 'Check the weight band' : undefined}
-              onInput={(e) => setWeightMin(e.currentTarget.value)}
-            />
-            <s-text-field
-              label="Up to grams"
-              placeholder="1000"
-              details="Orders at this weight use the next band"
-              value={weightMax}
-              onInput={(e) => setWeightMax(e.currentTarget.value)}
-            />
-            <Dropdown
-              label="Method"
-              value={mode}
-              options={[
-                { value: 'flat', label: 'Flat amount per order' },
-                { value: 'per_kilogram', label: 'Amount per kilogram' },
-                { value: 'percent_of_shipping_charged', label: 'Percent of shipping charged' },
-              ]}
-              onChange={(v) => setMode(v as ShipMode)}
-            />
-            <s-text-field
-              label={
-                mode === 'percent_of_shipping_charged'
-                  ? 'Percent of shipping charged'
-                  : mode === 'per_kilogram'
-                    ? `Amount per kilogram (${cur})`
-                    : `Amount per order (${cur})`
-              }
-              placeholder={mode === 'percent_of_shipping_charged' ? '80' : '6.00'}
-              value={value}
-              error={touched && !valueOk ? 'Enter a number' : undefined}
-              onInput={(e) => setValue(e.currentTarget.value)}
-            />
-            <DateField
-              label="Applies from"
-              value={from}
-              error={touched && !dateOk ? 'Choose a date that is not in the future' : undefined}
-              onChange={(v) => setFrom(v)}
-            />
-          </s-grid>
-          <FormError message={error} />
-          <RuleCheck
-            kind="shipping"
-            body={
-              valueOk && dateOk && countryList !== null && weightOk
-                ? mode === 'percent_of_shipping_charged'
-                  ? {
-                      mode,
-                      percent: value.trim(),
-                      zone: zone.trim() || null,
-                      countries: countryList,
-                      weightMinGrams: minG,
-                      weightMaxGrams: maxG,
-                      effectiveFrom: from,
-                    }
-                  : {
-                      mode,
-                      amount: value.trim(),
-                      zone: zone.trim() || null,
-                      countries: countryList,
-                      weightMinGrams: minG,
-                      weightMaxGrams: maxG,
-                      effectiveFrom: from,
-                    }
-                : null
-            }
-          />
-          <FormActions>
-            <s-button variant="primary" disabled={busy} onClick={() => void add()}>
-              Add rule
-            </s-button>
-          </FormActions>
-          <s-text color="subdued">
-            A country rule wins over a rule for every country, and a weight band wins over a rule
-            with no weight. Per kilogram needs a product weight. Only orders that ship have a
-            shipping cost. {RECALC_NOTE}
-          </s-text>
           <s-text type="strong">Import or export</s-text>
           <s-text-area
             label="CSV"
@@ -460,6 +266,7 @@ export function ShippingTab({ rules, onChanged }: { rules: RulesResponse; onChan
               setPreview(null);
             }}
           />
+          <FormError message={error} />
           {preview && (
             <s-banner tone={preview.invalid > 0 ? 'warning' : 'info'} heading="Import preview">
               <s-stack gap="small-300">
@@ -506,6 +313,22 @@ export function ShippingTab({ rules, onChanged }: { rules: RulesResponse; onChan
             </s-button>
           </FormActions>
         </s-stack>
+        {dialog && (
+          <Modal
+            heading={dialog === 'new' ? 'Add shipping cost rule' : 'Edit shipping cost rule'}
+            onClose={() => setDialog(null)}
+          >
+            <ShippingRuleForm
+              rules={rules}
+              rule={dialog === 'new' ? undefined : dialog}
+              onCancel={() => setDialog(null)}
+              onSaved={() => {
+                setDialog(null);
+                onChanged();
+              }}
+            />
+          </Modal>
+        )}
       </s-section>
     </>
   );
