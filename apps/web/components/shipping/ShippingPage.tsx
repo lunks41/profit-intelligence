@@ -9,6 +9,7 @@ import type {
   ShippingOverviewResponse,
 } from '@pi/contracts';
 import { apiDelete } from '../../lib/api';
+import { CHART } from '../../lib/chart-colors';
 import { formatDayMonth, todayInShop } from '../../lib/shop-time';
 import { buildListQuery } from '../../lib/query';
 import { InfoTip } from '../common/info-tip';
@@ -83,7 +84,7 @@ export function ShippingPage() {
                       name: formatDayMonth(d.date),
                       Cost: Number(d.cost),
                     }))}
-                    keys={[{ key: 'Cost', name: 'Shipping cost', color: '#005bd3' }]}
+                    keys={[{ key: 'Cost', name: 'Shipping cost', color: CHART.costs }]}
                   />
                 </s-section>
               )}

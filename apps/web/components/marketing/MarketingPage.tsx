@@ -7,6 +7,7 @@ import { Dropdown } from '../dropdown';
 import { useState } from 'react';
 import type { AdProvidersResponse, MarketingResponse, PeriodPreset } from '@pi/contracts';
 import { apiDelete, apiPatch, apiPost } from '../../lib/api';
+import { CHART } from '../../lib/chart-colors';
 import { formatMoney, longDate, periodLabel } from '../../lib/format';
 import { buildListQuery } from '../../lib/query';
 import { parseSpendLines } from '../../lib/spend';
@@ -79,7 +80,7 @@ export function MarketingPage() {
                         name: formatDayMonth(d.date),
                         Spend: Number(d.spend),
                       }))}
-                      keys={[{ key: 'Spend', name: 'Ad spend', color: '#005bd3' }]}
+                      keys={[{ key: 'Spend', name: 'Ad spend', color: CHART.spend }]}
                     />
                   </s-section>
                 )}

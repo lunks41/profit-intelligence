@@ -13,6 +13,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { CHART } from '../../lib/chart-colors';
 import { formatMoney, formatMoneyCompact, formatPercent } from '../../lib/format';
 import { buildListQuery } from '../../lib/query';
 import { todayInShop } from '../../lib/shop-time';
@@ -328,7 +329,7 @@ function RatioCard({ data }: { data: LtvResponse }) {
                 yAxisId="money"
                 dataKey="LTV"
                 name="Lifetime value (LTV)"
-                fill="#005bd3"
+                fill={CHART.revenue}
                 isAnimationActive={false}
                 maxBarSize={28}
               />
@@ -336,7 +337,7 @@ function RatioCard({ data }: { data: LtvResponse }) {
                 yAxisId="money"
                 dataKey="CAC"
                 name="Cost to win a customer (CAC)"
-                fill="#b98900"
+                fill={CHART.spend}
                 isAnimationActive={false}
                 maxBarSize={28}
               />
@@ -344,7 +345,7 @@ function RatioCard({ data }: { data: LtvResponse }) {
                 yAxisId="ratio"
                 dataKey="Ratio"
                 name="LTV:CAC"
-                stroke="#303030"
+                stroke={CHART.operating}
                 strokeWidth={2}
                 dot
                 isAnimationActive={false}

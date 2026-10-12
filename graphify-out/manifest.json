@@ -572,8 +572,8 @@
     "hash": "d421004a4236cad3c9ed1236e6e96ea8"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\common\\kpi.tsx": {
-    "mtime": 1791569466.0001898,
-    "hash": "735e33b06432fe1b8350c5d940a0b866"
+    "mtime": 1791812710.2877748,
+    "hash": "4cfc5db552f9fc1e9225723ce9f38ffb"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\common\\label-value-row.tsx": {
     "mtime": 1791552398.0631468,
@@ -660,24 +660,24 @@
     "hash": "d6a7859c67f4adb0049428c4b31857cb"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\marketing\\AdAccountsCard.tsx": {
-    "mtime": 1791805216.9632812,
-    "hash": "f86217ff05425c775e5bd0ab44a785bc"
+    "mtime": 1791812707.1598897,
+    "hash": "93e11f2149164bae41dcc80a3e717fa2"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\marketing\\ChannelChart.tsx": {
-    "mtime": 1791804660.3773904,
-    "hash": "38375af486c4b1e3cbfbb93f2f8bf306"
+    "mtime": 1791812709.689059,
+    "hash": "4410161fc893bbcd226b65b665502e1a"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\marketing\\ConnectPlatforms.tsx": {
     "mtime": 1791806052.9469626,
     "hash": "1607781f8e020ad24a4c7d9d6c72e4b7"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\marketing\\MarketingPage.tsx": {
-    "mtime": 1791805806.4124427,
-    "hash": "ce3649306748776f53eb3d3c329bee11"
+    "mtime": 1791812698.8498228,
+    "hash": "6535fa0e295d25fc8b4eeeef721bb246"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\marketing\\MarketingSummaryCard.tsx": {
-    "mtime": 1791804221.2280564,
-    "hash": "ae3ad435c3df05c56e8849a7df09c96b"
+    "mtime": 1791812709.9161723,
+    "hash": "28394c18e8465d551a333ac6384c8a92"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\notices\\Notice.tsx": {
     "mtime": 1791779603.2603016,
@@ -699,13 +699,9 @@
     "mtime": 1791791027.2961073,
     "hash": "465aeb4c60d6e778a316e4cd755b867e"
   },
-  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\ExpensesSummaryCard.tsx": {
-    "mtime": 1791784468.1852646,
-    "hash": "9a9b77b1b98ea3c3edc77bba63b645f7"
-  },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\KpiCards.tsx": {
-    "mtime": 1791784468.1892648,
-    "hash": "d2423d3b4042219f72a19a21069e3cb5"
+    "mtime": 1791812668.7237115,
+    "hash": "97315816d15d02b57d7c054ddfea18ef"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\Opportunities.tsx": {
     "mtime": 1791791027.3101118,
@@ -719,9 +715,13 @@
     "mtime": 1791784689.836301,
     "hash": "921361df6a1ea1aafd7808c6a038d3d9"
   },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\OverviewTop.tsx": {
+    "mtime": 1791812744.6769235,
+    "hash": "776b65ea0765a9ea2d470df1e222d5e0"
+  },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\OverviewView.tsx": {
-    "mtime": 1791805337.9404297,
-    "hash": "dae44733cb865c025f1c8cd77e79cf2f"
+    "mtime": 1791812734.9489,
+    "hash": "619644e3146d57ffd83f05fd116c8aaf"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\ProfitBreakdown.tsx": {
     "mtime": 1791663860.2673156,
@@ -744,12 +744,12 @@
     "hash": "0d2a6958ffc17c300efed97fbff43706"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\TrendCard.tsx": {
-    "mtime": 1791568956.919214,
-    "hash": "8e06ebba94561ed8ff40e44da38e6e19"
+    "mtime": 1791812677.1315327,
+    "hash": "4c689e8e3369f74eab541d78bfe1762f"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\TrendChart.tsx": {
-    "mtime": 1791609940.0329404,
-    "hash": "c86501c94be244f16bc9bea804f1838b"
+    "mtime": 1791812698.7889829,
+    "hash": "ec6bf49c1b4cd26a322d1336fc9ff009"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\WhatChangedCard.tsx": {
     "mtime": 1791791027.32462,
@@ -792,8 +792,8 @@
     "hash": "3cca46aad73c4ab72c9edc00ae044a31"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\profit\\ProfitPage.tsx": {
-    "mtime": 1791805965.2598405,
-    "hash": "42efd093214efa2c0d67be8c3195c423"
+    "mtime": 1791812698.8412156,
+    "hash": "d42aa574c657d74a888ffc5437a9b98a"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\profitability\\BulkCostDialog.tsx": {
     "mtime": 1791787283.5224934,
@@ -832,8 +832,8 @@
     "hash": "59469d0a4be60c8dc446e34cf4625d85"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\reports\\LtvReport.tsx": {
-    "mtime": 1791812228.7425578,
-    "hash": "ad4e9cfb845f93db0c045bcae8ade0b1"
+    "mtime": 1791812698.8653376,
+    "hash": "0af96bfa388381fb331ac6f40186d70e"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\reports\\Notifications.tsx": {
     "mtime": 1791791027.3412662,
@@ -908,8 +908,8 @@
     "hash": "afbcc31561416baebe116b263b83aee8"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\shipping\\ShippingPage.tsx": {
-    "mtime": 1791807046.1254807,
-    "hash": "e281db92dfab54f39297db5e71f3a22c"
+    "mtime": 1791812698.8733377,
+    "hash": "dd8ca8de6656b8c8da7627653724e9ea"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\shipping\\ShippingParts.tsx": {
     "mtime": 1791807079.60551,
@@ -946,6 +946,10 @@
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\lib\\card-periods.ts": {
     "mtime": 1791781984.5178356,
     "hash": "751202c6a7a50619336527ec3e6e6ade"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\lib\\chart-colors.ts": {
+    "mtime": 1791812660.5748162,
+    "hash": "147a13a5b07fd270acee0a98324dac63"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\lib\\costs.test.ts": {
     "mtime": 1791664001.7299948,

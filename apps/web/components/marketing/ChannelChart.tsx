@@ -11,6 +11,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { CHART } from '../../lib/chart-colors';
 import { formatMoney, formatMoneyCompact } from '../../lib/format';
 import { chartColor } from '../common/platform-marks';
 
@@ -86,7 +87,7 @@ export function ChannelChart({ data }: { data: MarketingResponse }) {
               isAnimationActive={false}
             >
               {rows.map((r) => (
-                <Cell key={r.full} fill={r.color} fillOpacity={0.4} />
+                <Cell key={r.full} fill={CHART.profit} />
               ))}
             </Bar>
           </BarChart>
@@ -113,7 +114,9 @@ export function ChannelChart({ data }: { data: MarketingResponse }) {
             <s-text color="subdued">{r.ret === null ? '' : `${r.ret}x`}</s-text>
           </span>
         ))}
-        <s-text color="subdued">Dark bar: spend. Light bar: sales the platform reports.</s-text>
+        <s-text color="subdued">
+          First bar (platform colour): spend. Green bar: sales the platform reports.
+        </s-text>
       </div>
     </s-stack>
   );

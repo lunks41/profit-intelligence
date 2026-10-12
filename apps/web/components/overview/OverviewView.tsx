@@ -10,10 +10,8 @@ import { PeriodDropdown } from '../dropdown';
 import { CostBreakdownCard } from './CostBreakdownCard';
 import { DataQualityCard } from './DataQualityCard';
 import { MarketingSummaryCard } from '../marketing/MarketingSummaryCard';
-import { ExpensesSummaryCard } from './ExpensesSummaryCard';
-import { KpiCards } from './KpiCards';
+import { OverviewTop } from './OverviewTop';
 import { ProfitBreakdown } from './ProfitBreakdown';
-import { TrendSection } from './TrendCard';
 import { WhatChangedCard } from './WhatChangedCard';
 import { DateField } from '../common/DateField';
 import { prettyDates } from '../../lib/shop-time';
@@ -177,30 +175,24 @@ export function OverviewView({
         </>
       ) : (
         <>
-          <KpiCards data={data} />
+          <OverviewTop
+            data={data}
+            topSelling={topSelling}
+            topReturned={topReturned}
+            recentOrders={recentOrders}
+          />
 
-          <MarketingSummaryCard period={data.period} currency={data.currency.code} />
-
-          <ExpensesSummaryCard data={data} />
-
+          {/* what does not fit the main screen */}
           <WhatChangedCard data={data} />
 
-          <TrendSection page={data} />
+          <MarketingSummaryCard
+            period={data.period}
+            currency={data.currency.code}
+            showSpend={false}
+            showAccounts={false}
+          />
 
-          {/* three cards of the same height; they wrap to fewer columns on a narrower page */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 21.25rem), 1fr))',
-              gap: '1rem',
-              alignItems: 'stretch',
-            }}
-          >
-            {topSelling}
-            {topReturned}
-            {recentOrders}
-            <CostBreakdownCard page={data} />
-          </div>
+          <CostBreakdownCard page={data} />
 
           <DataQualityCard quality={data.dataQuality} issues={data.issues} />
           <ProfitBreakdown data={data} />

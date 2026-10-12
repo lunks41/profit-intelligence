@@ -14,9 +14,15 @@ import { AdAccountsCard } from './AdAccountsCard';
 export function MarketingSummaryCard({
   period,
   currency,
+  showSpend = true,
+  showAccounts = true,
 }: {
   period: { from: string; to: string };
   currency: string;
+  /** false when ad spend is already shown elsewhere on the page */
+  showSpend?: boolean;
+  /** false when the connected accounts are already shown elsewhere on the page */
+  showAccounts?: boolean;
 }) {
   const q = new URLSearchParams({ preset: 'custom', from: period.from, to: period.to, currency });
   const { data, error } = useApi<MarketingResponse>(`/marketing/overview?${q}`);
@@ -47,20 +53,22 @@ export function MarketingSummaryCard({
   return (
     <s-stack gap="small">
       <s-grid gridTemplateColumns="repeat(auto-fit, minmax(15rem, 1fr))" gap="small">
-        <Kpi
-          icon="receipt"
-          label="Ad spend"
-          value={t.hasData ? formatMoney(t.spend, cur) : '—'}
-          info="Advertising spend imported or entered for the period, in your store currency."
-          change={
-            t.hasData ? (
-              <s-text color="subdued">All ad accounts</s-text>
-            ) : (
-              <s-text color="subdued">No spend for this period yet</s-text>
-            )
-          }
-          spark={t.hasData ? spark : undefined}
-        />
+        {showSpend && (
+          <Kpi
+            icon="receipt"
+            label="Ad spend"
+            value={t.hasData ? formatMoney(t.spend, cur) : '—'}
+            info="Advertising spend imported or entered for the period, in your store currency."
+            change={
+              t.hasData ? (
+                <s-text color="subdued">All ad accounts</s-text>
+              ) : (
+                <s-text color="subdued">No spend for this period yet</s-text>
+              )
+            }
+            spark={t.hasData ? spark : undefined}
+          />
+        )}
         <Kpi
           icon="chart-vertical"
           label="Profit after ads"
@@ -82,7 +90,7 @@ export function MarketingSummaryCard({
           change={<s-link href="/marketing">Open Marketing</s-link>}
         />
       </s-grid>
-      <AdAccountsCard data={data} />
+      {showAccounts && <AdAccountsCard data={data} />}
     </s-stack>
   );
 }

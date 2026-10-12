@@ -18,7 +18,14 @@ const PLATFORM: Record<string, string> = {
  * The ad accounts that are set up, each with the mark of its platform, how it gets its spend, when it last
  * imported, and what it spent in the period of the page. Shown on the Overview under the advertising figures.
  */
-export function AdAccountsCard({ data }: { data: MarketingResponse }) {
+export function AdAccountsCard({
+  data,
+  limit = 6,
+}: {
+  data: MarketingResponse;
+  /** how many accounts to list; the rest are on Marketing */
+  limit?: number;
+}) {
   const accounts = data.accounts.filter((a) => a.status !== 'disconnected');
   if (accounts.length === 0) return null;
   const spendOf = (id: string) =>
@@ -41,7 +48,7 @@ export function AdAccountsCard({ data }: { data: MarketingResponse }) {
             gap: '0.5rem',
           }}
         >
-          {accounts.slice(0, 6).map((a) => {
+          {accounts.slice(0, limit).map((a) => {
             const mark = markFor(a.provider, a.name);
             return (
               <div

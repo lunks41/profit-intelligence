@@ -20,6 +20,7 @@ import {
   longDate,
   shortDate,
 } from '../../lib/format';
+import { CHART } from '../../lib/chart-colors';
 
 type Trend = OverviewResponse['trend'];
 
@@ -89,7 +90,7 @@ export function TrendChart({
               dataKey="reportedCosts"
               stackId="costs"
               name="Costs"
-              fill="#fbd5d0"
+              fill={CHART.costs}
               isAnimationActive={false}
               maxBarSize={monthly ? 40 : 28}
             />
@@ -97,7 +98,7 @@ export function TrendChart({
               dataKey="estimatedFees"
               stackId="costs"
               name="Estimated payment fees (part of costs)"
-              fill="#f5c26b"
+              fill={CHART.estimated}
               isAnimationActive={false}
               maxBarSize={monthly ? 40 : 28}
             />
@@ -106,7 +107,7 @@ export function TrendChart({
                 <Bar
                   dataKey="revenue"
                   name="Revenue"
-                  fill="#005bd3"
+                  fill={CHART.revenue}
                   isAnimationActive={false}
                   maxBarSize={40}
                 >
@@ -120,7 +121,7 @@ export function TrendChart({
                 <Bar
                   dataKey="profit"
                   name="Contribution profit"
-                  fill="#047b5d"
+                  fill={CHART.profit}
                   isAnimationActive={false}
                   maxBarSize={40}
                 >
@@ -138,8 +139,8 @@ export function TrendChart({
                   type="monotone"
                   dataKey="revenue"
                   name="Revenue"
-                  stroke="#005bd3"
-                  strokeWidth={2}
+                  stroke={CHART.revenue}
+                  strokeWidth={3}
                   dot={false}
                   isAnimationActive={false}
                 />
@@ -147,9 +148,8 @@ export function TrendChart({
                   type="monotone"
                   dataKey="profit"
                   name="Contribution profit"
-                  stroke="#047b5d"
-                  strokeWidth={2}
-                  strokeDasharray="6 3"
+                  stroke={CHART.profit}
+                  strokeWidth={3}
                   dot={false}
                   isAnimationActive={false}
                 />
@@ -164,7 +164,7 @@ export function TrendChart({
         be incomplete. Costs are product cost, payment fees, shipping and advertising (when set up);
         contribution profit is revenue less costs.
         {hasEstimates &&
-          ' The amber part of each cost bar is payment fees estimated from your fee rule; fees Shopify charged are not imported yet.'}
+          ' The amber part of each red cost bar is payment fees estimated from your fee rule; fees Shopify charged are not imported yet.'}
       </s-text>
     </div>
   );

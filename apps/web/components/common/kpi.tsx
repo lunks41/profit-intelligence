@@ -79,6 +79,7 @@ export function Kpi({
   change,
   notes,
   spark,
+  large,
 }: {
   icon: KpiIcon;
   label: string;
@@ -89,6 +90,8 @@ export function Kpi({
   notes?: ReactNode;
   /** points for the small chart; omitted or too few means no chart */
   spark?: Array<number | null>;
+  /** the main figure of a screen: a bigger number */
+  large?: boolean;
 }) {
   const tile = TILE[icon];
   return (
@@ -116,7 +119,11 @@ export function Kpi({
               <s-text color="subdued">{label}</s-text>
               {info && <InfoTip label={label} text={info} />}
             </s-stack>
-            <span style={{ fontSize: '1.75rem', fontWeight: 700, lineHeight: 1.2 }}>{value}</span>
+            <span
+              style={{ fontSize: large ? '2.25rem' : '1.75rem', fontWeight: 700, lineHeight: 1.2 }}
+            >
+              {value}
+            </span>
           </s-stack>
         </s-stack>
         <s-grid gridTemplateColumns="1fr 1fr" gap="base" alignItems="end">

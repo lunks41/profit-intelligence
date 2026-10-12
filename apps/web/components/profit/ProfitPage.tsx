@@ -8,6 +8,7 @@ import type {
   PeriodPreset,
   ReportTableResponse,
 } from '@pi/contracts';
+import { CHART } from '../../lib/chart-colors';
 import { describeDelta, describePoints, formatMoney, formatPercent } from '../../lib/format';
 import { sparkSeries } from '../../lib/series';
 import { buildListQuery } from '../../lib/query';
@@ -271,9 +272,9 @@ function Trend({
       <SampleBars
         data={data}
         keys={[
-          { key: 'Revenue', name: 'Revenue', color: '#005bd3' },
-          { key: 'Contribution profit', name: 'Contribution profit', color: '#047b5d' },
-          { key: 'Operating profit', name: 'Estimated operating profit', color: '#b98900' },
+          { key: 'Revenue', name: 'Revenue', color: CHART.revenue },
+          { key: 'Contribution profit', name: 'Contribution profit', color: CHART.profit },
+          { key: 'Operating profit', name: 'Estimated operating profit', color: CHART.operating },
         ]}
       />
       <s-text color="subdued">
