@@ -164,28 +164,28 @@ export function DateField({
   }
 
   return (
-    <s-stack direction="inline" gap="small-300" alignItems="end">
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <s-text-field
-          label={label}
-          value={text}
-          placeholder="12-Oct-2026"
-          error={bad ? 'Use a date such as 12-Oct-2026' : error}
-          onInput={(e) => {
-            setText(e.currentTarget.value);
-            setBad(false);
-          }}
-          onBlur={commit}
-          onChange={commit}
+    <>
+      <s-text-field
+        label={label}
+        value={text}
+        placeholder="12-Oct-2026"
+        error={bad ? 'Use a date such as 12-Oct-2026' : error}
+        onInput={(e) => {
+          setText(e.currentTarget.value);
+          setBad(false);
+        }}
+        onBlur={commit}
+        onChange={commit}
+      >
+        <s-button
+          slot="accessory"
+          variant="tertiary"
+          icon="calendar"
+          commandFor={id}
+          command="--toggle"
+          accessibilityLabel={`Pick ${label} from a calendar`}
         />
-      </div>
-      <s-button
-        variant="tertiary"
-        icon="calendar"
-        commandFor={id}
-        command="--toggle"
-        accessibilityLabel={`Pick ${label} from a calendar`}
-      />
+      </s-text-field>
       <s-popover id={id}>
         <Calendar
           value={value}
@@ -195,6 +195,6 @@ export function DateField({
           }}
         />
       </s-popover>
-    </s-stack>
+    </>
   );
 }
