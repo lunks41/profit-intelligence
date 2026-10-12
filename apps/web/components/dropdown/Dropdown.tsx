@@ -51,43 +51,19 @@ export function Dropdown({
   const control = (
     <s-stack gap="small-300">
       {!compact && !chip && <s-text>{label}</s-text>}
-      {chip ? (
-        <s-button
-          variant="secondary"
-          inlineSize="auto"
-          disabled={disabled}
-          commandFor={id}
-          command="--toggle"
-          accessibilityLabel={`${label}: ${current?.label ?? 'none selected'}`}
-        >
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
-            {name}
-            <s-icon type="chevron-down" size="small" />
-          </span>
-        </s-button>
-      ) : (
-        <s-button
-          inlineSize={compact ? 'auto' : 'fill'}
-          variant="secondary"
-          disabled={disabled}
-          commandFor={id}
-          command="--toggle"
-          accessibilityLabel={`${label}: ${current?.label ?? 'none selected'}`}
-        >
-          <span
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: compact ? 'flex-start' : 'space-between',
-              gap: '0.35rem',
-              width: '100%',
-            }}
-          >
-            {name}
-            <s-icon type="chevron-down" size="small" />
-          </span>
-        </s-button>
-      )}
+      <s-button
+        variant="secondary"
+        inlineSize="auto"
+        disabled={disabled}
+        commandFor={id}
+        command="--toggle"
+        accessibilityLabel={`${label}: ${current?.label ?? 'none selected'}`}
+      >
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+          {name}
+          <s-icon type="chevron-down" size="small" />
+        </span>
+      </s-button>
       <s-popover id={id} minInlineSize="200px" maxBlockSize="256px">
         <s-stack gap="none" padding="small-300">
           {options.map((o) => {
@@ -136,6 +112,5 @@ export function Dropdown({
       </s-popover>
     </s-stack>
   );
-  if (!chip) return control;
   return <div style={{ width: 'fit-content' }}>{control}</div>;
 }
