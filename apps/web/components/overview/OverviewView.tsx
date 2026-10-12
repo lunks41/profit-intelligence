@@ -1,5 +1,7 @@
 'use client';
 
+import { presetRange } from '../../lib/period-range';
+import { formatDate, todayInShop } from '../../lib/shop-time';
 import type { ReactNode } from 'react';
 import type { OverviewResponse, PeriodPreset } from '@pi/contracts';
 import { describeFreshness } from '../../lib/freshness';
@@ -42,6 +44,15 @@ export function FilterBar({
       onChange={(preset) => onChange({ ...filters, preset })}
     />
   );
+  // the dates a preset stands for, next to the dropdown: "Last 30 days" is 13-Sep-2026 to 12-Oct-2026
+  const range = presetRange(filters.preset, todayInShop());
+  const rangeCapsule = range && (
+    <s-badge tone="neutral">
+      {range.from === range.to
+        ? formatDate(range.from)
+        : `${formatDate(range.from)} to ${formatDate(range.to)}`}
+    </s-badge>
+  );
   const dates = filters.preset === 'custom' && (
     <>
       <div style={{ width: '11rem' }}>
@@ -76,6 +87,7 @@ export function FilterBar({
         }}
       >
         {period}
+        {rangeCapsule}
         {dates}
         {children}
       </div>
