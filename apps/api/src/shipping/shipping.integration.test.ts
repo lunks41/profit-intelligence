@@ -4,8 +4,20 @@ import { readFileSync } from 'node:fs';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
-import { carrierInvoiceListResponseSchema, carrierInvoiceResultSchema } from '@pi/contracts';
-import { PROFIT_QUEUE, createDb, createPool, installShop, upsertOrders, withTenant } from '@pi/db';
+import {
+  carrierInvoiceListResponseSchema,
+  carrierInvoiceResultSchema,
+  shippingOverviewResponseSchema,
+} from '@pi/contracts';
+import {
+  PROFIT_QUEUE,
+  createDb,
+  createPool,
+  installShop,
+  saveCarrierInvoice,
+  upsertOrders,
+  withTenant,
+} from '@pi/db';
 import type { InstallResult } from '@pi/db';
 import { AuthError, mapOrder } from '@pi/shopify';
 import type { ShopifyAuth } from '@pi/shopify';
@@ -247,5 +259,100 @@ describe('carrier invoices', () => {
       (await call('POST', importUrl, 'id-ship-a', importBody({ carrier: 'pigeon' }))).statusCode,
     ).toBe(400);
     expect((await call('DELETE', '/shipping/carrier-invoices/not-an-id')).statusCode).toBe(400);
+  });
+});
+
+describe('the shipping overview', () => {
+  /** Three counted orders in September: one with an invoice cost, one estimated by a rule, one with no cost. */
+  async function ledger() {
+    const id = async (name: string) =>
+      (
+        await admin.query('select id from t_order where shop_id = $1 and name = $2', [
+          a.shopId,
+          name,
+        ])
+      ).rows[0].id as string;
+    const orders = [
+      ['#1040', 'actual', 'carrier invoice: dhl', '-12.4000', '5.0000'],
+      ['#1017', 'estimated', 'flat rule', '-4.0000', '3.0000'],
+      ['#1029', 'missing', 'no shipping cost rule', '0.0000', '2.0000'],
+    ] as const;
+    for (const [name, status, source, cost, charged] of orders) {
+      const orderId = await id(name);
+      await admin.query(
+        `insert into f_order_profit (tenant_id, shop_id, order_id, order_date, recognized, engine_version) values ($1,$2,$3,'2026-09-10',true,'t')`,
+        [a.tenantId, a.shopId, orderId],
+      );
+      await admin.query(
+        `insert into f_profit_entry (tenant_id, shop_id, order_id, component, occurred_at, entry_date, amount, currency, status, source, engine_version)
+         values ($1,$2,$3,'shipping_cost',now(),'2026-09-10',$4,'USD',$5,$6,'t'), ($1,$2,$3,'shipping_revenue',now(),'2026-09-10',$7,'USD','actual','shopify','t')`,
+        [a.tenantId, a.shopId, orderId, cost, status, source, charged],
+      );
+    }
+    await saveCarrierInvoice(db, a, {
+      carrier: 'dhl',
+      fileName: 'dhl.csv',
+      fileHash: 'overview-h',
+      rowCount: 1,
+      unmatchedRows: 0,
+      charges: [
+        { orderId: await id('#1040'), reference: '#1040', amount: '12.4000', chargeDate: null },
+      ],
+      actor: 'test',
+    });
+  }
+  const q = '?preset=custom&from=2026-09-01&to=2026-09-30';
+
+  it('adds up the cost by where it comes from, and what customers paid for shipping', async () => {
+    await ledger();
+    const r = shippingOverviewResponseSchema.parse(
+      (await call('GET', `/shipping/overview${q}`)).json(),
+    );
+    expect(r.totals).toMatchObject({
+      cost: '16.4000',
+      costActual: '12.4000',
+      costEstimated: '4.0000',
+      charged: '10.0000',
+      margin: '-6.4000',
+      orders: 2,
+      ordersActual: 1,
+      ordersEstimated: 1,
+      ordersMissing: 1,
+      costPerOrder: '8.2000',
+      invoiceShare: '0.5000',
+    });
+    expect(r.carriers).toEqual([
+      { key: 'dhl', cost: '12.4000', orders: 1 },
+      { key: 'rules', cost: '4.0000', orders: 1 },
+    ]);
+    expect(r.daily).toEqual([{ date: '2026-09-10', cost: '16.4000' }]);
+    // the order with no cost comes first, then the dearest
+    expect(r.shipments.map((x) => [x.orderName, x.kind])).toEqual([
+      ['#1029', 'missing'],
+      ['#1040', 'invoice'],
+      ['#1017', 'rules'],
+    ]);
+    expect(r.shipments[1]).toMatchObject({ carrier: 'dhl', cost: '12.4000', charged: '5.0000' });
+  });
+
+  it('is empty outside the period, belongs to one shop, and refuses a bad period', async () => {
+    await ledger();
+    const none = shippingOverviewResponseSchema.parse(
+      (await call('GET', '/shipping/overview?preset=custom&from=2026-01-01&to=2026-01-31')).json(),
+    );
+    expect(none.totals).toMatchObject({
+      cost: '0.0000',
+      orders: 0,
+      costPerOrder: null,
+      invoiceShare: null,
+    });
+    const other = shippingOverviewResponseSchema.parse(
+      (await call('GET', `/shipping/overview${q}`, 'id-ship-b')).json(),
+    );
+    expect(other.totals.cost).toBe('0.0000');
+    expect(
+      (await call('GET', '/shipping/overview?preset=custom&from=2026-09-30&to=2026-09-01'))
+        .statusCode,
+    ).toBe(400);
   });
 });

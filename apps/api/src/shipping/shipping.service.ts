@@ -4,11 +4,15 @@ import type {
   CarrierInvoiceImportBody,
   CarrierInvoiceListResponse,
   CarrierInvoiceResult,
+  PeriodPreset,
+  ShippingOverviewResponse,
 } from '@pi/contracts';
 import {
   carrierCoverage,
   carrierFileImported,
   enqueueProfitRecalc,
+  getShippingOverview,
+  getShopOverview,
   listCarrierInvoices,
   matchOrdersByReference,
   normalizeReference,
@@ -18,7 +22,10 @@ import {
 import type { Db } from '@pi/db';
 import type { PgBoss } from 'pg-boss';
 import type { TenantContext } from '../auth/installation.service.js';
+import { EntitlementsService } from '../billing/entitlements.service.js';
+import { InvalidRangeError, resolveRange } from '../dashboard/range.js';
 import { DB, QUEUE } from '../tokens.js';
+import { businessDate, dec, toStored } from '@pi/profit-engine';
 import { parseCarrierCsv } from './carrier-csv.js';
 
 const actorOf = (t: TenantContext) => (t.userId ? `shopify-user:${t.userId}` : 'merchant');
@@ -33,7 +40,60 @@ export class ShippingService {
   constructor(
     @Inject(DB) private readonly db: Db,
     @Inject(QUEUE) private readonly boss: PgBoss,
+    @Inject(EntitlementsService) private readonly entitlements: EntitlementsService,
   ) {}
+
+  /** What shipping cost in a period, what customers paid for it, and where the cost comes from. */
+  async overview(
+    scope: TenantContext,
+    q: { preset: PeriodPreset; from?: string; to?: string },
+  ): Promise<ShippingOverviewResponse> {
+    const shop = await getShopOverview(this.db, scope);
+    if (!shop) throw new BadRequestException({ code: 'shop_not_found', message: 'Shop not found' });
+    let range;
+    try {
+      range = resolveRange(q, shop.ianaTimezone, new Date());
+    } catch (e) {
+      if (e instanceof InvalidRangeError)
+        throw new BadRequestException({ code: 'invalid_period', message: e.message });
+      throw e;
+    }
+    await this.entitlements.assertRange(scope, range, businessDate(new Date(), shop.ianaTimezone));
+    const o = await getShippingOverview(this.db, scope, range);
+    const withCost = o.ordersActual + o.ordersEstimated;
+    return {
+      period: {
+        from: range.from,
+        to: range.to,
+        days: range.days,
+        preset: range.preset,
+        timezone: shop.ianaTimezone,
+      },
+      currency: 'USD',
+      totals: {
+        cost: toStored(dec(o.cost)),
+        costActual: toStored(dec(o.costActual)),
+        costEstimated: toStored(dec(o.costEstimated)),
+        charged: toStored(dec(o.charged)),
+        margin: toStored(dec(o.charged).minus(dec(o.cost))),
+        orders: withCost,
+        ordersActual: o.ordersActual,
+        ordersEstimated: o.ordersEstimated,
+        ordersMissing: o.ordersMissing,
+        costPerOrder: withCost > 0 ? toStored(dec(o.cost).div(dec(String(withCost)))) : null,
+        invoiceShare:
+          withCost > 0
+            ? dec(String(o.ordersActual))
+                .div(dec(String(withCost)))
+                .toDecimalPlaces(4)
+                .toFixed(4)
+            : null,
+      },
+      daily: o.daily,
+      carriers: o.carriers,
+      shipments: o.shipments,
+    };
+  }
 
   async list(scope: TenantContext): Promise<CarrierInvoiceListResponse> {
     const [rows, cover] = await Promise.all([

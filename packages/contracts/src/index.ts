@@ -1678,3 +1678,45 @@ export const carrierInvoiceListResponseSchema = z.object({
   coveredOrders: z.number(),
 });
 export type CarrierInvoiceListResponse = z.infer<typeof carrierInvoiceListResponseSchema>;
+
+// ---- shipping overview ----
+
+export const shippingQuerySchema = z.object({ ...periodQuery });
+
+export const shippingOverviewResponseSchema = z.object({
+  period: periodSchema,
+  currency: z.string(),
+  totals: z.object({
+    /** what shipping cost in the period: from invoices and from rules */
+    cost: money,
+    costActual: money,
+    costEstimated: money,
+    /** shipping charged to customers, less shipping refunded */
+    charged: money,
+    /** charged less cost */
+    margin: money,
+    /** counted orders with a shipping cost (actual or estimated) */
+    orders: z.number(),
+    ordersActual: z.number(),
+    ordersEstimated: z.number(),
+    /** counted orders that ship but have no shipping cost yet */
+    ordersMissing: z.number(),
+    costPerOrder: money.nullable(),
+    /** the share of the orders with a cost whose cost is from a carrier invoice */
+    invoiceShare: ratio,
+  }),
+  daily: z.array(z.object({ date: z.string(), cost: money })),
+  /** a carrier (from invoices) or "rules" (the estimate), with what it cost */
+  carriers: z.array(z.object({ key: z.string(), cost: money, orders: z.number() })),
+  shipments: z.array(
+    z.object({
+      orderName: z.string(),
+      orderDate: z.string(),
+      kind: z.enum(['invoice', 'rules', 'missing']),
+      carrier: z.string().nullable(),
+      cost: money,
+      charged: money,
+    }),
+  ),
+});
+export type ShippingOverviewResponse = z.infer<typeof shippingOverviewResponseSchema>;

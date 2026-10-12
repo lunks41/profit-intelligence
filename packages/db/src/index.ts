@@ -66,3 +66,4 @@ export * from './ad-connections.js';
 export * from './report-data.js';
 export { runningJobCounts } from './running-jobs.js';
 export * from './carrier-invoices.js';
+export * from './shipping-overview.js';

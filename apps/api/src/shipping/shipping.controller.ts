@@ -8,9 +8,10 @@ import {
   Inject,
   Param,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
-import { carrierInvoiceImportBodySchema } from '@pi/contracts';
+import { carrierInvoiceImportBodySchema, shippingQuerySchema } from '@pi/contracts';
 import { z } from 'zod';
 import type { ZodType } from 'zod';
 import type { TenantContext } from '../auth/installation.service.js';
@@ -34,6 +35,12 @@ const uuid = (v: string) => parse(z.string().regex(/^[0-9a-f-]{36}$/i, 'invalid 
 @UseGuards(SessionGuard)
 export class ShippingController {
   constructor(@Inject(ShippingService) private readonly service: ShippingService) {}
+
+  /** The shipping picture of a period: cost, what customers paid, where the cost comes from. */
+  @Get('overview')
+  overview(@Tenant() t: TenantContext, @Query() raw: Record<string, unknown>) {
+    return this.service.overview(t, parse(shippingQuerySchema, raw));
+  }
 
   /** The imported carrier invoices, newest first, and how many orders they cover. */
   @Get('carrier-invoices')
