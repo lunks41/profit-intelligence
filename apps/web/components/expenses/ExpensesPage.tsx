@@ -20,6 +20,7 @@ import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormError, isAmount, todayLocal, useAction, FormActions } from '../settings/shared';
 import { Kpi } from '../common/kpi';
 import { Modal } from '../common/Modal';
+import { BulkExpenseTools } from './BulkExpenseDialog';
 import { formatDateTime } from '../../lib/shop-time';
 import { DateField } from '../common/DateField';
 
@@ -34,6 +35,7 @@ export function ExpensesPage() {
   const [tab, setTab] = useState<Tab>('all');
   const [version, setVersion] = useState(0);
   const [adding, setAdding] = useState(false);
+  const [bulk, setBulk] = useState(false);
   const changed = () => setVersion((v) => v + 1);
 
   const summary = useApi<ExpenseSummaryResponse>(`/expenses/summary?_=${version}`);
@@ -62,7 +64,18 @@ export function ExpensesPage() {
         <s-button variant="primary" onClick={() => setAdding(true)}>
           Add expense
         </s-button>
+        <div style={{ marginLeft: 'auto' }}>
+          <s-button variant="primary" onClick={() => setBulk(true)}>
+            Bulk Expenses
+          </s-button>
+        </div>
       </s-stack>
+
+      {bulk && (
+        <Modal heading="Bulk Expenses" onClose={() => setBulk(false)}>
+          <BulkExpenseTools onSaved={changed} onClose={() => setBulk(false)} />
+        </Modal>
+      )}
 
       {adding && cats.data && (
         <Modal heading="Add expense" onClose={() => setAdding(false)}>
