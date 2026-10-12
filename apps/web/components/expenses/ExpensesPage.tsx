@@ -142,14 +142,6 @@ function Summary({
           </s-paragraph>
         </s-banner>
       )}
-      {data.operatingProfitStatus === 'incomplete' && (
-        <s-banner tone="info" heading="Operating profit is an estimate for some months">
-          <s-paragraph>
-            Months marked Incomplete have orders with a missing product cost, payment fee or
-            shipping cost, so their operating profit is higher than it really is.
-          </s-paragraph>
-        </s-banner>
-      )}
       <s-grid gridTemplateColumns="repeat(auto-fit, minmax(15rem, 1fr))" gap="small">
         <Kpi
           icon="wallet"

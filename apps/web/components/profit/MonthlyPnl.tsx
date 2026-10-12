@@ -97,6 +97,8 @@ function Table({ data }: { data: ExpenseSummaryResponse }) {
             Operating profit is contribution profit less advertising and the month&apos;s expenses.
             Recurring expenses are spread over the days of each month; one-time expenses fall in the
             month they are dated.
+            {data.operatingProfitStatus === 'incomplete' &&
+              ' Months marked Incomplete have orders with a missing product cost, payment fee or shipping cost, so their operating profit is higher than it really is.'}
           </s-text>
         </s-box>
       </s-section>
