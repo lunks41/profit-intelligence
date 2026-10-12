@@ -133,6 +133,8 @@ export function DateField({
   onChange,
   error,
   disabled,
+  hideLabel,
+  placeholder = 'dd-MMM-yyyy',
 }: {
   label: string;
   /** YYYY-MM-DD, or empty */
@@ -140,6 +142,9 @@ export function DateField({
   onChange: (iso: string) => void;
   error?: string;
   disabled?: boolean;
+  /** no label above the field (it is still read aloud); the placeholder says what the field is */
+  hideLabel?: boolean;
+  placeholder?: string;
 }) {
   const id = `cal-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   const [text, setText] = useState(value ? formatDate(value) : '');
@@ -169,9 +174,10 @@ export function DateField({
     <>
       <s-text-field
         label={label}
+        labelAccessibilityVisibility={hideLabel ? 'exclusive' : undefined}
         value={text}
         disabled={disabled}
-        placeholder="dd-MMM-yyyy"
+        placeholder={placeholder}
         error={bad ? 'Use a date such as 12-Oct-2026' : error}
         onInput={(e) => {
           setText(e.currentTarget.value);

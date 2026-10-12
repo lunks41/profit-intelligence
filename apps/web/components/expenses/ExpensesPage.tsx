@@ -532,10 +532,22 @@ function List({
               onChange={setStatus}
             />
             <div style={{ width: '11rem' }}>
-              <DateField label="From" value={dateFrom} onChange={(v) => setDateFrom(v)} />
+              <DateField
+                label="From"
+                hideLabel
+                placeholder="From date"
+                value={dateFrom}
+                onChange={(v) => setDateFrom(v)}
+              />
             </div>
             <div style={{ width: '11rem' }}>
-              <DateField label="To" value={dateTo} onChange={(v) => setDateTo(v)} />
+              <DateField
+                label="To"
+                hideLabel
+                placeholder="To date"
+                value={dateTo}
+                onChange={(v) => setDateTo(v)}
+              />
             </div>
           </div>
           {error && <ErrorBanner message={error} onRetry={() => void reload()} />}

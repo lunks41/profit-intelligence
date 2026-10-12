@@ -47,6 +47,8 @@ export function FilterBar({
       <div style={{ width: '11rem' }}>
         <DateField
           label="From"
+          hideLabel
+          placeholder="From date"
           value={filters.from}
           onChange={(v) => onChange({ ...filters, from: v })}
         />
@@ -54,6 +56,8 @@ export function FilterBar({
       <div style={{ width: '11rem' }}>
         <DateField
           label="To"
+          hideLabel
+          placeholder="To date"
           value={filters.to}
           onChange={(v) => onChange({ ...filters, to: v })}
         />
