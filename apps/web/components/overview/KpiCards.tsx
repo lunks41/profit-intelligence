@@ -1,90 +1,91 @@
 'use client';
 
 import type { OverviewResponse } from '@pi/contracts';
-import { describeDelta, describePoints, formatMoney, formatPercent } from '../../lib/format';
+import {
+  describeDelta,
+  describePoints,
+  formatCount,
+  formatMoney,
+  formatPercent,
+  shortDate,
+} from '../../lib/format';
 import { sparkSeries } from '../../lib/series';
-import { Change, Kpi } from '../common/kpi';
+import { GradientTile, TILE_GRADIENT } from '../common/GradientTile';
 
 /**
- * Revenue, costs, contribution profit and contribution margin, one card each so the Overview can place them. Each
+ * Revenue, costs, contribution profit and contribution margin, one tile each so the Overview can place them. Each
  * says what it is made of (the "i"), how it changed against the equivalent previous period, how it moved over the
- * period (the small line), and when it rests on incomplete data.
+ * period (the line), and what is behind it in one line.
  */
 export function overviewKpis(data: OverviewResponse) {
   const { summary: s, deltas, previousPeriod } = data;
   const cur = data.currency.code;
   const spark = sparkSeries(data.trend);
+  const compare = `vs ${shortDate(previousPeriod.from)} – ${shortDate(previousPeriod.to)}`;
   const estimates = [s.statuses.cogs, s.statuses.paymentFees, s.statuses.shippingCost].includes(
     'estimated',
   );
-  const gap = s.partial ? (
-    <s-badge tone="caution">Partial: some costs missing</s-badge>
-  ) : estimates ? (
-    <s-badge tone="info">Includes estimates</s-badge>
-  ) : null;
+  const caveat = s.partial ? 'Some costs are missing' : estimates ? 'Includes estimates' : null;
+  const money = (v: string) => formatMoney(v, cur);
+  const abs = (v: string) => v.replace(/^-/, '');
 
   return {
     revenue: (
-      <Kpi
-        icon="cart"
+      <GradientTile
         label="Revenue"
-        value={formatMoney(s.revenue, cur)}
+        value={money(s.revenue)}
+        gradient={TILE_GRADIENT.revenue}
         info="Sales after discounts and product refunds, plus shipping charged (net of shipping refunds). Tax is not included."
-        change={<Change delta={describeDelta(deltas.revenue)} previous={previousPeriod} />}
+        delta={describeDelta(deltas.revenue)}
+        compare={compare}
+        detail={`${formatCount(s.orders)} orders${
+          s.averageOrderValue ? `, ${money(s.averageOrderValue)} each` : ''
+        }`}
         spark={spark.revenue}
       />
     ),
     costs: (
-      <Kpi
-        icon="wallet"
+      <GradientTile
         label="Costs"
-        value={formatMoney(s.totalCosts, cur)}
+        value={money(s.totalCosts)}
+        gradient={TILE_GRADIENT.costs}
         info="The costs of selling what you sold: product cost, payment fees and shipping cost. Advertising and other operating expenses are separate and come after contribution profit."
-        change={
-          <Change
-            delta={describeDelta(deltas.costs)}
-            previous={previousPeriod}
-            goodWhenUp={false}
-          />
-        }
-        notes={
-          <s-stack gap="small-300">
-            {s.partial && <s-badge tone="caution">Some costs missing, so this is low</s-badge>}
-            {Number(data.fees.estimated) > 0 && (
-              <s-badge tone="info">
-                {`Includes ${formatMoney(data.fees.estimated, cur)} of estimated payment fees`}
-              </s-badge>
-            )}
-          </s-stack>
+        delta={describeDelta(deltas.costs)}
+        goodWhenUp={false}
+        compare={compare}
+        detail={
+          <>
+            Product {money(abs(s.cogs))}, fees {money(abs(s.paymentFees))}, shipping{' '}
+            {money(abs(s.shippingCost))}
+            {Number(data.fees.estimated) > 0
+              ? `. ${money(data.fees.estimated)} of the fees is estimated.`
+              : ''}
+          </>
         }
         spark={spark.costs}
       />
     ),
     profit: (
-      <Kpi
-        icon="chart-vertical"
+      <GradientTile
         label="Contribution profit"
-        value={formatMoney(s.contributionProfit, cur)}
+        value={money(s.contributionProfit)}
+        gradient={TILE_GRADIENT.profit}
         info="Revenue minus product cost, payment fees and shipping cost. Advertising and other operating expenses are not taken off, so this is not operating profit."
-        change={
-          <Change delta={describeDelta(deltas.contributionProfit)} previous={previousPeriod} />
-        }
-        notes={
-          <s-stack direction="inline" gap="small" alignItems="center">
-            {gap}
-          </s-stack>
-        }
+        delta={describeDelta(deltas.contributionProfit)}
+        compare={compare}
+        detail={caveat ?? 'Before ads and expenses'}
         spark={spark.profit}
       />
     ),
     margin: (
-      <Kpi
-        icon="discount"
+      <GradientTile
         label="Contribution margin"
         value={formatPercent(s.contributionMargin)}
+        gradient={TILE_GRADIENT.margin}
         info="Contribution profit divided by revenue."
-        change={<Change delta={describePoints(deltas.marginPoints)} previous={previousPeriod} />}
-        notes={gap}
+        delta={describePoints(deltas.marginPoints)}
+        compare={compare}
+        detail={caveat ?? 'Of every dollar of revenue'}
         spark={spark.margin}
       />
     ),

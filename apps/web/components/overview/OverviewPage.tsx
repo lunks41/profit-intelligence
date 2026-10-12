@@ -100,12 +100,8 @@ export function OverviewPage() {
             topSelling={<TopSelling page={data} />}
             topReturned={<TopReturned page={data} />}
             recentOrders={<RecentOrders page={data} />}
-            after={
-              <>
-                <Opportunities data={data} query={detailQuery(data)} />
-                <SecondaryInsights data={data} query={detailQuery(data)} />
-              </>
-            }
+            opportunities={<Opportunities data={data} query={detailQuery(data)} />}
+            insights={<SecondaryInsights data={data} query={detailQuery(data)} />}
           />
         </div>
       )}

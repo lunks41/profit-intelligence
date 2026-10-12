@@ -130,43 +130,44 @@ s-button {
 }
 
 /*
- * The top of the Overview, laid out as sketched: net profit tall on the left, the four figures beside it, expenses
- * and ads under them with the connected ad accounts, then the trend (two thirds) beside sales by channel, and the
- * product and order lists under the trend. Each cell stretches to the height of its row.
+ * The Overview board: three columns of cards that stack up and down (no card is stretched to a row, so no blank
+ * space). Left: what to do and where the money goes. Middle: the figures and the trend. Right: ads, channels,
+ * highlights. A narrower page puts the left and right columns beside the middle one; a phone has one column.
  */
-.pi-ov-top {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  grid-template-areas:
-    'net rev cost cp cm'
-    'net exp ads acc acc'
-    'trend trend trend chan chan'
-    'top ret rec chan chan';
-  gap: 0.5rem;
-  align-items: stretch;
+.pi-board-wrap {
+  container-type: inline-size;
 }
-.pi-ov-top > * {
+.pi-board {
   display: grid;
+  gap: 0.5rem;
+  align-items: start;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: 'main' 'left' 'right';
+}
+.pi-board > * {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
   min-width: 0;
 }
-@media (max-width: 1100px) {
-  .pi-ov-top {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-areas:
-      'net net'
-      'rev cost'
-      'cp cm'
-      'exp ads'
-      'acc acc'
-      'trend trend'
-      'chan chan'
-      'top ret'
-      'rec rec';
+.pi-board-left {
+  grid-area: left;
+}
+.pi-board-main {
+  grid-area: main;
+}
+.pi-board-right {
+  grid-area: right;
+}
+@container (min-width: 760px) {
+  .pi-board {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    grid-template-areas: 'main left' 'main right';
   }
 }
-@media (max-width: 600px) {
-  .pi-ov-top {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: 'net' 'rev' 'cost' 'cp' 'cm' 'exp' 'ads' 'acc' 'trend' 'chan' 'top' 'ret' 'rec';
+@container (min-width: 1180px) {
+  .pi-board {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2.2fr) minmax(0, 1fr);
+    grid-template-areas: 'left main right';
   }
 }

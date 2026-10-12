@@ -7,12 +7,8 @@ import type { OverviewResponse, PeriodPreset } from '@pi/contracts';
 import { describeFreshness } from '../../lib/freshness';
 import { periodLabel } from '../../lib/format';
 import { PeriodDropdown } from '../dropdown';
-import { CostBreakdownCard } from './CostBreakdownCard';
 import { DataQualityCard } from './DataQualityCard';
-import { MarketingSummaryCard } from '../marketing/MarketingSummaryCard';
-import { OverviewTop } from './OverviewTop';
-import { ProfitBreakdown } from './ProfitBreakdown';
-import { WhatChangedCard } from './WhatChangedCard';
+import { OverviewBoard } from './OverviewTop';
 import { DateField } from '../common/DateField';
 import { prettyDates } from '../../lib/shop-time';
 
@@ -125,15 +121,16 @@ export function OverviewView({
   topSelling,
   recentOrders,
   topReturned,
-  after,
+  opportunities,
+  insights,
 }: {
   data: OverviewResponse;
   /** lists loaded beside the overview (kept out of this component so it needs only `data`) */
   topSelling?: ReactNode;
   recentOrders?: ReactNode;
   topReturned?: ReactNode;
-  /** what follows the breakdown: opportunities, secondary figures */
-  after?: ReactNode;
+  opportunities?: ReactNode;
+  insights?: ReactNode;
 }) {
   const { summary } = data;
   const empty = summary.orders === 0;
@@ -175,28 +172,14 @@ export function OverviewView({
         </>
       ) : (
         <>
-          <OverviewTop
+          <OverviewBoard
             data={data}
             topSelling={topSelling}
             topReturned={topReturned}
             recentOrders={recentOrders}
+            opportunities={opportunities}
+            insights={insights}
           />
-
-          {/* what does not fit the main screen */}
-          <WhatChangedCard data={data} />
-
-          <MarketingSummaryCard
-            period={data.period}
-            currency={data.currency.code}
-            showSpend={false}
-            showAccounts={false}
-          />
-
-          <CostBreakdownCard page={data} />
-
-          <DataQualityCard quality={data.dataQuality} issues={data.issues} />
-          <ProfitBreakdown data={data} />
-          {after}
         </>
       )}
     </>

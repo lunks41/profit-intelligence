@@ -559,6 +559,10 @@
     "mtime": 1791793767.4271355,
     "hash": "afbc2089ea969f1fb3d1a5632d9b2a8f"
   },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\common\\GradientTile.tsx": {
+    "mtime": 1791813508.9050217,
+    "hash": "4b2a6e4eae6ed88f6b645d676cb9392b"
+  },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\common\\index.ts": {
     "mtime": 1791568231.668765,
     "hash": "c431d35db66e79bdb10b19d4237ef8ea"
@@ -699,9 +703,17 @@
     "mtime": 1791791027.2961073,
     "hash": "465aeb4c60d6e778a316e4cd755b867e"
   },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\Highlights.tsx": {
+    "mtime": 1791813509.2974331,
+    "hash": "eee8a72f4a798c61603a3bc1ab8c8b71"
+  },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\KpiCards.tsx": {
-    "mtime": 1791812668.7237115,
-    "hash": "97315816d15d02b57d7c054ddfea18ef"
+    "mtime": 1791813493.2515795,
+    "hash": "9e29f8bcddefa561807944d0e20272b6"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\MoneyFlow.tsx": {
+    "mtime": 1791813509.3164372,
+    "hash": "bc83e3ea4f484cbaa8617496acba0be8"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\Opportunities.tsx": {
     "mtime": 1791791027.3101118,
@@ -712,16 +724,16 @@
     "hash": "9248656966a75169203f07997dc0f9fe"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\OverviewPage.tsx": {
-    "mtime": 1791784689.836301,
-    "hash": "921361df6a1ea1aafd7808c6a038d3d9"
+    "mtime": 1791813503.9033616,
+    "hash": "3db20a2cb2a64b2f643be2d5f9004085"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\OverviewTop.tsx": {
-    "mtime": 1791812744.6769235,
-    "hash": "776b65ea0765a9ea2d470df1e222d5e0"
+    "mtime": 1791813580.0889683,
+    "hash": "0005b6498b74281154d87c279df608dc"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\OverviewView.tsx": {
-    "mtime": 1791812734.9489,
-    "hash": "619644e3146d57ffd83f05fd116c8aaf"
+    "mtime": 1791813549.8970785,
+    "hash": "3850967d5ee6f1f0be570cb6b591db27"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\ProfitBreakdown.tsx": {
     "mtime": 1791663860.2673156,
@@ -730,6 +742,10 @@
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\RecentOrders.tsx": {
     "mtime": 1791805525.8669925,
     "hash": "a6fe4757314fabe8cf2595af55e6e56c"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\Reminders.tsx": {
+    "mtime": 1791813509.390733,
+    "hash": "f6f731b4811860eee0e40c10a6f30c99"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\overview\\SecondaryInsights.tsx": {
     "mtime": 1791784468.1972642,
