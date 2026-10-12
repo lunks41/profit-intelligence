@@ -31,17 +31,21 @@ export function MonthlyPnl() {
   );
   return (
     <>
-      <div style={{ display: 'flex', alignItems: 'flex-end', flexWrap: 'wrap', gap: '0.75rem' }}>
-        <Dropdown chip label="Months" value={months} options={RANGES} onChange={setMonths} />
-      </div>
       {error && <ErrorBanner message={error} onRetry={() => void reload()} />}
       {loading && !data && <Loading what="the monthly profit and loss" />}
-      {data && <Table data={data} />}
+      {data && (
+        <Table
+          data={data}
+          filter={
+            <Dropdown chip label="Months" value={months} options={RANGES} onChange={setMonths} />
+          }
+        />
+      )}
     </>
   );
 }
 
-function Table({ data }: { data: ExpenseSummaryResponse }) {
+function Table({ data, filter }: { data: ExpenseSummaryResponse; filter: React.ReactNode }) {
   const cur = data.currency;
   return (
     <>
@@ -53,7 +57,18 @@ function Table({ data }: { data: ExpenseSummaryResponse }) {
           </s-paragraph>
         </s-banner>
       )}
-      <s-section padding="none" heading="Monthly profit and loss">
+      <s-section padding="none">
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            padding: '0.75rem 1rem',
+          }}
+        >
+          <s-heading>Monthly profit and loss</s-heading>
+          {filter}
+        </div>
         <div style={{ overflowX: 'auto' }}>
           <s-table>
             <s-table-header-row>
