@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
-import { APP_FILTER } from '@nestjs/core';
+import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { AuthModule } from './auth/auth.module.js';
 import { ConfigModule } from './config/config.module.js';
 import { ApiErrorFilter } from './common/error.filter.js';
+import { ActivityNotificationInterceptor } from './notifications/activity.interceptor.js';
 import { DashboardModule } from './dashboard/dashboard.module.js';
 import { DbModule } from './db/db.module.js';
 import { HealthController } from './health/health.controller.js';
@@ -40,6 +41,9 @@ import { WebhooksModule } from './webhooks/webhooks.module.js';
     SupportModule,
   ],
   controllers: [HealthController, SessionController],
-  providers: [{ provide: APP_FILTER, useClass: ApiErrorFilter }],
+  providers: [
+    { provide: APP_FILTER, useClass: ApiErrorFilter },
+    { provide: APP_INTERCEPTOR, useClass: ActivityNotificationInterceptor },
+  ],
 })
 export class AppModule {}
