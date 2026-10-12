@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import './globals.css';
+import { ShopTimeZone } from '../components/ShopTimeZone';
 
 export const metadata = { title: 'Profit Intelligence' };
 
@@ -34,7 +35,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             </s-link>
           ))}
         </s-app-nav>
-        {children}
+        <ShopTimeZone>{children}</ShopTimeZone>
       </body>
     </html>
   );

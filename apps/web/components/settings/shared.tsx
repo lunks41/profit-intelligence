@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { ApiRequestError } from '../../lib/api';
+import { todayInShop } from '../../lib/shop-time';
 
 /** Runs a save action, tracks "busy", and turns a failure into a readable message. */
 export function useAction() {
@@ -47,7 +48,7 @@ export function Saved({ text }: { text: string | null }) {
 export const isAmount = (v: string) => /^\d{1,12}(\.\d{1,4})?$/.test(v.trim());
 export const isPercent = (v: string) => /^\d{1,3}(\.\d{1,4})?$/.test(v.trim()) && Number(v) <= 100;
 
-export const todayLocal = () => new Date().toISOString().slice(0, 10);
+export const todayLocal = todayInShop;
 
 /**
  * The row of buttons at the foot of a form or dialog. Always at the right end, the way out (Cancel, Close,

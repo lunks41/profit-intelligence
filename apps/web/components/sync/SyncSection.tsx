@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import type { SyncStatusResponse } from '@pi/contracts';
 import { isImporting } from './useSyncStatus';
+import { formatDateTime } from '../../lib/shop-time';
 
-const when = (iso: string | null) => (iso ? new Date(iso).toLocaleString() : 'never');
+const when = (iso: string | null) => (iso ? formatDateTime(iso) : 'never');
 
 function describe(s: SyncStatusResponse): {
   label: string;

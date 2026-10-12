@@ -3,9 +3,9 @@
 import type { PeriodPreset } from '@pi/contracts';
 import type { FreshnessView } from '../../lib/freshness';
 import { periodLabel } from '../../lib/format';
+import { formatTime } from '../../lib/shop-time';
 
-const clock = (d: Date) =>
-  d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+const clock = (d: Date) => formatTime(d);
 
 /** The only period choices on the Overview. */
 export const QUICK_PERIODS: Array<{ value: PeriodPreset; label: string }> = [

@@ -19,6 +19,8 @@ import { SampleBars } from '../preview/ui';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormError, isAmount, todayLocal, useAction, FormActions } from '../settings/shared';
 import { Kpi } from '../common/kpi';
+import { formatDateTime } from '../../lib/shop-time';
+import { DateField } from '../common/DateField';
 
 type Tab = 'all' | 'recurring' | 'categories' | 'history';
 
@@ -332,17 +334,17 @@ function AddExpense({
               }
             }}
           />
-          <s-date-field
+          <DateField
             label={kind === 'one_time' ? 'Date' : 'Starts'}
             value={start}
-            onChange={(e) => setStart(e.currentTarget.value)}
+            onChange={(v) => setStart(v)}
           />
           {kind === 'recurring' && (
-            <s-date-field
+            <DateField
               label="Ends (optional)"
               value={end}
               error={touched && !endOk ? 'Must be after the start' : undefined}
-              onChange={(e) => setEnd(e.currentTarget.value)}
+              onChange={(v) => setEnd(v)}
             />
           )}
         </s-grid>
@@ -444,16 +446,8 @@ function List({
               ]}
               onChange={setStatus}
             />
-            <s-date-field
-              label="From"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.currentTarget.value)}
-            />
-            <s-date-field
-              label="To"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.currentTarget.value)}
-            />
+            <DateField label="From" value={dateFrom} onChange={(v) => setDateFrom(v)} />
+            <DateField label="To" value={dateTo} onChange={(v) => setDateTo(v)} />
             <s-button
               variant="tertiary"
               disabled={exportCsv.busy}
@@ -642,10 +636,10 @@ function Manage({
             onInput={(e) => setAmount(e.currentTarget.value)}
           />
           <CategoryDropdown value={categoryId} categories={categories} onChange={setCategoryId} />
-          <s-date-field
+          <DateField
             label={recurring ? 'Applies from (first of a month)' : 'Date'}
             value={from}
-            onChange={(e) => setFrom(e.currentTarget.value)}
+            onChange={(v) => setFrom(v)}
           />
         </s-grid>
         {recurring && (
@@ -686,11 +680,7 @@ function Manage({
           <>
             <s-text type="strong">Change one month only</s-text>
             <s-grid gridTemplateColumns={FILTER_GRID} gap="base" alignItems="end">
-              <s-date-field
-                label="Month (first day)"
-                value={month}
-                onChange={(e) => setMonth(e.currentTarget.value)}
-              />
+              <DateField label="Month (first day)" value={month} onChange={(v) => setMonth(v)} />
               <s-text-field
                 label={`Amount that month (${currency})`}
                 value={monthAmount}
@@ -760,10 +750,10 @@ function Manage({
               <>
                 <s-text type="strong">Stop this expense</s-text>
                 <s-grid gridTemplateColumns={FILTER_GRID} gap="base" alignItems="end">
-                  <s-date-field
+                  <DateField
                     label="Last day it applies"
                     value={stopDay}
-                    onChange={(e) => setStopDay(e.currentTarget.value)}
+                    onChange={(v) => setStopDay(v)}
                   />
                 </s-grid>
                 <FormError message={stop.error} />
@@ -845,7 +835,7 @@ function History({ version }: { version: number }) {
           <s-table-body>
             {data.rows.map((r) => (
               <s-table-row key={r.id}>
-                <s-table-cell>{new Date(r.createdAt).toLocaleString()}</s-table-cell>
+                <s-table-cell>{formatDateTime(r.createdAt)}</s-table-cell>
                 <s-table-cell>{r.actor.replace('shopify-user:', 'User ')}</s-table-cell>
                 <s-table-cell>{r.summary}</s-table-cell>
               </s-table-row>

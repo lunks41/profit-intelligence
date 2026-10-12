@@ -17,6 +17,7 @@ import { FilterBar, type Filters } from '../overview/OverviewView';
 import { ErrorBanner, Loading, QualityBadge, RuleNote, SortControls, useApi } from './shared';
 import { readParam } from '../../lib/url-params';
 import { CostsTab } from '../settings/CostsTab';
+import { todayInShop } from '../../lib/shop-time';
 
 type Sort = 'profit' | 'revenue' | 'margin' | 'units' | 'cogs' | 'refunds' | 'title';
 const SORTS: Array<{ value: Sort; label: string }> = [
@@ -31,7 +32,7 @@ const SORTS: Array<{ value: Sort; label: string }> = [
 
 const STATUS_FILTERS = ['all', 'missing_cost', 'estimated_cost', 'loss', 'high_refunds'] as const;
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = todayInShop;
 
 /**
  * The Products screen. The product table is the page: figures first, then the table. Below it the top-selling

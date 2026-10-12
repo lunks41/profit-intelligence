@@ -20,9 +20,11 @@ import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { ReportTable } from '../reports/ReportTable';
 import { Change, Kpi } from '../common/kpi';
 import { readParam } from '../../lib/url-params';
+import { todayInShop } from '../../lib/shop-time';
+import { formatDateTime } from '../../lib/shop-time';
 
 type Tab = 'statement' | 'trend' | 'leakage' | 'quality';
-const today = () => new Date().toISOString().slice(0, 10);
+const today = todayInShop;
 const QUALITY_RULES = new Set(['missing_costs', 'missing_fees', 'missing_shipping_cost']);
 
 export function ProfitPage() {
@@ -121,10 +123,8 @@ function Freshness({ data }: { data: OverviewResponse }) {
     <s-stack gap="small">
       <s-text color="subdued">
         Last successful import:{' '}
-        {data.freshness.lastSuccessAt
-          ? new Date(data.freshness.lastSuccessAt).toLocaleString()
-          : 'never'}
-        . {view.badge}
+        {data.freshness.lastSuccessAt ? formatDateTime(data.freshness.lastSuccessAt) : 'never'}.{' '}
+        {view.badge}
         {view.detail ? `. ${view.detail}` : ''}
       </s-text>
       {data.currency.note && <s-text color="subdued">{data.currency.note}</s-text>}

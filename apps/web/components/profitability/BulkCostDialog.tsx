@@ -5,6 +5,7 @@ import { apiGet, apiPost } from '../../lib/api';
 import { downloadText, importSummaryCsv } from '../../lib/import-summary';
 import { Dropdown } from '../dropdown';
 import { FormError, isAmount, todayLocal, useAction, FormActions } from '../settings/shared';
+import { DateField } from '../common/DateField';
 
 type Tab = 'import' | 'edit' | 'export';
 type Preview = { matched: number; skipped: number; invalid: number; messages: string[] };
@@ -267,11 +268,11 @@ function EditTab({ onSaved }: { onSaved: () => void }) {
           error={touched && !amountOk ? 'Enter a number such as 4.50' : undefined}
           onInput={(e) => setAmount(e.currentTarget.value)}
         />
-        <s-date-field
+        <DateField
           label="Applies from"
           value={from}
           error={touched && !dateOk ? 'Choose a date that is not in the future' : undefined}
-          onChange={(e) => setFrom(e.currentTarget.value)}
+          onChange={(v) => setFrom(v)}
         />
       </s-grid>
       <FormError message={error} />

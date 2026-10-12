@@ -11,6 +11,7 @@ import { ErrorBanner, Loading, QualityBadge, RuleNote, SortControls, useApi } fr
 import { LabelValueRow } from '../common';
 import { readParam } from '../../lib/url-params';
 import { fulfillmentStatus, paymentStatus } from '../../lib/order-status';
+import { todayInShop } from '../../lib/shop-time';
 
 type Sort = 'date' | 'name' | 'revenue' | 'cogs' | 'profit' | 'margin';
 const SORTS: Array<{ value: Sort; label: string }> = [
@@ -22,7 +23,7 @@ const SORTS: Array<{ value: Sort; label: string }> = [
   { value: 'name', label: 'Order number' },
 ];
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = todayInShop;
 
 export function OrdersPage() {
   const [filters, setFilters] = useState<Filters>({

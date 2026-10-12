@@ -83,14 +83,14 @@ describe('describePoints', () => {
 
 describe('dates', () => {
   it('formats calendar dates without any time zone shift', () => {
-    expect(shortDate('2026-10-09')).toBe('Oct 9');
-    expect(shortDate('2026-01-01')).toBe('Jan 1');
-    expect(longDate('2026-12-31')).toBe('Dec 31, 2026');
+    expect(shortDate('2026-10-09')).toBe('09-Oct');
+    expect(shortDate('2026-01-01')).toBe('01-Jan');
+    expect(longDate('2026-12-31')).toBe('31-Dec-2026');
   });
 
   it('labels a period, and a single day', () => {
-    expect(periodLabel('2026-09-10', '2026-10-09')).toBe('Sep 10, 2026 to Oct 9, 2026');
-    expect(periodLabel('2026-10-09', '2026-10-09')).toBe('Oct 9, 2026');
+    expect(periodLabel('2026-09-10', '2026-10-09')).toBe('10-Sep-2026 to 09-Oct-2026');
+    expect(periodLabel('2026-10-09', '2026-10-09')).toBe('09-Oct-2026');
   });
 });
 

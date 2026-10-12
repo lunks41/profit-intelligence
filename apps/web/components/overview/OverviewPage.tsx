@@ -16,8 +16,9 @@ import { SecondaryInsights } from './SecondaryInsights';
 import { TopReturned } from './TopReturned';
 import { TopSelling } from './TopSelling';
 import { OverviewSkeleton, OverviewView, type Filters } from './OverviewView';
+import { todayInShop } from '../../lib/shop-time';
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = todayInShop;
 
 /** The period of the figures on screen, for the lists loaded beside them (never the filter being typed). */
 const detailQuery = (d: OverviewResponse) =>

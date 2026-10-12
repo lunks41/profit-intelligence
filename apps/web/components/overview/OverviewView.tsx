@@ -13,6 +13,7 @@ import { KpiCards } from './KpiCards';
 import { ProfitBreakdown } from './ProfitBreakdown';
 import { TrendSection } from './TrendCard';
 import { WhatChangedCard } from './WhatChangedCard';
+import { DateField } from '../common/DateField';
 
 export interface Filters {
   preset: PeriodPreset;
@@ -43,17 +44,17 @@ export function FilterBar({
   const dates = filters.preset === 'custom' && (
     <>
       <div style={{ width: '11rem' }}>
-        <s-date-field
+        <DateField
           label="From"
           value={filters.from}
-          onChange={(e) => onChange({ ...filters, from: e.currentTarget.value })}
+          onChange={(v) => onChange({ ...filters, from: v })}
         />
       </div>
       <div style={{ width: '11rem' }}>
-        <s-date-field
+        <DateField
           label="To"
           value={filters.to}
-          onChange={(e) => onChange({ ...filters, to: e.currentTarget.value })}
+          onChange={(v) => onChange({ ...filters, to: v })}
         />
       </div>
     </>
@@ -86,15 +87,15 @@ export function FilterBar({
         {period}
         {filters.preset === 'custom' && (
           <>
-            <s-date-field
+            <DateField
               label="From"
               value={filters.from}
-              onChange={(e) => onChange({ ...filters, from: e.currentTarget.value })}
+              onChange={(v) => onChange({ ...filters, from: v })}
             />
-            <s-date-field
+            <DateField
               label="To"
               value={filters.to}
-              onChange={(e) => onChange({ ...filters, to: e.currentTarget.value })}
+              onChange={(v) => onChange({ ...filters, to: v })}
             />
           </>
         )}

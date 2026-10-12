@@ -10,6 +10,7 @@ import { formatMoney, longDate } from '../../lib/format';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormError, Saved, isAmount, todayLocal, useAction, FormActions } from './shared';
 import { readParam } from '../../lib/url-params';
+import { DateField } from '../common/DateField';
 
 const ALL = 'all-variants';
 
@@ -460,11 +461,11 @@ function CostEditor({
             error={touched && !amountOk ? 'Enter a number such as 12.50' : undefined}
             onInput={(e) => setAmount(e.currentTarget.value)}
           />
-          <s-date-field
+          <DateField
             label="Applies from"
             value={from}
             error={touched && !dateOk ? 'Choose a date that is not in the future' : undefined}
-            onChange={(e) => setFrom(e.currentTarget.value)}
+            onChange={(v) => setFrom(v)}
           />
           <s-text-field
             label="Note (optional)"

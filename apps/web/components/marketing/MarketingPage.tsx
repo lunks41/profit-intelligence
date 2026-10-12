@@ -15,9 +15,11 @@ import { SampleLines } from '../preview/ui';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormError, isAmount, todayLocal, useAction, FormActions } from '../settings/shared';
 import { StatCard, StatGrid } from '../common';
+import { todayInShop } from '../../lib/shop-time';
+import { DateField } from '../common/DateField';
 
 const GRID = 'repeat(auto-fit, minmax(10.625rem, 1fr))';
-const today = () => new Date().toISOString().slice(0, 10);
+const today = todayInShop;
 
 export function MarketingPage() {
   const [filters, setFilters] = useState<Filters>({
@@ -340,11 +342,7 @@ function AddSpend({ data, onChanged }: { data: MarketingResponse; onChanged: () 
             options={[...manual.map((a) => ({ value: a.id, label: a.name }))]}
             onChange={(v) => setAccountId(v)}
           />
-          <s-date-field
-            label="Date"
-            value={date}
-            onChange={(e) => setDate(e.currentTarget.value)}
-          />
+          <DateField label="Date" value={date} onChange={(v) => setDate(v)} />
           <s-text-field
             label="Campaign (optional)"
             value={campaign}

@@ -1,3 +1,4 @@
+import { formatDate, formatDayMonth } from './shop-time';
 // Display helpers. Amounts arrive from the API as exact decimal strings; they are turned into
 // numbers only here, only for display (never for calculation).
 
@@ -76,22 +77,14 @@ export function describePoints(points: number | null): Delta {
   };
 }
 
-/** 2026-10-09 -> "Oct 9". Dates are calendar dates in the shop time zone, so no zone conversion. */
+/** 2026-10-09 -> "09-Oct". Dates are calendar dates in the shop time zone, so no zone conversion. */
 export function shortDate(date: string): string {
-  return new Intl.DateTimeFormat(LOCALE, {
-    month: 'short',
-    day: 'numeric',
-    timeZone: 'UTC',
-  }).format(new Date(`${date}T00:00:00Z`));
+  return formatDayMonth(date);
 }
 
+/** 2026-10-09 -> "09-Oct-2026" (dd-MMM-yyyy, the one date format of the app). */
 export function longDate(date: string): string {
-  return new Intl.DateTimeFormat(LOCALE, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    timeZone: 'UTC',
-  }).format(new Date(`${date}T00:00:00Z`));
+  return formatDate(date);
 }
 
 export function periodLabel(from: string, to: string): string {

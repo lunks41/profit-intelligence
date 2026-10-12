@@ -9,6 +9,7 @@ import { SyncNotice } from '../sync/SyncNotice';
 import { SyncSection } from '../sync/SyncSection';
 import { useSyncStatus } from '../sync/useSyncStatus';
 import { FormError, useAction, FormActions } from './shared';
+import { formatDateTime } from '../../lib/shop-time';
 
 export function DataTab({ reloadKey }: { reloadKey: number }) {
   const sync = useSyncStatus();
@@ -87,7 +88,7 @@ function RecalcResult({ since }: { since: string | null }) {
           {formatMoney(data.profitBefore, data.currency)} to{' '}
           {formatMoney(data.profitAfter, data.currency)} ({signed}).
         </s-text>
-        <s-text color="subdued">Finished {new Date(data.finishedAt).toLocaleString()}.</s-text>
+        <s-text color="subdued">Finished {formatDateTime(data.finishedAt)}.</s-text>
       </s-stack>
     </s-banner>
   );
@@ -206,7 +207,7 @@ function History({ reloadKey }: { reloadKey: number }) {
           <s-table-body>
             {data.rows.map((r) => (
               <s-table-row key={r.id}>
-                <s-table-cell>{new Date(r.createdAt).toLocaleString()}</s-table-cell>
+                <s-table-cell>{formatDateTime(r.createdAt)}</s-table-cell>
                 <s-table-cell>{r.actor.replace('shopify-user:', 'User ')}</s-table-cell>
                 <s-table-cell>{r.summary}</s-table-cell>
               </s-table-row>

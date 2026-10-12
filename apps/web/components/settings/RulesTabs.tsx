@@ -9,6 +9,7 @@ import { downloadText, importSummaryCsv } from '../../lib/import-summary';
 import { formatMoney, longDate } from '../../lib/format';
 import { CoverageSummary, RuleCheck } from './RuleCoverage';
 import { FormError, isAmount, isPercent, todayLocal, useAction, FormActions } from './shared';
+import { DateField } from '../common/DateField';
 
 type Reload = () => void;
 
@@ -136,11 +137,11 @@ export function FeesTab({ rules, onChanged }: { rules: RulesResponse; onChanged:
               error={touched && !fixedOk ? 'Enter a number such as 0.30' : undefined}
               onInput={(e) => setFixed(e.currentTarget.value)}
             />
-            <s-date-field
+            <DateField
               label="Applies from"
               value={from}
               error={touched && !dateOk ? 'Choose a date that is not in the future' : undefined}
-              onChange={(e) => setFrom(e.currentTarget.value)}
+              onChange={(v) => setFrom(v)}
             />
           </s-grid>
           <FormError message={error} />
@@ -399,11 +400,11 @@ export function ShippingTab({ rules, onChanged }: { rules: RulesResponse; onChan
               error={touched && !valueOk ? 'Enter a number' : undefined}
               onInput={(e) => setValue(e.currentTarget.value)}
             />
-            <s-date-field
+            <DateField
               label="Applies from"
               value={from}
               error={touched && !dateOk ? 'Choose a date that is not in the future' : undefined}
-              onChange={(e) => setFrom(e.currentTarget.value)}
+              onChange={(v) => setFrom(v)}
             />
           </s-grid>
           <FormError message={error} />

@@ -15,10 +15,11 @@ import { Downloads } from './Downloads';
 import { Notifications } from './Notifications';
 import { ReportTable } from './ReportTable';
 import { Schedules } from './Schedules';
+import { todayInShop } from '../../lib/shop-time';
 
 type Tab = 'reports' | 'downloads' | 'schedules' | 'notifications';
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = todayInShop;
 
 export function ReportsPage() {
   const [tab, setTab] = useState<Tab>('reports');
