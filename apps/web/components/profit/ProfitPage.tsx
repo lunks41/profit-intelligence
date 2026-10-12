@@ -104,8 +104,8 @@ export function ProfitPage() {
       )}
       {tab === 'quality' && (
         <>
-          {overview.data && <Coverage data={overview.data} />}
           <Findings
+            lead={overview.data && <Coverage data={overview.data} />}
             title="Data quality"
             empty="Nothing is missing that stops your figures from being trusted."
             data={leakage.data}
@@ -117,7 +117,7 @@ export function ProfitPage() {
           />
         </>
       )}
-      {overview.data && (
+      {overview.data && tab !== 'quality' && (
         <DataQualityCard quality={overview.data.dataQuality} issues={overview.data.issues} />
       )}
     </>
@@ -264,6 +264,7 @@ function Trend({
   );
 }
 
+/** How complete the figures are (confidence and the share of each cost that is confirmed, estimated or missing). */
 function Coverage({ data }: { data: OverviewResponse }) {
   const c = data.summary.confidence.components;
   const rows: Array<
@@ -274,26 +275,24 @@ function Coverage({ data }: { data: OverviewResponse }) {
     ['Shipping costs', c.shipping],
   ];
   return (
-    <s-section heading="How complete your data is">
-      <s-stack gap="small">
-        <s-text>
-          Profit confidence is{' '}
-          <s-text type="strong">{data.summary.confidence.band ?? 'not available yet'}</s-text>
-          {data.summary.confidence.score !== null
-            ? ` (score ${formatPercent(data.summary.confidence.score, 0)})`
-            : ''}
-          .
+    <s-stack gap="small">
+      <s-text>
+        Profit confidence is{' '}
+        <s-text type="strong">{data.summary.confidence.band ?? 'not available yet'}</s-text>
+        {data.summary.confidence.score !== null
+          ? ` (score ${formatPercent(data.summary.confidence.score, 0)})`
+          : ''}
+        .
+      </s-text>
+      {rows.map(([label, v]) => (
+        <s-text key={label}>
+          {label}:{' '}
+          {v
+            ? `${formatPercent(v.shares.actual, 0)} confirmed, ${formatPercent(v.shares.estimated, 0)} estimated, ${formatPercent(v.shares.missing, 0)} missing`
+            : 'not tracked yet'}
         </s-text>
-        {rows.map(([label, v]) => (
-          <s-text key={label}>
-            {label}:{' '}
-            {v
-              ? `${formatPercent(v.shares.actual, 0)} confirmed, ${formatPercent(v.shares.estimated, 0)} estimated, ${formatPercent(v.shares.missing, 0)} missing`
-              : 'not tracked yet'}
-          </s-text>
-        ))}
-      </s-stack>
-    </s-section>
+      ))}
+    </s-stack>
   );
 }
 
@@ -308,7 +307,10 @@ function Findings({
   error,
   reload,
   planLimited,
+  lead,
 }: {
+  /** shown first inside the same card (the completeness of the data) */
+  lead?: React.ReactNode;
   title: string;
   empty: string;
   data: LeakageResponse | null;
@@ -335,6 +337,7 @@ function Findings({
   return (
     <s-section heading={title}>
       <s-stack gap="base">
+        {lead}
         {findings.length === 0 && (
           <s-stack gap="small-300">
             <s-text>{empty}</s-text>
