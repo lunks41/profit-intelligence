@@ -131,7 +131,7 @@ export const sampleOverview: OverviewResponse = {
       severity: 'warning',
       title: 'Shipping cost is missing on 3 of 10 orders',
       detail: 'Shopify does not report what you pay carriers.',
-      action: { label: 'Set a shipping cost rule', href: '/settings?tab=shipping' },
+      action: { label: 'Set a shipping cost rule', href: '/shipping' },
     },
     {
       id: 'missing_fees',

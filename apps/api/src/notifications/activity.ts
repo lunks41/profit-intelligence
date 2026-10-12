@@ -57,7 +57,7 @@ const ACTIVITIES: Record<string, Maker> = {
   'POST /settings/shipping-rules': a(
     'Shipping cost rule added',
     `Matching orders use it as an estimate. ${FIGURES}`,
-    '/settings',
+    '/shipping',
   ),
   'POST /settings/shipping-rules/import': (body) =>
     asRecord(body).preview === true
@@ -65,9 +65,9 @@ const ACTIVITIES: Record<string, Maker> = {
       : {
           title: 'Shipping cost rules imported',
           body: `The rules in your file were saved. ${FIGURES}`,
-          link: '/settings',
+          link: '/shipping',
         },
-  'DELETE /settings/shipping-rules/:id': a('Shipping cost rule removed', FIGURES, '/settings'),
+  'DELETE /settings/shipping-rules/:id': a('Shipping cost rule removed', FIGURES, '/shipping'),
   // settings
   'PUT /settings/limits': a(
     'Alert limits saved',

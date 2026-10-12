@@ -503,7 +503,7 @@ describe('data completeness and issues', () => {
     expect(shipping.title).toContain(`${q.shipping!.missing} of`);
     for (const i of o.issues) {
       expect(i.action.href).toMatch(
-        /^(#sync|\/(settings|marketing|expenses|orders|products)(\?.*)?)$/,
+        /^(#sync|\/(settings|marketing|expenses|orders|products|shipping)(\?.*)?)$/,
       );
     }
     // most severe first

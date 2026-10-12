@@ -213,7 +213,7 @@ function fixLinks(d: OrderDetailResponse): Array<{ text: string; href: string; l
   if (by('shipping_cost').some((e) => e.status === 'missing')) {
     out.push({
       text: 'No shipping cost rule applies to this order.',
-      href: '/settings?tab=shipping',
+      href: '/shipping',
       label: 'Set a shipping cost rule',
     });
   }

@@ -109,7 +109,7 @@ export function buildIssues(i: IssueInput): Issue[] {
       title: `Shipping cost is missing on ${q.shipping.missing} of ${orders(total(q.shipping))}`,
       detail:
         'Shopify does not report what you pay carriers. Without a rule that cost is left out of profit.',
-      action: { label: 'Set a shipping cost rule', href: '/settings?tab=shipping' },
+      action: { label: 'Set a shipping cost rule', href: '/shipping' },
     });
   }
   if (q.fees && q.fees.missing > 0) {

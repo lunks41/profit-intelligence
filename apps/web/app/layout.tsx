@@ -9,6 +9,7 @@ const NAV = [
   ['/profit', 'Profit'],
   ['/products', 'Products'],
   ['/marketing', 'Marketing'],
+  ['/shipping', 'Shipping'],
   ['/orders', 'Orders'],
   ['/expenses', 'Expenses'],
   ['/reports', 'Reports'],
