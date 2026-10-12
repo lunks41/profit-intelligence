@@ -59,3 +59,16 @@ html {
   outline: 0.125rem solid #005bd3;
   outline-offset: 0.0625rem;
 }
+
+/* Two cards in one row, 60 and 40 percent; one under the other only on a narrow window. */
+.pi-split-60-40 {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 0.5rem;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .pi-split-60-40 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -186,11 +186,7 @@ function Summary({
           )}
         />
       </s-grid>
-      <s-grid
-        gridTemplateColumns="@container (inline-size > 760px) 3fr 2fr, 1fr"
-        gap="small"
-        alignItems="start"
-      >
+      <div className="pi-split-60-40">
         {names.length > 0 && (
           <s-section heading="Expenses by month">
             <SampleBars
@@ -202,7 +198,7 @@ function Summary({
         {categories && (
           <CategoriesSection categories={categories} onChanged={onCategoriesChanged} />
         )}
-      </s-grid>
+      </div>
     </>
   );
 }
