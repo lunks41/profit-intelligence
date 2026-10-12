@@ -173,6 +173,7 @@ export function ProductsPage() {
           <CostsTab
             key={dialog.n}
             initialSearch={dialog.search}
+            onClose={closeDialog}
             onChanged={() => setSaved((v) => v + 1)}
           />
         </Modal>

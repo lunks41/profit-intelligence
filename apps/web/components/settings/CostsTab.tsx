@@ -20,8 +20,11 @@ const QUALITY = {
 export function CostsTab({
   onChanged,
   initialSearch = '',
+  onClose,
 }: {
   onChanged: () => void;
+  /** closes the dialog the tab is in (used by the one-product form) */
+  onClose?: () => void;
   /** open already searching for this product (the row's Set cost button) */
   initialSearch?: string;
 }) {
@@ -37,6 +40,8 @@ export function CostsTab({
   const [selected, setSelected] = useState<CostRow | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [justSaved, setJustSaved] = useState(false);
+  // opened from one product's Set cost button: show that product's form, not the whole list
+  const [focused, setFocused] = useState(initialSearch !== '');
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -46,16 +51,89 @@ export function CostsTab({
     return () => clearTimeout(t);
   }, [search]);
 
-  const q = new URLSearchParams({ filter, sort, page: String(page), pageSize: '15' });
+  const q = new URLSearchParams({
+    filter,
+    sort,
+    page: String(page),
+    pageSize: focused ? '50' : '15',
+  });
   if (applied) q.set('search', applied);
   q.set('_', String(reloadKey)); // forces a reload after a save; ignored by the server
   const { data, error, loading, reload } = useApi<CostListResponse>(`/settings/costs?${q}`);
+
+  const matches = data
+    ? data.rows.filter((r) => r.productTitle === initialSearch).length > 0
+      ? data.rows.filter((r) => r.productTitle === initialSearch)
+      : data.rows
+    : [];
+  useEffect(() => {
+    if (focused && !selected && !justSaved && matches.length === 1) setSelected(matches[0]!);
+  }, [focused, selected, justSaved, matches]);
 
   function saved() {
     setSelected(null);
     setJustSaved(true);
     setReloadKey((k) => k + 1);
     onChanged();
+  }
+
+  if (focused) {
+    return (
+      <>
+        {justSaved && <ApplyBanner onDone={() => setJustSaved(false)} />}
+        {error && <ErrorBanner message={error} onRetry={() => void reload()} />}
+        {loading && !data && <Loading what="product" />}
+        {justSaved ? (
+          <div>
+            <s-button variant="primary" onClick={onClose}>
+              Done
+            </s-button>
+          </div>
+        ) : selected && data ? (
+          <CostEditor
+            row={selected}
+            currency={data.currency}
+            onSaved={saved}
+            onCancel={() => (matches.length > 1 ? setSelected(null) : onClose?.())}
+          />
+        ) : (
+          data && (
+            <s-section heading={initialSearch}>
+              <s-stack gap="base">
+                <s-text color="subdued">
+                  {matches.length === 0
+                    ? 'No variant found for this product.'
+                    : 'Choose the variant to set a cost for.'}
+                </s-text>
+                {matches.map((r) => (
+                  <s-stack
+                    key={r.variantShopifyId}
+                    direction="inline"
+                    gap="base"
+                    alignItems="center"
+                  >
+                    <s-text>{r.variantTitle || 'Default'}</s-text>
+                    <s-text color="subdued">
+                      {(r.merchantCost?.amount ?? r.shopifyCost)
+                        ? formatMoney(r.merchantCost?.amount ?? r.shopifyCost!, data.currency)
+                        : 'No cost'}
+                    </s-text>
+                    <s-button variant="tertiary" onClick={() => setSelected(r)}>
+                      {r.merchantCost ? 'Change' : 'Set cost'}
+                    </s-button>
+                  </s-stack>
+                ))}
+                <div>
+                  <s-button variant="tertiary" onClick={() => setFocused(false)}>
+                    Show all products
+                  </s-button>
+                </div>
+              </s-stack>
+            </s-section>
+          )
+        )}
+      </>
+    );
   }
 
   return (
