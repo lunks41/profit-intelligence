@@ -11,8 +11,7 @@ import type {
   ExpenseRow,
   ExpenseSummaryResponse,
 } from '@pi/contracts';
-import { apiDelete, apiGet, apiPost, apiPut } from '../../lib/api';
-import { downloadText } from '../../lib/import-summary';
+import { apiDelete, apiPost, apiPut } from '../../lib/api';
 import { CLASS_LABEL, overlapWarning } from '../../lib/expense-class';
 import { formatMoney, formatPercent, longDate } from '../../lib/format';
 import { SampleBars } from '../preview/ui';
@@ -67,11 +66,10 @@ export function ExpensesPage() {
             {label}
           </s-button>
         ))}
-        <div style={{ marginLeft: 'auto' }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.75rem' }}>
           <s-button variant="primary" onClick={() => setAdding(true)}>
             Add expense
           </s-button>
-
           <s-button variant="primary" onClick={() => setBulk(true)}>
             Bulk Expenses
           </s-button>
@@ -480,20 +478,18 @@ function List({
 }) {
   const [search, setSearch] = useState('');
   const [applied, setApplied] = useState('');
-  const [kind, setKind] = useState<'all' | 'one_time'>('all');
   const [categoryId, setCategoryId] = useState('');
   const [status, setStatus] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [selected, setSelected] = useState<ExpenseRow | null>(null);
-  const exportCsv = useAction();
 
   useEffect(() => {
     const t = setTimeout(() => setApplied(search.trim()), 350);
     return () => clearTimeout(t);
   }, [search]);
 
-  const q = new URLSearchParams({ filter: mode === 'recurring' ? 'recurring' : kind });
+  const q = new URLSearchParams({ filter: mode === 'recurring' ? 'recurring' : 'all' });
   if (applied) q.set('search', applied);
   if (categoryId) q.set('categoryId', categoryId);
   if (status !== 'all') q.set('status', status);
@@ -549,30 +545,7 @@ function List({
             <div style={{ width: '11rem' }}>
               <DateField label="To" value={dateTo} onChange={(v) => setDateTo(v)} />
             </div>
-            <s-button
-              variant="tertiary"
-              disabled={exportCsv.busy}
-              onClick={async () => {
-                const file = await exportCsv.run(() => apiGet<{ csv: string }>('/expenses/export'));
-                if (file) downloadText('expenses.csv', file.csv);
-              }}
-            >
-              Export CSV
-            </s-button>
-            {mode === 'all' && (
-              <ShowDropdown
-                chip
-                label="Show"
-                value={kind}
-                options={[
-                  { value: 'all', label: 'Everything' },
-                  { value: 'one_time', label: 'One-time only' },
-                ]}
-                onChange={(v) => setKind(v as 'all' | 'one_time')}
-              />
-            )}
           </div>
-          <FormError message={exportCsv.error} />
           {error && <ErrorBanner message={error} onRetry={() => void reload()} />}
           {loading && !data && <Loading what="expenses" />}
           {data && data.rows.length === 0 && (
