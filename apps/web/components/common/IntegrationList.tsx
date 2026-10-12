@@ -19,6 +19,8 @@ export interface Integration {
   /** connected: green check; idle: nothing to say; soon: not built yet; unavailable: cannot be used on this server */
   status: 'connected' | 'idle' | 'soon' | 'unavailable';
   statusLabel?: string;
+  /** what a service that is not connected says (default: Not connected) */
+  idleLabel?: string;
   /** what is going on with it (accounts, last import, spend); shown under the description */
   detail?: ReactNode;
   actions?: IntegrationAction[];
@@ -37,8 +39,9 @@ export function IntegrationList({ items }: { items: Integration[] }) {
           key={it.id}
           style={{
             display: 'flex',
+            flexWrap: 'wrap',
             alignItems: 'center',
-            gap: '1rem',
+            gap: '0.75rem 1rem',
             padding: '0.85rem 0',
             borderTop: i === 0 ? 'none' : '1px solid #e3e3e3',
             opacity: it.status === 'soon' ? 0.7 : 1,
@@ -63,28 +66,17 @@ export function IntegrationList({ items }: { items: Integration[] }) {
           >
             {it.mark.text}
           </span>
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ flex: '1 1 10rem', minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
               <s-text type="strong">{it.name}</s-text>
               {it.status === 'connected' && (
-                <span
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.2rem',
-                    color: '#047b5d',
-                    fontWeight: 550,
-                  }}
-                >
-                  <s-icon type="check" size="small" />
-                  {it.statusLabel ?? 'Connected'}
-                </span>
+                <s-badge tone="success">{it.statusLabel ?? 'Connected'}</s-badge>
+              )}
+              {it.status === 'idle' && (
+                <s-badge tone="neutral">{it.idleLabel ?? 'Not connected'}</s-badge>
               )}
               {it.status === 'soon' && <s-badge tone="neutral">Coming soon</s-badge>}
               {it.status === 'unavailable' && <s-badge tone="caution">Not available yet</s-badge>}
-              {it.status === 'idle' && it.statusLabel && (
-                <s-text color="subdued">{it.statusLabel}</s-text>
-              )}
             </div>
             <s-text color="subdued">{it.description}</s-text>
             {it.detail && <div style={{ marginTop: '0.35rem' }}>{it.detail}</div>}

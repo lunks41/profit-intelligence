@@ -90,6 +90,7 @@ export function CarrierIntegrations() {
         mark: c.mark,
         status: mine.length > 0 ? 'connected' : 'idle',
         statusLabel: mine.length > 0 ? 'Invoices imported' : undefined,
+        idleLabel: 'No invoices yet',
         detail:
           mine.length > 0 ? (
             <s-stack gap="small-300">

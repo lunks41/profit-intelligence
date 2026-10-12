@@ -15,21 +15,44 @@ export const PLATFORM_MARKS: Record<string, PlatformMark> = {
   reddit: { text: 'R', background: '#ff4500' },
 };
 
+/** Which platform an account is: its own provider, or a guess from the name for a hand-entered one. */
+export function platformKey(provider: string, name: string): string | null {
+  if (PLATFORM_MARKS[provider]) return provider;
+  const n = name.toLowerCase();
+  if (/(meta|facebook|instagram)/.test(n)) return 'meta';
+  if (/google/.test(n)) return 'google';
+  if (/tiktok|tik tok/.test(n)) return 'tiktok';
+  if (/(bing|microsoft)/.test(n)) return 'bing';
+  if (/snap/.test(n)) return 'snapchat';
+  if (/pinterest/.test(n)) return 'pinterest';
+  if (/reddit/.test(n)) return 'reddit';
+  return null;
+}
+
+const CHART_COLORS: Record<string, string> = {
+  meta: '#1877f2',
+  google: '#ea4335',
+  tiktok: '#161823',
+  bing: '#00809d',
+  snapchat: '#e6c800',
+  pinterest: '#e60023',
+  reddit: '#ff4500',
+};
+const SPARE = ['#047b5d', '#8a3ffc', '#b98900', '#c4295c', '#007f9f'];
+
+/** The colour of a channel in a chart: the colour of its platform, or one from a spare set. */
+export function chartColor(provider: string, name: string, index: number): string {
+  const key = platformKey(provider, name);
+  return (key && CHART_COLORS[key]) || SPARE[index % SPARE.length]!;
+}
+
 /**
  * The mark for an ad account. A connected account knows its platform; an account whose spend is typed in by hand is
  * a "manual" one, so the platform is guessed from its name (Meta Ads, Google Ads...), otherwise it gets its initials.
  */
 export function markFor(provider: string, name: string): PlatformMark {
-  const known = PLATFORM_MARKS[provider];
-  if (known) return known;
-  const n = name.toLowerCase();
-  if (/(meta|facebook|instagram)/.test(n)) return PLATFORM_MARKS.meta!;
-  if (/google/.test(n)) return PLATFORM_MARKS.google!;
-  if (/tiktok|tik tok/.test(n)) return PLATFORM_MARKS.tiktok!;
-  if (/(bing|microsoft)/.test(n)) return PLATFORM_MARKS.bing!;
-  if (/snap/.test(n)) return PLATFORM_MARKS.snapchat!;
-  if (/pinterest/.test(n)) return PLATFORM_MARKS.pinterest!;
-  if (/reddit/.test(n)) return PLATFORM_MARKS.reddit!;
+  const key = platformKey(provider, name);
+  if (key) return PLATFORM_MARKS[key]!;
   const initials = name
     .split(/\s+/)
     .filter(Boolean)

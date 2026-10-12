@@ -17,7 +17,8 @@ import { SampleLines } from '../preview/ui';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormError, isAmount, todayLocal, useAction, FormActions } from '../settings/shared';
 import { StatCard, StatGrid } from '../common';
-import { formatDate, todayInShop } from '../../lib/shop-time';
+import { formatDate, formatDayMonth, todayInShop } from '../../lib/shop-time';
+import { ChannelChart } from './ChannelChart';
 import { DateField } from '../common/DateField';
 
 const GRID = 'repeat(auto-fit, minmax(10.625rem, 1fr))';
@@ -66,25 +67,34 @@ export function MarketingPage() {
               </Notice>
             )}
             <Kpis data={data} />
-            <s-section heading="Your ad platforms">
-              {providers.error && (
-                <ErrorBanner message={providers.error} onRetry={() => void providers.reload()} />
-              )}
-              {providers.data ? (
-                <ConnectPlatforms data={data} providers={providers.data} onChanged={changed} />
-              ) : (
-                !providers.error && <Loading what="platforms" />
-              )}
-            </s-section>
-            {data.totals.hasData && (
-              <s-section heading={`Daily spend, ${periodLabel(data.period.from, data.period.to)}`}>
-                <SampleLines
-                  data={data.daily.map((d) => ({ name: d.date.slice(5), Spend: Number(d.spend) }))}
-                  keys={[{ key: 'Spend', name: 'Ad spend', color: '#005bd3' }]}
-                />
+            <div className="pi-split-60-40">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: 0 }}>
+                {data.totals.hasData && (
+                  <s-section
+                    heading={`Daily spend, ${periodLabel(data.period.from, data.period.to)}`}
+                  >
+                    <SampleLines
+                      data={data.daily.map((d) => ({
+                        name: formatDayMonth(d.date),
+                        Spend: Number(d.spend),
+                      }))}
+                      keys={[{ key: 'Spend', name: 'Ad spend', color: '#005bd3' }]}
+                    />
+                  </s-section>
+                )}
+                <Channels data={data} />
+              </div>
+              <s-section heading="Your ad platforms">
+                {providers.error && (
+                  <ErrorBanner message={providers.error} onRetry={() => void providers.reload()} />
+                )}
+                {providers.data ? (
+                  <ConnectPlatforms data={data} providers={providers.data} onChanged={changed} />
+                ) : (
+                  !providers.error && <Loading what="platforms" />
+                )}
               </s-section>
-            )}
-            <Channels data={data} />
+            </div>
             <Campaigns data={data} onChanged={changed} />
             <Accounts data={data} onChanged={changed} />
             <s-text color="subdued">{data.note}</s-text>
@@ -144,36 +154,15 @@ function Channels({ data }: { data: MarketingResponse }) {
   if (data.channels.length === 0) {
     return (
       <s-section heading="Results by channel">
-        <s-text color="subdued">No advertising accounts yet. Connect a platform above.</s-text>
+        <s-text color="subdued">
+          No advertising accounts yet. Connect a platform on the right.
+        </s-text>
       </s-section>
     );
   }
   return (
     <s-section heading="Results by channel">
-      <s-table>
-        <s-table-header-row>
-          <s-table-header listSlot="primary">Account</s-table-header>
-          <s-table-header format="numeric">Spend</s-table-header>
-          <s-table-header format="numeric">Platform-reported sales</s-table-header>
-          <s-table-header format="numeric">Platform return</s-table-header>
-          <s-table-header format="numeric">Clicks</s-table-header>
-          <s-table-header format="numeric">Impressions</s-table-header>
-        </s-table-header-row>
-        <s-table-body>
-          {data.channels.map((c) => (
-            <s-table-row key={c.accountId}>
-              <s-table-cell>{c.name}</s-table-cell>
-              <s-table-cell>{formatMoney(c.spend, data.currency)}</s-table-cell>
-              <s-table-cell>{formatMoney(c.platformReportedSales, data.currency)}</s-table-cell>
-              <s-table-cell>
-                {c.platformReturn === null ? '—' : `${c.platformReturn}x`}
-              </s-table-cell>
-              <s-table-cell>{c.clicks}</s-table-cell>
-              <s-table-cell>{c.impressions}</s-table-cell>
-            </s-table-row>
-          ))}
-        </s-table-body>
-      </s-table>
+      <ChannelChart data={data} />
     </s-section>
   );
 }
