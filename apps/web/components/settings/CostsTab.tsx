@@ -1,6 +1,6 @@
 'use client';
 
-import { finishToast, toastProgress } from '../../lib/toast';
+import { showToast } from '../../lib/shopify-toast';
 import { Dropdown, ShowDropdown } from '../dropdown';
 
 import { useEffect, useState } from 'react';
@@ -76,14 +76,14 @@ export function CostsTab({
     if (focused && !selected && !justSaved && matches.length > 0) setSelected(matches[0]!);
   }, [focused, selected, justSaved, matches]);
 
-  // the recalculation runs in the background: say so with a small message at the top right, load the figures
-  // of the page again a little later, and once more when it should be finished
+  // the recalculation runs in the background: say so with the message of Shopify, load the figures of the page
+  // again a little later, and once more when it should be finished
   const onApplied = () => {
-    const id = toastProgress('Applying the cost to existing orders');
+    showToast('Applying the cost to existing orders. Figures update in a minute or two.');
     setTimeout(onChanged, 6_000);
     setTimeout(() => {
       onChanged();
-      finishToast(id, 'Figures updated');
+      showToast('Figures updated');
     }, 20_000);
   };
 
