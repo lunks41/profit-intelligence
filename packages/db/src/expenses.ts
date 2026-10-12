@@ -23,6 +23,17 @@ export const DEFAULT_CATEGORIES = [
   'Marketing',
   'Operations',
   'Other',
+  'Accounting and legal',
+  'Bank charges',
+  'Equipment',
+  'Insurance',
+  'Office supplies',
+  'Packaging',
+  'Repairs and maintenance',
+  'Shipping and logistics',
+  'Taxes and licences',
+  'Training and travel',
+  'Utilities',
 ];
 
 export const EXPENSE_CLASSES = ['product', 'logistics', 'advertising', 'operating'] as const;

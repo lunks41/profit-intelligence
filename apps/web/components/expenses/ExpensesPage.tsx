@@ -19,6 +19,7 @@ import { SampleBars } from '../preview/ui';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormError, isAmount, todayLocal, useAction, FormActions } from '../settings/shared';
 import { Kpi } from '../common/kpi';
+import { CardHeader } from '../common/CardHeader';
 import { Modal } from '../common/Modal';
 import { BulkExpenseTools } from './BulkExpenseDialog';
 import { formatDateTime } from '../../lib/shop-time';
@@ -66,10 +67,11 @@ export function ExpensesPage() {
             {label}
           </s-button>
         ))}
-        <s-button variant="primary" onClick={() => setAdding(true)}>
-          Add expense
-        </s-button>
         <div style={{ marginLeft: 'auto' }}>
+          <s-button variant="primary" onClick={() => setAdding(true)}>
+            Add expense
+          </s-button>
+
           <s-button variant="primary" onClick={() => setBulk(true)}>
             Bulk Expenses
           </s-button>
@@ -188,11 +190,14 @@ function Summary({
       </s-grid>
       <div className="pi-split-60-40">
         {names.length > 0 && (
-          <s-section heading="Expenses by month">
-            <SampleBars
-              data={chart}
-              keys={names.map((n, i) => ({ key: n, name: n, color: COLORS[i % COLORS.length]! }))}
-            />
+          <s-section>
+            <s-stack gap="small">
+              <CardHeader title="Expenses by month" />
+              <SampleBars
+                data={chart}
+                keys={names.map((n, i) => ({ key: n, name: n, color: COLORS[i % COLORS.length]! }))}
+              />
+            </s-stack>
           </s-section>
         )}
         {categories && (

@@ -238,17 +238,21 @@ describe('expense categories', () => {
         'Marketing',
         'Operations',
         'Other',
+        'Insurance',
+        'Utilities',
+        'Shipping and logistics',
       ]),
     );
-    const first = await json('POST', '/expenses/categories', 'id-exp-a', { name: 'Packaging' });
+    expect(list.categories.length).toBeGreaterThanOrEqual(15);
+    const first = await json('POST', '/expenses/categories', 'id-exp-a', { name: 'Charity' });
     expect(first.body.created).toBe(true);
-    const again = await json('POST', '/expenses/categories', 'id-exp-a', { name: ' packaging ' });
+    const again = await json('POST', '/expenses/categories', 'id-exp-a', { name: ' charity ' });
     expect(again.body.created).toBe(false);
     expect(again.body.id).toBe(first.body.id);
     expect(
       categoryListResponseSchema
         .parse((await json('GET', '/expenses/categories')).body)
-        .categories.filter((c) => c.name.toLowerCase() === 'packaging'),
+        .categories.filter((c) => c.name.toLowerCase() === 'charity'),
     ).toHaveLength(1);
   });
 

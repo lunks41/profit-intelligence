@@ -65,7 +65,7 @@ html {
   display: grid;
   grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
   gap: 0.5rem;
-  align-items: start;
+  align-items: stretch;
 }
 @media (max-width: 900px) {
   .pi-split-60-40 {

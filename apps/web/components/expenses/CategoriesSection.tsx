@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { CategoryListResponse, ExpenseClassName } from '@pi/contracts';
 import { apiDelete, apiPost, apiPut } from '../../lib/api';
 import { CLASS_LABEL, CLASS_OPTIONS, overlapWarning } from '../../lib/expense-class';
+import { CardHeader } from '../common/CardHeader';
 import { Modal } from '../common/Modal';
 import { Dropdown } from '../dropdown';
 import { FormActions, FormError, useAction } from '../settings/shared';
@@ -25,14 +26,17 @@ export function CategoriesSection({
   const [dialog, setDialog] = useState<'new' | Category | null>(null);
   const del = useAction();
   return (
-    <s-section heading="Categories">
+    <s-section>
       <s-stack gap="small">
-        <FormActions>
-          <s-button variant="primary" onClick={() => setDialog('new')}>
-            Add category
-          </s-button>
-        </FormActions>
-        <div style={{ maxHeight: '20rem', overflowY: 'auto' }}>
+        <CardHeader
+          title="Categories"
+          action={
+            <s-button variant="primary" onClick={() => setDialog('new')}>
+              Add category
+            </s-button>
+          }
+        />
+        <div style={{ maxHeight: '15rem', overflowY: 'auto' }}>
           <s-table>
             <s-table-header-row>
               <s-table-header listSlot="primary">Category</s-table-header>
