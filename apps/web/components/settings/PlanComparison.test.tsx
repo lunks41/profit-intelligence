@@ -31,30 +31,38 @@ const button = (name: string) =>
 afterEach(cleanup);
 
 describe('PlanComparison', () => {
-  it('shows the four plans side by side, marks Growth as most popular and Free as current', () => {
+  it('shows the four plans as equal cards, marks Growth as most popular and Free as current', () => {
     const { container } = render(<PlanComparison data={data()} busy={false} onChoose={() => {}} />);
-    const heads = Array.from(container.querySelectorAll('thead th')).map(
-      (h) => h.textContent ?? '',
-    );
-    expect(heads.join('|')).toMatch(/Free.*Basic.*Growth.*Pro/);
+    const cards = Array.from(container.querySelectorAll('section'));
+    expect(cards.map((c) => c.getAttribute('aria-label'))).toEqual([
+      'Free plan',
+      'Basic plan',
+      'Growth plan',
+      'Pro plan',
+    ]);
     expect(container.textContent).toContain('$9');
     expect(container.textContent?.match(/Most popular/g)).toHaveLength(1);
-    expect(heads.find((h) => h.includes('Growth'))).toContain('Most popular');
-    expect(heads.find((h) => h.includes('Free'))).toContain('Current');
+    expect(cards[2]!.textContent).toContain('Most popular');
+    expect(cards[0]!.textContent).toContain('Current');
     expect(container.textContent).toContain('14-day free trial');
+    // no inner scrolling: nothing in the plans is a scroll box
+    expect(container.querySelector('table')).toBeNull();
   });
 
-  it('has a row for each limit, with ticks and dashes for what a plan has', () => {
+  it('every card has the same rows in the same order, with ticks and dashes for what a plan has', () => {
     const { container } = render(<PlanComparison data={data()} busy={false} onChoose={() => {}} />);
-    const rows = Array.from(container.querySelectorAll('tbody th')).map((r) => r.textContent);
-    expect(rows).toEqual(
-      expect.arrayContaining([
-        'Orders included a month',
-        'History',
-        'LTV report',
-        'Cost CSV import and bulk edit',
-      ]),
-    );
+    const labels = (c: Element) =>
+      Array.from(c.querySelectorAll('span'))
+        .map((x) => x.textContent ?? '')
+        .filter((t) =>
+          /^(Orders included|History|Report files|PDF|Scheduled|Advertising|Cost CSV|Carrier|LTV|Profit leakage)/.test(
+            t,
+          ),
+        );
+    const cards = Array.from(container.querySelectorAll('section'));
+    const first = labels(cards[0]!);
+    expect(first).toHaveLength(10);
+    for (const c of cards) expect(labels(c)).toEqual(first);
     expect(container.querySelectorAll('[aria-label="Included"]').length).toBeGreaterThan(0);
     expect(container.querySelectorAll('[aria-label="Not included"]').length).toBeGreaterThan(0);
   });
