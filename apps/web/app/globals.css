@@ -178,3 +178,234 @@ s-button {
     grid-column: span 2;
   }
 }
+
+/* ---- the public front page (shown only to someone who opens the address in a browser tab) ---- */
+body:has(.pi-landing) {
+  background: #fff;
+  color: #1a1a1a;
+}
+body:has(.pi-landing) s-app-nav {
+  display: none;
+}
+.pi-landing {
+  max-width: 68rem;
+  margin: 0 auto;
+  padding: 1rem 1.25rem 3rem;
+  font-family:
+    Inter,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  line-height: 1.55;
+  color: #1a1a1a;
+  background: #fff;
+}
+.pi-landing a {
+  color: #005bd3;
+}
+.pi-landing-top,
+.pi-landing-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  padding: 0.75rem 0;
+}
+.pi-landing-top nav,
+.pi-landing-foot {
+  gap: 1.25rem;
+}
+.pi-landing-top nav {
+  display: flex;
+  flex-wrap: wrap;
+}
+.pi-landing-brand {
+  font-weight: 750;
+  font-size: 1.1rem;
+}
+.pi-landing-hero {
+  text-align: center;
+  padding: 3rem 0 2rem;
+}
+.pi-landing-hero h1 {
+  font-size: clamp(1.9rem, 4.5vw, 3rem);
+  line-height: 1.15;
+  margin: 0 auto 1rem;
+  max-width: 44rem;
+}
+.pi-landing-hero > p {
+  max-width: 40rem;
+  margin: 0 auto 1.5rem;
+  color: #4a4a4a;
+  font-size: 1.1rem;
+}
+.pi-landing-install {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0 auto 0.75rem;
+  max-width: 34rem;
+}
+.pi-landing-install input {
+  flex: 1 1 15rem;
+  min-width: 0;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid #8a8a8a;
+  border-radius: 0.6rem;
+  font: inherit;
+  color: #1a1a1a;
+  background: #fff;
+}
+.pi-landing-install button {
+  padding: 0.7rem 1.3rem;
+  border: 0;
+  border-radius: 0.6rem;
+  background: #005bd3;
+  color: #fff;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+.pi-landing-install button:hover {
+  background: #004fb8;
+}
+.pi-landing-error {
+  flex-basis: 100%;
+  margin: 0;
+  color: #c70a24;
+  font-size: 0.9rem;
+}
+.pi-landing-note,
+.pi-landing-small {
+  color: #616161;
+  font-size: 0.85rem;
+}
+.pi-landing-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+.pi-landing-mock {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.75rem;
+  max-width: 44rem;
+  margin: 2rem auto 0;
+  padding: 1rem;
+  border: 1px solid #e3e3e3;
+  border-radius: 1rem;
+  background: #f7f7f7;
+  text-align: left;
+  position: relative;
+}
+.pi-landing-mock > div {
+  background: #fff;
+  border: 1px solid #ececec;
+  border-radius: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  display: grid;
+  gap: 0.2rem;
+}
+.pi-landing-mock span {
+  font-size: 0.75rem;
+  color: #616161;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.pi-landing-mock strong {
+  font-size: 1.4rem;
+}
+.pi-landing-mock em {
+  grid-column: 1 / -1;
+  font-size: 0.75rem;
+  color: #8a8a8a;
+}
+.pi-landing-section {
+  padding: 2.5rem 0 0.5rem;
+}
+.pi-landing-section h2 {
+  font-size: 1.6rem;
+  margin: 0 0 1.25rem;
+}
+.pi-landing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 0.9rem;
+}
+.pi-landing-grid article {
+  border: 1px solid #e3e3e3;
+  border-radius: 0.9rem;
+  padding: 1.1rem 1.2rem;
+  background: #fff;
+}
+.pi-landing-grid h3,
+.pi-landing-steps h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+}
+.pi-landing-grid p,
+.pi-landing-steps p {
+  margin: 0 0 0.4rem;
+  color: #4a4a4a;
+}
+.pi-landing-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 0.9rem;
+}
+.pi-landing-steps li {
+  display: flex;
+  gap: 0.9rem;
+  border: 1px solid #e3e3e3;
+  border-radius: 0.9rem;
+  padding: 1.1rem 1.2rem;
+}
+.pi-landing-steps li > span {
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: #e5efff;
+  color: #005bd3;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.pi-landing-platforms {
+  margin-top: 1rem;
+  color: #4a4a4a;
+}
+.pi-landing-plans .pi-landing-popular {
+  border: 2px solid #005bd3;
+  box-shadow: 0 4px 14px rgba(0, 91, 211, 0.15);
+}
+.pi-landing-price {
+  font-size: 1.5rem;
+  font-weight: 750;
+  color: #1a1a1a !important;
+}
+.pi-landing-badge {
+  margin-left: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: #e5efff;
+  color: #005bd3;
+  vertical-align: middle;
+}
+.pi-landing-foot {
+  margin-top: 3rem;
+  border-top: 1px solid #e3e3e3;
+  color: #616161;
+  font-size: 0.9rem;
+}
