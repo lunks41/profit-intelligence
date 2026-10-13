@@ -51,6 +51,8 @@ Shopify Client secret. It generates everything else (the token encryption key an
 `app\.env`, readable only by administrators. **Keep a copy of `TOKEN_ENCRYPTION_KEY` somewhere safe**: without it the
 stored Shopify tokens cannot be read.
 
+If another IIS site already holds the host name profit.archipelago.ae (an old placeholder site, for example), IIS refuses to start ours ("Cannot create a file when that file already exists"). The script says which site it is; run it again with `-TakeOverBinding` to move the host name to the new site, or remove the binding from the old site in IIS Manager.
+
 Then it creates the database and tables, starts the API and worker, and creates the IIS site with the https binding
 for `profit.archipelago.ae` (it finds your wildcard certificate; if it cannot, add the binding in IIS Manager).
 
@@ -61,7 +63,7 @@ Use a **new Shopify app client secret** for production (the old one was exposed 
 
 1. **DNS:** create the record `profit.archipelago.ae` pointing at the server's public address, and forward port 443 to
    the server (the same way `web.archipelago.ae` is reached).
-2. **Check:** open `https://profit.archipelago.ae/health` from outside.
+2. **Check:** open `https://profit.archipelago.ae/api/health` from outside.
 3. **Shopify:** in `shopify.app.toml` on your PC set `application_url` and the redirect URLs to
    `https://profit.archipelago.ae`, then run `shopify app deploy` when you are ready (it is not run for you).
 4. **Ad platforms:** `APP_URL` is already `https://profit.archipelago.ae`. Register the redirect addresses with each

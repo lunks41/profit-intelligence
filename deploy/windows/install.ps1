@@ -11,7 +11,9 @@ param(
   [string]$HostName = 'profit.archipelago.ae',
   [string]$PgBin = 'C:\Program Files\PostgreSQL\18\bin',
   [string]$SiteName = 'profit-intelligence',
-  [int]$PgPort = 5432
+  [int]$PgPort = 5432,
+  # remove the host name from another IIS site that already holds it (for example an old placeholder site)
+  [switch]$TakeOverBinding
 )
 
 $ErrorActionPreference = 'Stop'
@@ -121,6 +123,19 @@ if (-not (Test-Path "IIS:\AppPools\$SiteName")) {
 icacls $Logs /grant "IIS AppPool\${SiteName}:(OI)(CI)M" | Out-Null
 icacls $webDir /grant "IIS AppPool\${SiteName}:(OI)(CI)RX" | Out-Null
 icacls $Env_ /grant "IIS AppPool\${SiteName}:R" | Out-Null
+# another IIS site holding this host name would stop ours from starting (IIS answers 'file already exists')
+foreach ($b in @(Get-WebBinding | Where-Object { $_.bindingInformation -like "*:$HostName" })) {
+  $other = if ($b.ItemXPath -match "@name='([^']+)'") { $Matches[1] } else { '' }
+  if ($other -and $other -ne $SiteName) {
+    $port = ($b.bindingInformation -split ':')[1]
+    if ($TakeOverBinding) {
+      Remove-WebBinding -Name $other -Protocol $b.protocol -Port $port -HostHeader $HostName
+      Write-Host "Removed $($b.protocol) $HostName from the IIS site '$other'"
+    } else {
+      Write-Host "The IIS site '$other' already has the binding $($b.protocol) $HostName. Run this script again with -TakeOverBinding to move it to $SiteName, or remove it in IIS Manager." -ForegroundColor Yellow
+    }
+  }
+}
 if (-not (Get-Website -Name $SiteName -ErrorAction SilentlyContinue)) {
   New-Website -Name $SiteName -PhysicalPath $webDir -ApplicationPool $SiteName -Port 80 -HostHeader $HostName | Out-Null
 }
@@ -139,6 +154,6 @@ Start-Website -Name $SiteName -ErrorAction SilentlyContinue
 
 Write-Host "`nDone. Next:" -ForegroundColor Green
 Write-Host "  1. DNS: point $HostName at this server's public address, and open port 443 to it."
-Write-Host "  2. Open https://$HostName/health on this machine, then from outside."
+Write-Host "  2. Open https://$HostName/api/health on this machine, then from outside."
 Write-Host "  3. In shopify.app.toml (on your development PC) set application_url to https://$HostName and the redirect_urls to match, then run shopify app deploy yourself when you are ready."
 Write-Host "  4. To see which ad platforms are ready: node --env-file=.env ads-check.mjs  (from this folder). Logs are in $Logs."
