@@ -169,6 +169,15 @@ s-button {
     grid-column: span 2;
   }
 }
+/* wide: all seven figures in one row, the net profit tile taking two of the eight columns */
+@container (min-width: 1480px) {
+  .pi-figures {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+  .pi-figures-hero {
+    grid-column: span 2;
+  }
+}
 .pi-mason {
   column-gap: 0.5rem;
   column-fill: balance;
