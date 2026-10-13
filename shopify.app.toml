@@ -1,13 +1,13 @@
-# Shopify app configuration (config as code). Deploy with `pnpm shopify:deploy`.
-# The application URL and redirect URLs below are placeholders: `pnpm shopify:dev` rewrites them
-# to the temporary tunnel URL for development, and the production URL is set at deployment.
+# Shopify app configuration (config as code) of the LIVE app. Deploy with `pnpm shopify:deploy`.
+# Development runs on the separate test app (its own config file, see docs/operations/deploy-windows.md), so
+# `shopify app dev` never rewrites the URLs of this app.
 client_id = "3bbbd3e97c78785f41572acca98bc4d5"
 name = "Profit Intelligence"
-application_url = "https://example.com"
+application_url = "https://profit.archipelago.ae"
 embedded = true
 
 [build]
-automatically_update_urls_on_dev = true
+automatically_update_urls_on_dev = false
 dev_store_url = "profit-intelligence-dev.myshopify.com"
 
 [access_scopes]
@@ -18,7 +18,7 @@ use_legacy_install_flow = false
 
 [auth]
 # Token exchange needs no OAuth redirect, but Shopify requires at least one URL.
-redirect_urls = ["https://example.com/api/auth/callback"]
+redirect_urls = ["https://profit.archipelago.ae/api/auth/callback"]
 
 [webhooks]
 api_version = "2026-10"

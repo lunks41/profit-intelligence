@@ -73,15 +73,27 @@ Use a **new Shopify app client secret** for production (the old one was exposed 
 5. **Billing, email, backups:** see `deployment-checklist.md` (SMTP, billing mode, plan prices, backups to another
    machine).
 
-## Use a separate Shopify app for production
+## Two Shopify apps: live and test
 
-The current Shopify app ("Profit Intelligence" in the Dev Dashboard) is the development app: its application URL is a placeholder, its released version holds the development write scopes (for seeding test orders), and `shopify app dev` **rewrites its URLs to a temporary tunnel every time you run it**, which would break the live site until it is deployed again. So run the live site on its own app:
+The app in the Dev Dashboard called **Profit Intelligence** is the **live** app: its config is `shopify.app.toml` (application URL `https://profit.archipelago.ae`, read-only scopes). The app **Profit Intelligence - test** is for development.
 
-1. On your PC: `shopify app config link`, choose **Create new app**, name it `Profit Intelligence Production`. This writes a second config file (for example `shopify.app.profit-intelligence-production.toml`) with the new app's client id.
-2. In that file set `application_url = "https://profit.archipelago.ae"`, `redirect_urls = ["https://profit.archipelago.ae/api/auth/callback"]`, and keep **only the read-only scopes** from `shopify.app.toml`. Keep `automatically_update_urls_on_dev = false`.
-3. `shopify app deploy --config profit-intelligence-production` (your decision; it is not run for you).
-4. Put the new app's Client ID and Client secret into `D:Projprofit-intelligenceapp.env` on the server (`SHOPIFY_API_KEY`, `SHOPIFY_API_SECRET`; use a text editor, do not paste them anywhere) and restart the API and the web site.
-5. Install the production app on your store from its distribution link (Dev Dashboard, the app, Distribution).
+Why they are separate: `shopify app dev` rewrites the URLs of the app it runs, to a temporary tunnel address. If the live app were used for development, the store would open that dead tunnel instead of the live site (the error "server IP address could not be found" on a `trycloudflare.com` address is exactly this).
+
+**Put the live URL on the live app (once, and after any change to `shopify.app.toml`):**
+
+```powershell
+pnpm shopify:deploy
+```
+
+It releases a new version with the live URLs and the read-only scopes. Then reload the app in Shopify Admin.
+
+**Point development at the test app (once):**
+
+1. `shopify app config link`, choose the existing app **Profit Intelligence - test**, and name the config `test`. This writes `shopify.app.test.toml`. That file may keep the write scopes the test-data seeder needs; the live file must not.
+2. Run development with `shopify app dev --config test` (the `pnpm shopify:dev` script is changed to this once the file exists).
+3. Put the **test** app's Client ID and secret in your PC's `.env`, and install the test app on the development store.
+
+The live server's `.env` keeps the **live** app's Client ID and secret. `SHOPIFY_APP_HANDLE` is the live app's handle (the end of its address in Shopify Admin, for example `profit-intelligence-4`); billing needs it. Rotate the live app's client secret in the Dev Dashboard (it was exposed earlier), then update the server `.env` and restart the API and the web site.
 
 ## Updating later
 
