@@ -73,6 +73,16 @@ Use a **new Shopify app client secret** for production (the old one was exposed 
 5. **Billing, email, backups:** see `deployment-checklist.md` (SMTP, billing mode, plan prices, backups to another
    machine).
 
+## Use a separate Shopify app for production
+
+The current Shopify app ("Profit Intelligence" in the Dev Dashboard) is the development app: its application URL is a placeholder, its released version holds the development write scopes (for seeding test orders), and `shopify app dev` **rewrites its URLs to a temporary tunnel every time you run it**, which would break the live site until it is deployed again. So run the live site on its own app:
+
+1. On your PC: `shopify app config link`, choose **Create new app**, name it `Profit Intelligence Production`. This writes a second config file (for example `shopify.app.profit-intelligence-production.toml`) with the new app's client id.
+2. In that file set `application_url = "https://profit.archipelago.ae"`, `redirect_urls = ["https://profit.archipelago.ae/api/auth/callback"]`, and keep **only the read-only scopes** from `shopify.app.toml`. Keep `automatically_update_urls_on_dev = false`.
+3. `shopify app deploy --config profit-intelligence-production` (your decision; it is not run for you).
+4. Put the new app's Client ID and Client secret into `D:Projprofit-intelligenceapp.env` on the server (`SHOPIFY_API_KEY`, `SHOPIFY_API_SECRET`; use a text editor, do not paste them anywhere) and restart the API and the web site.
+5. Install the production app on your store from its distribution link (Dev Dashboard, the app, Distribution).
+
 ## Updating later
 
 On your PC run `pnpm pack:deploy`, copy and unzip the new zip **over** `D:\Proj\profit-intelligence\app` (the zip has no
