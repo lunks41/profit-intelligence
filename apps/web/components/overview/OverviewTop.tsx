@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import type { MarketingResponse, OverviewResponse } from '@pi/contracts';
-import { formatMoney, formatPercent } from '../../lib/format';
+import { formatCount, formatMoney, formatPercent } from '../../lib/format';
 import { Card } from '../common';
 import { CardHeader } from '../common/CardHeader';
 import { FigureTile, TILE_COLOR } from '../common/FigureTile';
@@ -13,7 +13,6 @@ import { sparkSeries } from '../../lib/series';
 import { ChannelDonut } from './ChannelDonut';
 import { CostBreakdownCard } from './CostBreakdownCard';
 import { DataQualityCard } from './DataQualityCard';
-import { Highlights } from './Highlights';
 import { overviewKpis } from './KpiCards';
 import { MoneyFlow } from './MoneyFlow';
 import { ProfitBreakdown } from './ProfitBreakdown';
@@ -57,6 +56,7 @@ export function OverviewBoard({
           {k.margin}
           <ExpensesTile data={data} />
           <AdsTile data={data} />
+          <MoreTiles data={data} />
         </div>
 
         <div className="pi-split-60-40">
@@ -68,7 +68,6 @@ export function OverviewBoard({
           {item(<Reminders data={data} />)}
           {item(<MoneyFlow data={data} />)}
           {item(<ConnectedAccounts data={data} />)}
-          {item(<Highlights data={data} />)}
           {item(<CostBreakdownCard page={data} />)}
           {item(<WhatChangedCard data={data} />)}
           {item(opportunities)}
@@ -185,6 +184,78 @@ function AdsTile({ data }: { data: OverviewResponse }) {
         )
       }
     />
+  );
+}
+
+/** Eight more figures of the period, each as plain as All ads and All expenses: what it is and what it comes to. */
+function MoreTiles({ data }: { data: OverviewResponse }) {
+  const s = data.summary;
+  const cur = data.currency.code;
+  const money = (v: string) => formatMoney(v.replace(/^-/, ''), cur);
+  const revenue = Number(s.revenue);
+  const share = (v: string) =>
+    revenue > 0 ? `${formatPercent(Math.abs(Number(v)) / revenue)} of revenue` : undefined;
+  const perDay = data.period.days > 0 ? s.orders / data.period.days : 0;
+  return (
+    <>
+      <FigureTile
+        label="Orders"
+        value={formatCount(s.orders)}
+        color={TILE_COLOR.revenue}
+        info="Orders counted in profit for the period."
+        detail={`${perDay.toFixed(1)} a day`}
+        spark={data.trend.map((t) => t.orders)}
+      />
+      <FigureTile
+        label="Average order"
+        value={s.averageOrderValue === null ? '—' : formatMoney(s.averageOrderValue, cur)}
+        color={TILE_COLOR.revenue}
+        info="Revenue divided by orders."
+        detail="Revenue per order"
+      />
+      <FigureTile
+        label="Gross sales"
+        value={money(s.grossSales)}
+        color={TILE_COLOR.revenue}
+        info="Product sales before discounts and refunds."
+        detail="Before discounts"
+      />
+      <FigureTile
+        label="Discounts"
+        value={money(s.discounts)}
+        color={TILE_COLOR.expenses}
+        info="Discounts given to customers."
+        detail={share(s.discounts) ?? 'Given to customers'}
+      />
+      <FigureTile
+        label="Refunds"
+        value={money(s.productRefunds)}
+        color={TILE_COLOR.costs}
+        info="Product money refunded in the period."
+        detail={`${formatPercent(s.refundRate)} of sales refunded`}
+      />
+      <FigureTile
+        label="Product cost"
+        value={money(s.cogs)}
+        color={TILE_COLOR.costs}
+        info="What the products you sold cost you."
+        detail={share(s.cogs) ?? 'Cost of goods sold'}
+      />
+      <FigureTile
+        label="Payment fees"
+        value={money(s.paymentFees)}
+        color={TILE_COLOR.expenses}
+        info="Fees charged on payments, reported by Shopify or estimated from your fee rule."
+        detail={share(s.paymentFees) ?? 'On payments'}
+      />
+      <FigureTile
+        label="Shipping cost"
+        value={money(s.shippingCost)}
+        color={TILE_COLOR.margin}
+        info="What you pay to ship the orders."
+        detail={share(s.shippingCost) ?? 'To ship orders'}
+      />
+    </>
   );
 }
 

@@ -6,7 +6,7 @@ import { CHART } from '../../lib/chart-colors';
 import { InfoTip } from './info-tip';
 import { Sparkline } from './sparkline';
 
-/** One colour for each figure, the same as in the charts: the tile shows it as a thin top edge and in its line. */
+/** One colour for each figure, the same as in the charts: the tile shows it in its line. */
 export const TILE_COLOR = {
   net: '#0e7490',
   revenue: CHART.revenue,
@@ -18,7 +18,7 @@ export const TILE_COLOR = {
 } as const;
 
 /**
- * A figure card: white, with a thin edge in the figure's colour, the label in capitals, the figure, how it changed (a
+ * A figure card: white, with the label in capitals, the figure, how it changed (a
  * capsule with an arrow), what it is compared with, one line of what is behind it, and the line of how it moved in the
  * figure's colour. The change is always written out, so colour is never the only signal.
  */
@@ -69,7 +69,6 @@ export function FigureTile({
         padding: hero ? '1.1rem 1.25rem' : '0.9rem 1rem',
         background: '#fff',
         boxShadow: '0 0 0 1px rgba(26,26,26,0.07), 0 1px 2px rgba(26,26,26,0.1)',
-        borderTop: `4px solid ${color}`,
         display: 'flex',
         flexDirection: 'column',
         gap: '0.75rem',
