@@ -14,7 +14,7 @@ export interface IntegrationAction {
 export interface Integration {
   id: string;
   name: string;
-  description: string;
+  description?: string;
   /** the round mark in front of the name: the first letters in the colour of the service */
   mark: { text: string; background: string; color?: string };
   /** the platform whose logo replaces the mark (see PlatformLogo) */
@@ -85,7 +85,7 @@ export function IntegrationList({ items }: { items: Integration[] }) {
               {it.status === 'soon' && <s-badge tone="neutral">Coming soon</s-badge>}
               {it.status === 'unavailable' && <s-badge tone="caution">Not available yet</s-badge>}
             </div>
-            <s-text color="subdued">{it.description}</s-text>
+            {it.description && <s-text color="subdued">{it.description}</s-text>}
             {it.detail && <div style={{ marginTop: '0.35rem' }}>{it.detail}</div>}
           </div>
           {it.actions && it.actions.length > 0 && (

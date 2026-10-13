@@ -30,16 +30,6 @@ type Platform = (typeof PLATFORMS)[number];
 
 const NAME = AD_PLATFORM_NAME as Record<Platform, string>;
 
-const WHAT: Record<Platform, string> = {
-  meta: 'Facebook and Instagram ads. Read-only access to your ad accounts.',
-  google: 'Google Ads campaigns. Read-only access to your Google Ads accounts.',
-  tiktok: 'TikTok for Business campaigns. Read-only access to your advertiser accounts.',
-  microsoft: 'Bing and Microsoft Advertising campaigns. Read-only access to your accounts.',
-  snapchat: 'Snapchat campaigns. Read-only access to your ad accounts.',
-  pinterest: 'Pinterest campaigns. Read-only access to your ad accounts.',
-  reddit: 'Reddit campaigns. Read-only access to your ad accounts.',
-};
-
 const PROBLEM: Record<string, string> = {
   expired: 'The sign-in took too long or was not started from this app. Try connecting again.',
   denied: 'The platform did not give access. Connect again and approve the access it asks for.',
@@ -91,7 +81,6 @@ export function ConnectPlatforms({
       return {
         id,
         name: NAME[id],
-        description: WHAT[id],
         mark: PLATFORM_MARKS[platformKey(id, '') ?? id]!,
         logo: platformKey(id, '') ?? id,
         status: !available ? 'unavailable' : mine.length > 0 ? 'connected' : 'idle',
