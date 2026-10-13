@@ -26,6 +26,9 @@ describe('plan definitions', () => {
       expect(hi.adAccounts).toBeGreaterThanOrEqual(lo.adAccounts);
       expect(Number(hi.pdfExports)).toBeGreaterThanOrEqual(Number(lo.pdfExports));
       expect(Number(hi.leakageFindings)).toBeGreaterThanOrEqual(Number(lo.leakageFindings));
+      expect(Number(hi.ltvReport)).toBeGreaterThanOrEqual(Number(lo.ltvReport));
+      expect(Number(hi.carrierInvoices)).toBeGreaterThanOrEqual(Number(lo.carrierInvoices));
+      expect(Number(hi.bulkCostTools)).toBeGreaterThanOrEqual(Number(lo.bulkCostTools));
       expect(PLANS[PLAN_IDS[i]!].priceUsd).toBeGreaterThan(PLANS[PLAN_IDS[i - 1]!].priceUsd);
     }
   });

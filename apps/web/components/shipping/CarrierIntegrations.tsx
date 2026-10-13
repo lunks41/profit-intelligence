@@ -71,7 +71,9 @@ type Invoice = CarrierInvoiceListResponse['rows'][number];
 export function CarrierList({
   invoices,
   onImport,
+  locked = false,
 }: {
+  locked?: boolean;
   invoices: Invoice[];
   onImport: (carrier: CarrierId) => void;
 }) {
@@ -98,6 +100,7 @@ export function CarrierList({
           {
             label: 'Import invoice',
             variant: mine.length > 0 ? 'secondary' : 'primary',
+            disabled: locked,
             onClick: () => onImport(c.id),
           },
         ],

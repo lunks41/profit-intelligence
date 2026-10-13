@@ -1559,6 +1559,9 @@ export const entitlementsSchema = z.object({
   scheduledReports: z.number(),
   adAccounts: z.number(),
   leakageFindings: z.boolean(),
+  ltvReport: z.boolean(),
+  carrierInvoices: z.boolean(),
+  bulkCostTools: z.boolean(),
   ordersPerMonth: z.number(),
 });
 

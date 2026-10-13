@@ -19,6 +19,8 @@ import { buildListQuery } from '../../lib/query';
 import { todayInShop } from '../../lib/shop-time';
 import { StatCard, StatGrid } from '../common';
 import { CardHeader } from '../common/CardHeader';
+import { PlanLock } from '../common/PlanLock';
+import { planWith, usePlan } from '../../lib/plan';
 import { ScrollTable } from '../common/ScrollTable';
 import { Dropdown } from '../dropdown';
 import { FilterBar, type Filters } from '../overview/OverviewView';
@@ -33,8 +35,20 @@ const ORDINAL = ['1st', '2nd', '3rd'];
 const nth = (i: number) => `${ORDINAL[i] ?? `${i + 1}th`} month`;
 const ratioText = (r: string | null) => (r === null ? '—' : `${r} : 1`);
 
-/** The LTV tab of Reports: customers grouped by the month of their first order. */
+/** The LTV tab of Reports: customers grouped by the month of their first order. Locked on a plan without it. */
 export function LtvReport() {
+  const plan = usePlan();
+  if (plan && !plan.entitlements.ltvReport) {
+    return (
+      <PlanLock plan={planWith(plan.plan, (e) => e.ltvReport)}>
+        {`The LTV report is not part of your ${plan.plan} plan.`}
+      </PlanLock>
+    );
+  }
+  return <LtvBody />;
+}
+
+function LtvBody() {
   const [filters, setFilters] = useState<Filters>({
     preset: '90d' as PeriodPreset,
     from: todayInShop(),

@@ -60,8 +60,8 @@
     "hash": "f00a5a8e2f2fa8f61d9aaea9e3f3b074"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\billing\\billing.integration.test.ts": {
-    "mtime": 1791747622.1586277,
-    "hash": "15d5c07568552d37fad31c2b0f9a8552"
+    "mtime": 1791870575.490229,
+    "hash": "540b9ce084d958eb8320fb4a40bc3d47"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\billing\\billing.module.ts": {
     "mtime": 1791546337.587965,
@@ -72,8 +72,8 @@
     "hash": "fcbdcfb4ebb6b178394962f93274dc53"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\billing\\entitlements.service.ts": {
-    "mtime": 1791746745.3279302,
-    "hash": "3b3410bc4a5aa47a8cbc33b1ae1d89c0"
+    "mtime": 1791870417.0579698,
+    "hash": "5543d571569888b17adcfa8df382fcf5"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\billing\\extra-orders.test.ts": {
     "mtime": 1791747208.6285145,
@@ -120,8 +120,8 @@
     "hash": "3aaaceca5b0f923966c09e1b0aa91904"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\customers\\customers.service.ts": {
-    "mtime": 1791810768.8580637,
-    "hash": "537b3ef24923aa37cb8b0e9f1d4d9e1e"
+    "mtime": 1791870417.060481,
+    "hash": "84eb2fb584cf88a8a1bec564469891a5"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\dashboard\\alerts.test.ts": {
     "mtime": 1791538790.7054687,
@@ -368,8 +368,8 @@
     "hash": "914c45ab80bbb01c579ab46cf0e8eb43"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\settings\\settings.service.ts": {
-    "mtime": 1791781202.0923827,
-    "hash": "093074c07f7fa58939a7e31247224f7e"
+    "mtime": 1791870423.1009188,
+    "hash": "ea71c41f03788d19c43cae1e165714ba"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\shipping\\carrier-csv.test.ts": {
     "mtime": 1791800093.5914237,
@@ -392,8 +392,8 @@
     "hash": "b13d4dc969885ec03fb2de5dee872ae6"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\shipping\\shipping.service.ts": {
-    "mtime": 1791806782.440756,
-    "hash": "bab281c76bd528ecb07b46963e211713"
+    "mtime": 1791870417.1112685,
+    "hash": "d483dba0d8f6fb813c48e3f960d889cb"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\api\\src\\shopify\\shopify.module.ts": {
     "mtime": 1791529859.6787221,
@@ -546,6 +546,10 @@
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\PageBody.tsx": {
     "mtime": 1791784468.2728078,
     "hash": "9c32eaec38513bfdf03c5d81a12f1818"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\plan-feature-locks.test.tsx": {
+    "mtime": 1791870698.4689403,
+    "hash": "74813fa949ccb18c83298e12d5745a7c"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\SetupGuide.test.tsx": {
     "mtime": 1791825127.7148924,
@@ -824,8 +828,8 @@
     "hash": "d42aa574c657d74a888ffc5437a9b98a"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\profitability\\BulkCostDialog.tsx": {
-    "mtime": 1791787283.5224934,
-    "hash": "faee6d970335bf83d725549ccef50e57"
+    "mtime": 1791870546.1845188,
+    "hash": "0714516edca154fac599ffc791572cd9"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\profitability\\OrdersPage.tsx": {
     "mtime": 1791794451.1585379,
@@ -860,16 +864,16 @@
     "hash": "59469d0a4be60c8dc446e34cf4625d85"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\reports\\LtvReport.tsx": {
-    "mtime": 1791812698.8653376,
-    "hash": "0af96bfa388381fb331ac6f40186d70e"
+    "mtime": 1791870485.1625938,
+    "hash": "1a89e30679102cec615c213fdd6c7a65"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\reports\\Notifications.tsx": {
     "mtime": 1791791027.3412662,
     "hash": "7cdfd5eef6cc652b5a0b69e245329463"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\reports\\ReportsPage.tsx": {
-    "mtime": 1791869225.547369,
-    "hash": "87d1ea662348f4ce73c94747c80f3392"
+    "mtime": 1791870485.1665952,
+    "hash": "c81fb5c853a4597228a6484ca43c2618"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\reports\\ReportTable.tsx": {
     "mtime": 1791805857.9144564,
@@ -900,8 +904,8 @@
     "hash": "e607b31854b87c7a4521ddddced2cae1"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\settings\\PlanTab.tsx": {
-    "mtime": 1791869376.4579,
-    "hash": "1c9d0736ed47bd4bca09212e5bd72b82"
+    "mtime": 1791870485.199009,
+    "hash": "2fcc8bb49484b47c251ab6b1f67da415"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\settings\\RuleCoverage.tsx": {
     "mtime": 1791615226.0283206,
@@ -932,16 +936,16 @@
     "hash": "2461cbcae00cb58b5fcfabdbd87afa73"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\shipping\\CarrierIntegrations.tsx": {
-    "mtime": 1791807079.5293748,
-    "hash": "afbcc31561416baebe116b263b83aee8"
+    "mtime": 1791870485.175402,
+    "hash": "4a5b5a1c468589966a0e6ddb6d4d2ef8"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\shipping\\ShippingPage.tsx": {
-    "mtime": 1791812698.8733377,
-    "hash": "dd8ca8de6656b8c8da7627653724e9ea"
+    "mtime": 1791870495.6990118,
+    "hash": "f4bd4f79392fa28b60a0c6a5b487e344"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\shipping\\ShippingParts.tsx": {
-    "mtime": 1791807079.60551,
-    "hash": "25d21b7ec6ea0c8e2412c0adf9071e54"
+    "mtime": 1791870485.180407,
+    "hash": "35953a5b4dad9d39d620ef39ac8d7be0"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\sync\\SyncNotice.tsx": {
     "mtime": 1791611474.1567662,
@@ -1296,16 +1300,16 @@
     "hash": "0ac6fc02b30b4eb773d3a2351a39a055"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\contracts\\src\\index.ts": {
-    "mtime": 1791867599.7093718,
-    "hash": "5ff1da5e7378f60b6355671069fe15c0"
+    "mtime": 1791870417.0389342,
+    "hash": "1ed827b6318879e758b3953b27cd21bd"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\contracts\\src\\plans.test.ts": {
-    "mtime": 1791546108.311282,
-    "hash": "7a2c4eed911c4f56f6ad7c72f8a1f588"
+    "mtime": 1791870417.0469728,
+    "hash": "39bdf8bd1a2818670bdac478592b95f7"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\contracts\\src\\plans.ts": {
-    "mtime": 1791747135.2956772,
-    "hash": "15b83d6d8eb90d27f327df633d3e2784"
+    "mtime": 1791870417.033933,
+    "hash": "89d2c5fb09cfbce9305eb6a6b69886f6"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\packages\\db\\drizzle.config.ts": {
     "mtime": 1791527505.6127205,
@@ -1992,8 +1996,8 @@
     "hash": "b77e287a1f70ba45f37818e567a623d7"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\roadmap.md": {
-    "mtime": 1791869981.003929,
-    "hash": "1b20e670edd1a9618dccfd604c49619c"
+    "mtime": 1791870866.4666731,
+    "hash": "181ef37d7c90101b701ae68769f733a6"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\architecture\\billing.md": {
     "mtime": 1791549276.7097468,

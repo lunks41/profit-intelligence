@@ -182,7 +182,9 @@ const KIND_BADGE = {
 export function ShipmentsCard({
   data,
   onImport,
+  locked = false,
 }: {
+  locked?: boolean;
   data: ShippingOverviewResponse;
   onImport: () => void;
 }) {
@@ -193,7 +195,7 @@ export function ShipmentsCard({
         <CardHeader
           title="Shipments"
           action={
-            <s-button variant="primary" onClick={onImport}>
+            <s-button variant="primary" disabled={locked} onClick={onImport}>
               Import invoice
             </s-button>
           }
@@ -255,7 +257,9 @@ export function InvoicesCard({
   error,
   onImport,
   onTakeBack,
+  locked = false,
 }: {
+  locked?: boolean;
   rows: Invoice[];
   busy: boolean;
   error: string | null;
@@ -268,7 +272,7 @@ export function InvoicesCard({
         <CardHeader
           title="Carrier invoices"
           action={
-            <s-button variant="primary" onClick={onImport}>
+            <s-button variant="primary" disabled={locked} onClick={onImport}>
               Import invoice
             </s-button>
           }

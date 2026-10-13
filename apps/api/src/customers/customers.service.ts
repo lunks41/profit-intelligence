@@ -35,6 +35,7 @@ export class CustomersService {
     scope: TenantContext,
     q: { preset: PeriodPreset; from?: string; to?: string; country?: string; source?: string },
   ): Promise<LtvResponse> {
+    await this.entitlements.assertLtv(scope);
     const shop = await getShopOverview(this.db, scope);
     if (!shop) throw new BadRequestException({ code: 'shop_not_found', message: 'Shop not found' });
     let picked;

@@ -23,6 +23,7 @@ type Tab = 'reports' | 'ltv' | 'notifications';
 const today = todayInShop;
 
 export function ReportsPage() {
+  const plan = usePlan();
   const [tab, setTab] = useState<Tab>('reports');
   useEffect(() => {
     const t = readParam('tab', ['reports', 'ltv', 'notifications'] as const);
@@ -37,7 +38,7 @@ export function ReportsPage() {
         {(
           [
             ['reports', 'Reports'],
-            ['ltv', 'LTV'],
+            ['ltv', plan && !plan.entitlements.ltvReport ? '🔒 LTV' : 'LTV'],
             ['notifications', 'Notifications'],
           ] as const
         ).map(([id, label]) => (

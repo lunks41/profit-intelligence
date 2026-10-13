@@ -135,6 +135,39 @@ export class EntitlementsService {
     }
   }
 
+  /** The LTV report. */
+  async assertLtv(scope: Scope): Promise<void> {
+    const { entitlements } = await this.plan(scope);
+    if (!entitlements.ltvReport) {
+      throw planLimit(
+        'The LTV report is not part of your plan.',
+        planFor((e) => e.ltvReport)?.id ?? null,
+      );
+    }
+  }
+
+  /** Importing a carrier invoice. Looking at the ones already imported, and taking one back, stay open. */
+  async assertCarrierInvoices(scope: Scope): Promise<void> {
+    const { entitlements } = await this.plan(scope);
+    if (!entitlements.carrierInvoices) {
+      throw planLimit(
+        'Importing carrier invoices is not part of your plan. Shipping rules are.',
+        planFor((e) => e.carrierInvoices)?.id ?? null,
+      );
+    }
+  }
+
+  /** Product costs by CSV import or by bulk edit. Setting one product's cost, and exporting, stay open. */
+  async assertBulkCosts(scope: Scope): Promise<void> {
+    const { entitlements } = await this.plan(scope);
+    if (!entitlements.bulkCostTools) {
+      throw planLimit(
+        'Importing costs and bulk edits are not part of your plan. You can still set costs one product at a time.',
+        planFor((e) => e.bulkCostTools)?.id ?? null,
+      );
+    }
+  }
+
   async assertLeakage(scope: Scope): Promise<void> {
     const { entitlements } = await this.plan(scope);
     if (!entitlements.leakageFindings) {

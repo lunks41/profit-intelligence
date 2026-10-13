@@ -23,6 +23,12 @@ export interface Entitlements {
   adAccounts: number;
   /** The profit leakage findings and their weekly notifications. */
   leakageFindings: boolean;
+  /** The LTV report: customers by month of first order, with CAC and LTV:CAC. */
+  ltvReport: boolean;
+  /** Importing a carrier's invoice file to make shipping costs exact. */
+  carrierInvoices: boolean;
+  /** Product costs by CSV import and by bulk edit (vendor, product, collection). One product at a time is always open. */
+  bulkCostTools: boolean;
   /**
    * Orders included per calendar month. Nothing stops working past it: on a paid plan each extra order costs
    * EXTRA_ORDER_USD, and on the free plan the merchant is asked to upgrade.
@@ -62,6 +68,9 @@ export const PLANS: Record<PlanId, Plan> = {
       scheduledReports: 0,
       adAccounts: 1,
       leakageFindings: false,
+      ltvReport: false,
+      carrierInvoices: false,
+      bulkCostTools: false,
       ordersPerMonth: 50,
     },
   },
@@ -78,6 +87,9 @@ export const PLANS: Record<PlanId, Plan> = {
       scheduledReports: 3,
       adAccounts: 3,
       leakageFindings: true,
+      ltvReport: true,
+      carrierInvoices: true,
+      bulkCostTools: true,
       ordersPerMonth: 500,
     },
   },
@@ -94,6 +106,9 @@ export const PLANS: Record<PlanId, Plan> = {
       scheduledReports: 10,
       adAccounts: 10,
       leakageFindings: true,
+      ltvReport: true,
+      carrierInvoices: true,
+      bulkCostTools: true,
       ordersPerMonth: 2000,
     },
   },

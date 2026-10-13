@@ -286,6 +286,65 @@ describe('billing on, no subscription: the free plan is enforced on the server',
     expect(r.body.error.message).toMatch(/Growth plan/);
   });
 
+  it('keeps the LTV report, carrier invoice import and cost bulk tools out of the free plan', async () => {
+    const app = await start(managed);
+    const ltv = await json(app, 'GET', '/customers/ltv?preset=30d');
+    expect(ltv.res.statusCode).toBe(403);
+    expect(ltv.body.error.code).toBe('plan_limit');
+    expect(ltv.body.error.message).toMatch(/Growth plan/);
+
+    const invoice = await json(app, 'POST', '/shipping/carrier-invoices/import', 'id-bill-a', {
+      carrier: 'dhl',
+      csv: 'Shipment Reference,Total Amount\r\n1001,5.00\r\n',
+      preview: true,
+    });
+    expect(invoice.res.statusCode).toBe(403);
+    expect(invoice.body.error.code).toBe('plan_limit');
+
+    const imported = await json(app, 'POST', '/settings/costs/import', 'id-bill-a', {
+      csv: 'sku,cost\nA,1.00\n',
+      preview: true,
+    });
+    expect(imported.res.statusCode).toBe(403);
+    expect(imported.body.error.code).toBe('plan_limit');
+
+    for (const by of ['vendor', 'product', 'collection']) {
+      const bulk = await json(app, 'POST', '/settings/costs/bulk', 'id-bill-a', {
+        amount: '3.00',
+        effectiveFrom: '2026-01-01',
+        by,
+        value: 'x',
+      });
+      expect(bulk.res.statusCode).toBe(403);
+      expect(bulk.body.error.code).toBe('plan_limit');
+    }
+    // one product's own variants, and exporting, stay open
+    const own = await json(app, 'POST', '/settings/costs/bulk', 'id-bill-a', {
+      amount: '3.00',
+      effectiveFrom: '2026-01-01',
+      by: 'variants',
+      value: '1',
+    });
+    expect(own.res.statusCode).not.toBe(403);
+    expect((await req(app, 'GET', '/settings/costs/export', 'id-bill-a')).statusCode).toBe(200);
+  });
+
+  it('opens all three on a plan that has them', async () => {
+    const app = await start({ BILLING_OFF_PLAN: 'growth' });
+    expect((await req(app, 'GET', '/customers/ltv?preset=30d', 'id-bill-a')).statusCode).toBe(200);
+    const imported = await json(app, 'POST', '/settings/costs/import', 'id-bill-a', {
+      csv: 'sku,cost\nA,1.00\n',
+      preview: true,
+    });
+    expect(imported.res.statusCode).not.toBe(403);
+    const invoice = await json(app, 'POST', '/shipping/carrier-invoices/import', 'id-bill-a', {
+      carrier: 'dhl',
+      csv: 'Shipment Reference,Total Amount\r\n1001,5.00\r\n',
+      preview: true,
+    });
+    expect(invoice.res.statusCode).not.toBe(403);
+  });
+
   it('refuses PDF reports and scheduled emails, but allows CSV reports', async () => {
     const app = await start(managed);
     const pdf = await json(app, 'POST', '/reports/exports', 'id-bill-a', {

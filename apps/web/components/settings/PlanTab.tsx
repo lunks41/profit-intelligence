@@ -162,7 +162,10 @@ export function PlanTab() {
             <s-text color="subdued">
               History you can look at: the last {e.historyDays} days. PDF reports:{' '}
               {e.pdfExports ? 'included' : 'not included'}. Profit leakage findings:{' '}
-              {e.leakageFindings ? 'included' : 'not included'}.
+              {e.leakageFindings ? 'included' : 'not included'}. LTV report:{' '}
+              {e.ltvReport ? 'included' : 'not included'}. Carrier invoice import:{' '}
+              {e.carrierInvoices ? 'included' : 'not included'}. Cost import and bulk edit:{' '}
+              {e.bulkCostTools ? 'included' : 'not included'}.
             </s-text>
           </s-stack>
           <FormError message={act.error} />
@@ -253,6 +256,17 @@ export function PlanTab() {
                       {p.entitlements.leakageFindings
                         ? 'Profit leakage findings'
                         : 'No leakage findings'}
+                    </li>
+                    <li>{p.entitlements.ltvReport ? 'LTV report' : 'No LTV report'}</li>
+                    <li>
+                      {p.entitlements.carrierInvoices
+                        ? 'Carrier invoice import'
+                        : 'No carrier invoice import'}
+                    </li>
+                    <li>
+                      {p.entitlements.bulkCostTools
+                        ? 'Cost CSV import and bulk edit'
+                        : 'Product costs one at a time'}
                     </li>
                   </ul>
                   {p.id !== 'free' && (

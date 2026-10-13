@@ -18,6 +18,8 @@ import { SampleLines } from '../preview/ui';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { ShippingTab } from '../settings/RulesTabs';
 import { useAction } from '../settings/shared';
+import { PlanLock } from '../common/PlanLock';
+import { planWith, usePlan } from '../../lib/plan';
 import { CarrierList, ImportInvoiceDialog } from './CarrierIntegrations';
 import { CarrierChart, InvoicesCard, ShipmentsCard, ShippingKpis } from './ShippingParts';
 
@@ -42,6 +44,8 @@ export function ShippingPage() {
   // the import dialog: closed, asking for the carrier (null), or for a given carrier
   const [importing, setImporting] = useState<{ carrier: CarrierId | null } | null>(null);
   const back = useAction();
+  const plan = usePlan();
+  const importLocked = plan !== null && !plan.entitlements.carrierInvoices;
 
   const missing = data?.totals.ordersMissing ?? 0;
   return (
@@ -69,6 +73,11 @@ export function ShippingPage() {
             gap: '1rem',
           }}
         >
+          {plan && importLocked && (
+            <PlanLock plan={planWith(plan.plan, (e) => e.carrierInvoices)}>
+              {`Importing carrier invoices is not part of your ${plan.plan} plan. Shipping cost rules below are, and invoices already imported still count.`}
+            </PlanLock>
+          )}
           <ShippingKpis
             data={data}
             onViewMissing={() =>
@@ -91,12 +100,18 @@ export function ShippingPage() {
               <CarrierChart data={data} />
             </div>
             <CarrierList
+              locked={importLocked}
               invoices={invoices.data?.rows ?? []}
               onImport={(carrier) => setImporting({ carrier })}
             />
           </div>
-          <ShipmentsCard data={data} onImport={() => setImporting({ carrier: null })} />
+          <ShipmentsCard
+            locked={importLocked}
+            data={data}
+            onImport={() => setImporting({ carrier: null })}
+          />
           <InvoicesCard
+            locked={importLocked}
             rows={invoices.data?.rows ?? []}
             busy={back.busy}
             error={back.error}

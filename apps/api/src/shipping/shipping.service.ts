@@ -107,6 +107,7 @@ export class ShippingService {
     scope: TenantContext,
     body: CarrierInvoiceImportBody,
   ): Promise<CarrierInvoiceResult> {
+    await this.entitlements.assertCarrierInvoices(scope);
     const parsed = parseCarrierCsv(body.csv, body.carrier, body.mapping ?? {});
     const columns = { headers: parsed.headers, ...parsed.used };
     const empty = {

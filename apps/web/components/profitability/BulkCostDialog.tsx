@@ -7,6 +7,8 @@ import { downloadText, importSummaryCsv } from '../../lib/import-summary';
 import { Dropdown } from '../dropdown';
 import { FormError, isAmount, todayLocal, useAction, FormActions } from '../settings/shared';
 import { DateField } from '../common/DateField';
+import { PlanLock } from '../common/PlanLock';
+import { planWith, usePlan } from '../../lib/plan';
 
 type Tab = 'import' | 'edit' | 'export';
 type Preview = { matched: number; skipped: number; invalid: number; messages: string[] };
@@ -18,14 +20,16 @@ type ByKind = 'vendor' | 'product' | 'collection' | 'variants';
  * catalogue with the costs as they are. All costs are in US dollars (USD); nothing is saved before it is confirmed.
  */
 export function BulkCostTools({ onSaved }: { onSaved: () => void }) {
+  const plan = usePlan();
+  const locked = plan !== null && !plan.entitlements.bulkCostTools;
   const [tab, setTab] = useState<Tab>('import');
   return (
     <s-stack gap="base">
       <s-stack direction="inline" gap="small">
         {(
           [
-            ['import', 'Import costs'],
-            ['edit', 'Bulk edit'],
+            ['import', locked ? '🔒 Import costs' : 'Import costs'],
+            ['edit', locked ? '🔒 Bulk edit' : 'Bulk edit'],
             ['export', 'Export costs'],
           ] as const
         ).map(([id, label]) => (
@@ -38,8 +42,13 @@ export function BulkCostTools({ onSaved }: { onSaved: () => void }) {
           </s-button>
         ))}
       </s-stack>
-      {tab === 'import' && <ImportTab onSaved={onSaved} />}
-      {tab === 'edit' && <EditTab onSaved={onSaved} />}
+      {plan && locked && tab !== 'export' && (
+        <PlanLock plan={planWith(plan.plan, (e) => e.bulkCostTools)}>
+          {`Importing costs and bulk edits are not part of your ${plan.plan} plan. You can set a product's cost one at a time, and export your costs.`}
+        </PlanLock>
+      )}
+      {!locked && tab === 'import' && <ImportTab onSaved={onSaved} />}
+      {!locked && tab === 'edit' && <EditTab onSaved={onSaved} />}
       {tab === 'export' && <ExportTab />}
     </s-stack>
   );

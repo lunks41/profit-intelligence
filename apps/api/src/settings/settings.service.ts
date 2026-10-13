@@ -62,6 +62,7 @@ import {
 import type { EngineOrder } from '@pi/profit-engine';
 import type { PgBoss } from 'pg-boss';
 import type { TenantContext } from '../auth/installation.service.js';
+import { EntitlementsService } from '../billing/entitlements.service.js';
 import { DB, QUEUE } from '../tokens.js';
 import { describeAudit } from './describe.js';
 
@@ -96,6 +97,7 @@ export class SettingsService {
   constructor(
     @Inject(DB) private readonly db: Db,
     @Inject(QUEUE) private readonly boss: PgBoss,
+    @Inject(EntitlementsService) private readonly entitlements: EntitlementsService,
   ) {}
 
   private async shop(scope: TenantContext) {
@@ -236,6 +238,7 @@ export class SettingsService {
   }
 
   async importCosts(scope: TenantContext, body: ProductCostImportBody) {
+    await this.entitlements.assertBulkCosts(scope);
     const { currency, today } = await this.shop(scope);
     const parsed = parseProductCostCsv(body.csv);
     const catalog = await listCostCatalog(this.db, scope, today);
@@ -298,6 +301,8 @@ export class SettingsService {
   }
 
   async bulkCosts(scope: TenantContext, body: BulkCostBody) {
+    // all the variants of one product is the product's own edit and stays open; the rest is a bulk tool
+    if (body.by !== 'variants') await this.entitlements.assertBulkCosts(scope);
     const { currency, today } = await this.shop(scope);
     this.checkDate(body.effectiveFrom, today);
     const catalog = await listCostCatalog(this.db, scope, today);
