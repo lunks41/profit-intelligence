@@ -1,7 +1,21 @@
 import type { FoundAdAccount, OAuthProviderId } from '@pi/db';
+import {
+  isMoreProvider,
+  moreAuthorizeUrl,
+  moreExchange,
+  moreListAccounts,
+} from './ad-oauth-more.js';
 
 export type { OAuthProviderId };
-export const OAUTH_PROVIDERS: OAuthProviderId[] = ['meta', 'google', 'tiktok'];
+export const OAUTH_PROVIDERS: OAuthProviderId[] = [
+  'meta',
+  'google',
+  'tiktok',
+  'microsoft',
+  'snapchat',
+  'pinterest',
+  'reddit',
+];
 
 /** What the server knows about each platform's app. A platform without its values cannot be connected yet. */
 export interface AdOAuthConfig {
@@ -9,6 +23,10 @@ export interface AdOAuthConfig {
   meta?: { appId: string; secret: string };
   google?: { clientId: string; secret: string; developerToken: string };
   tiktok?: { appId: string; secret: string };
+  microsoft?: { clientId: string; secret: string; developerToken: string };
+  snapchat?: { clientId: string; secret: string };
+  pinterest?: { appId: string; secret: string };
+  reddit?: { clientId: string; secret: string };
 }
 
 export interface OAuthEnv {
@@ -20,6 +38,15 @@ export interface OAuthEnv {
   GOOGLE_ADS_DEVELOPER_TOKEN?: string;
   TIKTOK_APP_ID?: string;
   TIKTOK_APP_SECRET?: string;
+  MICROSOFT_ADS_CLIENT_ID?: string;
+  MICROSOFT_ADS_CLIENT_SECRET?: string;
+  MICROSOFT_ADS_DEVELOPER_TOKEN?: string;
+  SNAPCHAT_CLIENT_ID?: string;
+  SNAPCHAT_CLIENT_SECRET?: string;
+  PINTEREST_APP_ID?: string;
+  PINTEREST_APP_SECRET?: string;
+  REDDIT_CLIENT_ID?: string;
+  REDDIT_CLIENT_SECRET?: string;
 }
 
 export function oauthConfigFromEnv(env: OAuthEnv): AdOAuthConfig {
@@ -40,6 +67,26 @@ export function oauthConfigFromEnv(env: OAuthEnv): AdOAuthConfig {
   }
   if (env.TIKTOK_APP_ID && env.TIKTOK_APP_SECRET) {
     cfg.tiktok = { appId: env.TIKTOK_APP_ID, secret: env.TIKTOK_APP_SECRET };
+  }
+  if (
+    env.MICROSOFT_ADS_CLIENT_ID &&
+    env.MICROSOFT_ADS_CLIENT_SECRET &&
+    env.MICROSOFT_ADS_DEVELOPER_TOKEN
+  ) {
+    cfg.microsoft = {
+      clientId: env.MICROSOFT_ADS_CLIENT_ID,
+      secret: env.MICROSOFT_ADS_CLIENT_SECRET,
+      developerToken: env.MICROSOFT_ADS_DEVELOPER_TOKEN,
+    };
+  }
+  if (env.SNAPCHAT_CLIENT_ID && env.SNAPCHAT_CLIENT_SECRET) {
+    cfg.snapchat = { clientId: env.SNAPCHAT_CLIENT_ID, secret: env.SNAPCHAT_CLIENT_SECRET };
+  }
+  if (env.PINTEREST_APP_ID && env.PINTEREST_APP_SECRET) {
+    cfg.pinterest = { appId: env.PINTEREST_APP_ID, secret: env.PINTEREST_APP_SECRET };
+  }
+  if (env.REDDIT_CLIENT_ID && env.REDDIT_CLIENT_SECRET) {
+    cfg.reddit = { clientId: env.REDDIT_CLIENT_ID, secret: env.REDDIT_CLIENT_SECRET };
   }
   return cfg;
 }
@@ -67,6 +114,7 @@ export function authorizeUrl(cfg: AdOAuthConfig, provider: OAuthProviderId, stat
     throw new OAuthError('This platform is not set up on the server');
   const redirect = redirectUri(cfg, provider);
   const q = (o: Record<string, string>) => new URLSearchParams(o).toString();
+  if (isMoreProvider(provider)) return moreAuthorizeUrl(cfg, provider, redirect, state);
   switch (provider) {
     case 'meta':
       return `https://www.facebook.com/v21.0/dialog/oauth?${q({
@@ -92,6 +140,8 @@ export function authorizeUrl(cfg: AdOAuthConfig, provider: OAuthProviderId, stat
         redirect_uri: redirect,
         state,
       })}`;
+    default:
+      throw new OAuthError('Unknown advertising platform');
   }
 }
 
@@ -126,6 +176,9 @@ export async function exchangeCode(
   if (!isConfigured(cfg, provider))
     throw new OAuthError('This platform is not set up on the server');
   const redirect = redirectUri(cfg, provider);
+  if (isMoreProvider(provider)) {
+    return moreExchange(cfg, provider, redirect, code, fetchImpl, now);
+  }
   if (provider === 'meta') {
     const short = await jsonOf(
       await fetchImpl(
@@ -216,6 +269,7 @@ export async function listAccounts(
   tokens: Tokens & { advertiserIds?: string[] },
   fetchImpl: Fetch,
 ): Promise<FoundAdAccount[]> {
+  if (isMoreProvider(provider)) return moreListAccounts(cfg, provider, tokens, fetchImpl);
   if (provider === 'meta') {
     const body = await jsonOf(
       await fetchImpl(

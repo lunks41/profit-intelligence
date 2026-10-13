@@ -35,7 +35,7 @@ export const envSchema = z.object({
   /**
    * Ad platform apps, one set per platform. A platform without its values cannot be connected by signing in;
    * the screen says so. The redirect address to register with each platform is
-   * APP_URL/api/v1/marketing/oauth/<meta|google|tiktok>/callback.
+   * APP_URL/api/v1/marketing/oauth/<meta|google|tiktok|microsoft|snapchat|pinterest|reddit>/callback.
    */
   META_APP_ID: z.string().min(3).max(100).optional(),
   META_APP_SECRET: z.string().min(8).max(200).optional(),
@@ -44,6 +44,15 @@ export const envSchema = z.object({
   GOOGLE_ADS_DEVELOPER_TOKEN: z.string().min(8).max(200).optional(),
   TIKTOK_APP_ID: z.string().min(3).max(100).optional(),
   TIKTOK_APP_SECRET: z.string().min(8).max(200).optional(),
+  MICROSOFT_ADS_CLIENT_ID: z.string().min(8).max(200).optional(),
+  MICROSOFT_ADS_CLIENT_SECRET: z.string().min(8).max(200).optional(),
+  MICROSOFT_ADS_DEVELOPER_TOKEN: z.string().min(8).max(200).optional(),
+  SNAPCHAT_CLIENT_ID: z.string().min(8).max(200).optional(),
+  SNAPCHAT_CLIENT_SECRET: z.string().min(8).max(200).optional(),
+  PINTEREST_APP_ID: z.string().min(3).max(100).optional(),
+  PINTEREST_APP_SECRET: z.string().min(8).max(200).optional(),
+  REDDIT_CLIENT_ID: z.string().min(8).max(200).optional(),
+  REDDIT_CLIENT_SECRET: z.string().min(8).max(200).optional(),
   /** Requests allowed per shop per minute; 0 turns the limit off. */
   RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(0).max(100000).default(600),
   /** Allow a database connection without TLS in production (only for a private network you trust). */

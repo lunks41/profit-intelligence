@@ -7,7 +7,8 @@ import type { ShopScope } from './sync.js';
 type Row = Record<string, unknown>;
 const rows = (res: { rows: unknown[] }) => res.rows as Row[];
 
-export type OAuthProviderId = 'meta' | 'google' | 'tiktok';
+export type OAuthProviderId =
+  'meta' | 'google' | 'tiktok' | 'microsoft' | 'snapchat' | 'pinterest' | 'reddit';
 
 /** An ad account the merchant can use on the platform (the id the platform knows it by, a name, its currency). */
 export interface FoundAdAccount {

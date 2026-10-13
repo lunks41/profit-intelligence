@@ -3,16 +3,12 @@
 import type { MarketingResponse } from '@pi/contracts';
 import { formatMoney } from '../../lib/format';
 import { formatDate } from '../../lib/shop-time';
+import { AD_PLATFORM_NAME } from '../../lib/ad-platforms';
 import { CardHeader } from '../common/CardHeader';
 import { markFor, platformKey } from '../common/platform-marks';
 import { PlatformLogo, hasLogo } from '../common/PlatformLogo';
 
-const PLATFORM: Record<string, string> = {
-  meta: 'Meta Ads',
-  google: 'Google Ads',
-  tiktok: 'TikTok Ads',
-  manual: 'Entered by hand',
-};
+const PLATFORM = { ...AD_PLATFORM_NAME, manual: 'Entered by hand' } as Record<string, string>;
 
 /**
  * The ad accounts that are set up, each with the mark of its platform, how it gets its spend, when it last

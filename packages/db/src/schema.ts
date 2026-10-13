@@ -1274,7 +1274,7 @@ export const fAdConnectionPending = pgTable(
     index('ix_f_ad_connection_pending_shop').on(t.shopId, t.createdAt),
     check(
       'ck_f_ad_connection_pending_provider',
-      sql`${t.provider} in ('meta', 'google', 'tiktok')`,
+      sql`${t.provider} in ('meta', 'google', 'tiktok', 'microsoft', 'snapchat', 'pinterest', 'reddit')`,
     ),
   ],
 );

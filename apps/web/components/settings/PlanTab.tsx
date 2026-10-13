@@ -15,7 +15,7 @@ const INCLUDED = [
   'Profit and loss, refund and missing-cost reports on screen',
   'Your product costs, payment fee rules and shipping rules, applied to past orders',
   'Operating expenses, and estimated operating profit',
-  'Marketing: connect Meta, Google and TikTok, and see profit after ads',
+  'Marketing: connect Meta, Google, TikTok, Microsoft, Snapchat, Pinterest and Reddit, and see profit after ads',
 ];
 
 function Usage({ label, used, limit }: { label: string; used: number; limit: number }) {

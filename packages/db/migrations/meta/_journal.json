@@ -225,6 +225,13 @@
       "when": 1791900000000,
       "tag": "0031_order_customer_key",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1792000000000,
+      "tag": "0032_ad_oauth_more_platforms",
+      "breakpoints": true
     }
   ]
 }

@@ -1145,7 +1145,16 @@ export const expenseHistoryResponseSchema = auditResponseSchema;
 
 // ---- advertising ----
 
-export const adProviderSchema = z.enum(['manual', 'meta', 'google', 'tiktok']);
+export const adProviderSchema = z.enum([
+  'manual',
+  'meta',
+  'google',
+  'tiktok',
+  'microsoft',
+  'snapchat',
+  'pinterest',
+  'reddit',
+]);
 export const adProvidersResponseSchema = z.object({
   providers: z.array(
     z.object({
@@ -1189,7 +1198,15 @@ export const pendingAdConnectionsResponseSchema = z.object({
   connections: z.array(
     z.object({
       id: z.string(),
-      provider: z.enum(['meta', 'google', 'tiktok']),
+      provider: z.enum([
+        'meta',
+        'google',
+        'tiktok',
+        'microsoft',
+        'snapchat',
+        'pinterest',
+        'reddit',
+      ]),
       expiresAt: z.string(),
       accounts: z.array(z.object({ id: z.string(), name: z.string(), currency: z.string() })),
     }),

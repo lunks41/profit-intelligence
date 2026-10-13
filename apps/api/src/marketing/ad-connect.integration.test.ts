@@ -40,7 +40,9 @@ const env = {
   GOOGLE_OAUTH_CLIENT_ID: 'google-client-id',
   GOOGLE_OAUTH_CLIENT_SECRET: 'google-client-secret',
   GOOGLE_ADS_DEVELOPER_TOKEN: 'google-dev-token',
-  // TikTok is deliberately not set up here
+  SNAPCHAT_CLIENT_ID: 'snap-client-id',
+  SNAPCHAT_CLIENT_SECRET: 'snap-client-secret',
+  // TikTok, Reddit, Pinterest and Microsoft are deliberately not set up here
 } as unknown as AppEnv;
 
 const fakeAuth: ShopifyAuth = {
@@ -85,6 +87,22 @@ const platform = vi.fn(async (input: string | URL | Request) => {
     return json({
       results: [
         { customer: { descriptiveName: 'Google shop', currencyCode: 'USD', manager: false } },
+      ],
+    });
+  }
+  if (url.startsWith('https://accounts.snapchat.com/login/oauth2/access_token')) {
+    return json({ access_token: 'SNAP-ACCESS', refresh_token: 'SNAP-REFRESH', expires_in: 1800 });
+  }
+  if (url.startsWith('https://adsapi.snapchat.com/v1/me/organizations')) {
+    return json({
+      organizations: [
+        {
+          organization: {
+            ad_accounts: [
+              { id: '11111111-2222-3333-4444-555555555555', name: 'Snap shop', currency: 'USD' },
+            ],
+          },
+        },
       ],
     });
   }
@@ -209,6 +227,10 @@ describe('which platforms can be connected', () => {
     expect(by.meta).toMatchObject({ connectVia: 'oauth', configured: true, available: true });
     expect(by.google).toMatchObject({ configured: true });
     expect(by.tiktok).toMatchObject({ connectVia: 'oauth', configured: false, available: true });
+    expect(by.snapchat).toMatchObject({ connectVia: 'oauth', configured: true, available: true });
+    for (const id of ['microsoft', 'pinterest', 'reddit']) {
+      expect(by[id]).toMatchObject({ connectVia: 'oauth', configured: false, available: true });
+    }
   });
 
   it('refuses to start a platform that is not set up, or one that does not exist', async () => {
@@ -217,6 +239,44 @@ describe('which platforms can be connected', () => {
     expect(t.body.error.code).toBe('provider_not_configured');
     expect((await call('POST', '/connect/myspace/start', 'id-adc-a', {})).statusCode).toBe(400);
     expect((await call('POST', '/connect/manual/start', 'id-adc-a', {})).statusCode).toBe(400);
+  });
+});
+
+describe('connecting Snapchat by signing in', () => {
+  it('goes through the same steps as the older platforms, with the renewable token kept encrypted', async () => {
+    const { url, state } = await start('snapchat');
+    expect(url.host).toBe('accounts.snapchat.com');
+    expect(url.searchParams.get('scope')).toBe('snapchat-marketing-api');
+    expect(url.toString()).not.toContain('snap-client-secret');
+    const res = await callback('snapchat', `code=CODE&state=${encodeURIComponent(state)}`);
+    expect(res.headers.location).toBe('https://app.example.com/marketing?connect=snapchat');
+    const waiting = await pending();
+    expect(waiting[0]).toMatchObject({ provider: 'snapchat' });
+    expect(waiting[0]!.accounts).toEqual([
+      { id: '11111111-2222-3333-4444-555555555555', name: 'Snap shop', currency: 'USD' },
+    ]);
+    expect(JSON.stringify(waiting)).not.toContain('SNAP-');
+    const done = await json('POST', `/connections/${waiting[0]!.id}/accounts`, 'id-adc-a', {
+      accountIds: ['11111111-2222-3333-4444-555555555555'],
+    });
+    expect(done.res.statusCode).toBe(201);
+    const rows = await accountRows();
+    expect(rows[0]).toMatchObject({
+      provider: 'snapchat',
+      connected_via: 'oauth',
+      status: 'active',
+    });
+    expect(rows[0].encrypted_access_token).not.toContain('SNAP-ACCESS');
+    expect(rows[0].encrypted_refresh_token).toBeTruthy();
+    expect(rows[0].encrypted_refresh_token).not.toContain('SNAP-REFRESH');
+  });
+
+  it('refuses to start a platform whose credentials are missing', async () => {
+    for (const id of ['microsoft', 'pinterest', 'reddit']) {
+      const r = await json('POST', `/connect/${id}/start`, 'id-adc-a', {});
+      expect(r.res.statusCode).toBe(400);
+      expect(r.body.error.code).toBe('provider_not_configured');
+    }
   });
 });
 

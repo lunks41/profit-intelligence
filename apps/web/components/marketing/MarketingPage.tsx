@@ -7,6 +7,7 @@ import { Dropdown } from '../dropdown';
 import { useState } from 'react';
 import type { AdProvidersResponse, MarketingResponse, PeriodPreset } from '@pi/contracts';
 import { apiDelete, apiPatch, apiPost } from '../../lib/api';
+import { AD_PLATFORM_NAME } from '../../lib/ad-platforms';
 import { CHART } from '../../lib/chart-colors';
 import { formatMoney, longDate, periodLabel } from '../../lib/format';
 import { buildListQuery } from '../../lib/query';
@@ -558,13 +559,7 @@ function Accounts({ data, onChanged }: { data: MarketingResponse; onChanged: () 
                       <s-table-cell>
                         {a.provider === 'manual'
                           ? 'Manual entry'
-                          : a.provider === 'meta'
-                            ? 'Meta Ads'
-                            : a.provider === 'google'
-                              ? 'Google Ads'
-                              : a.provider === 'tiktok'
-                                ? 'TikTok Ads'
-                                : a.provider}
+                          : (AD_PLATFORM_NAME[a.provider] ?? a.provider)}
                       </s-table-cell>
                       <s-table-cell>
                         <s-badge tone={a.status === 'active' ? 'success' : 'critical'}>

@@ -13,22 +13,31 @@ import { readParam } from '../../lib/url-params';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormError, useAction, FormActions } from '../settings/shared';
 import { IntegrationList } from '../common/IntegrationList';
-import { PLATFORM_MARKS } from '../common/platform-marks';
+import { PLATFORM_MARKS, platformKey } from '../common/platform-marks';
+import { AD_PLATFORM_NAME } from '../../lib/ad-platforms';
 import type { Integration } from '../common/IntegrationList';
 
-const PLATFORMS = ['meta', 'google', 'tiktok'] as const;
+const PLATFORMS = [
+  'meta',
+  'google',
+  'tiktok',
+  'microsoft',
+  'snapchat',
+  'pinterest',
+  'reddit',
+] as const;
 type Platform = (typeof PLATFORMS)[number];
 
-const NAME: Record<Platform, string> = {
-  meta: 'Meta Ads',
-  google: 'Google Ads',
-  tiktok: 'TikTok Ads',
-};
+const NAME = AD_PLATFORM_NAME as Record<Platform, string>;
 
 const WHAT: Record<Platform, string> = {
   meta: 'Facebook and Instagram ads. Read-only access to your ad accounts.',
   google: 'Google Ads campaigns. Read-only access to your Google Ads accounts.',
   tiktok: 'TikTok for Business campaigns. Read-only access to your advertiser accounts.',
+  microsoft: 'Bing and Microsoft Advertising campaigns. Read-only access to your accounts.',
+  snapchat: 'Snapchat campaigns. Read-only access to your ad accounts.',
+  pinterest: 'Pinterest campaigns. Read-only access to your ad accounts.',
+  reddit: 'Reddit campaigns. Read-only access to your ad accounts.',
 };
 
 const PROBLEM: Record<string, string> = {
@@ -83,18 +92,11 @@ export function ConnectPlatforms({
         id,
         name: NAME[id],
         description: WHAT[id],
-        mark: PLATFORM_MARKS[id]!,
-        logo: id,
+        mark: PLATFORM_MARKS[platformKey(id, '') ?? id]!,
+        logo: platformKey(id, '') ?? id,
         status: !available ? 'unavailable' : mine.length > 0 ? 'connected' : 'idle',
         detail:
-          !available || mine.length === 0 ? (
-            !available ? (
-              <s-text color="subdued">
-                Connecting is switched off until the owner of this app adds the {NAME[id]} app
-                credentials (a developer app of the platform) to the server settings.
-              </s-text>
-            ) : undefined
-          ) : (
+          mine.length === 0 ? undefined : (
             <s-stack gap="small-300">
               <s-text>
                 Spend{' '}
@@ -148,22 +150,6 @@ export function ConnectPlatforms({
             [{ label: 'Connect', variant: 'primary', disabled: true, onClick: () => undefined }],
       };
     }),
-    // platforms that are not built yet, so the merchant can see what is planned
-    ...(
-      [
-        ['bing', 'Microsoft Ads', 'Bing and Microsoft Advertising campaigns.', 'Ms', '#00809d'],
-        ['snapchat', 'Snapchat Ads', 'Snapchat campaigns.', 'Sn', '#fffc00'],
-        ['pinterest', 'Pinterest Ads', 'Pinterest campaigns.', 'P', '#e60023'],
-        ['reddit', 'Reddit Ads', 'Reddit campaigns.', 'R', '#ff4500'],
-      ] as const
-    ).map(([id, name, description, text, background]): Integration => ({
-      id,
-      name,
-      description,
-      mark: { text, background, color: id === 'snapchat' ? '#000' : '#fff' },
-      logo: id,
-      status: 'soon',
-    })),
   ];
 
   return (

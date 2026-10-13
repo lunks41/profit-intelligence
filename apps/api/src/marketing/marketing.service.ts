@@ -82,6 +82,30 @@ export const PROVIDERS: Array<
     available: true,
     note: 'Sign in to TikTok and choose the advertiser accounts. Spend imports every day at 06:00 UTC. TikTok does not report sales here, so reported sales stay empty.',
   },
+  {
+    id: 'microsoft',
+    name: 'Microsoft Ads',
+    available: true,
+    note: 'Sign in to Microsoft Advertising and choose the accounts. Spend imports every day at 06:00 UTC. Reported sales stay empty.',
+  },
+  {
+    id: 'snapchat',
+    name: 'Snapchat Ads',
+    available: true,
+    note: 'Sign in to Snapchat and choose the ad accounts. Spend imports every day at 06:00 UTC. Reported sales stay empty.',
+  },
+  {
+    id: 'pinterest',
+    name: 'Pinterest Ads',
+    available: true,
+    note: 'Sign in to Pinterest and choose the ad accounts. Spend imports every day at 06:00 UTC, for the whole account. Reported sales stay empty.',
+  },
+  {
+    id: 'reddit',
+    name: 'Reddit Ads',
+    available: true,
+    note: 'Sign in to Reddit and choose the ad accounts. Spend imports every day at 06:00 UTC. Reported sales stay empty.',
+  },
 ];
 
 const ratioOf = (n: string, d: string) =>

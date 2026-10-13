@@ -7,6 +7,10 @@ import {
 import type { AdAccountToSync, Db, SpendInput } from '@pi/db';
 import { fetchGoogleDaily } from './google.js';
 import { fetchMetaDaily } from './meta.js';
+import { fetchMicrosoftDaily } from './microsoft.js';
+import { fetchPinterestDaily } from './pinterest.js';
+import { fetchRedditDaily } from './reddit.js';
+import { fetchSnapchatDaily } from './snapchat.js';
 import { needsRefresh, refreshAccessToken } from './refresh.js';
 import type { RefreshEnv } from './refresh.js';
 import { fetchTikTokDaily } from './tiktok.js';
@@ -62,6 +66,55 @@ export const PROVIDERS: AdProvider[] = [
       return fetchTikTokDaily(account.externalId, account.accessToken, range);
     },
   },
+  {
+    id: 'microsoft',
+    fetchDaily: (account, range) => {
+      if (!account.accessToken || !account.externalId) {
+        const err = new Error('Microsoft Advertising account has no token');
+        err.name = 'MissingToken';
+        throw err;
+      }
+      return fetchMicrosoftDaily(
+        account.externalId,
+        account.accessToken,
+        process.env.MICROSOFT_ADS_DEVELOPER_TOKEN ?? '',
+        range,
+      );
+    },
+  },
+  {
+    id: 'snapchat',
+    fetchDaily: (account, range) => {
+      if (!account.accessToken || !account.externalId) {
+        const err = new Error('Snapchat account has no token');
+        err.name = 'MissingToken';
+        throw err;
+      }
+      return fetchSnapchatDaily(account.externalId, account.accessToken, range);
+    },
+  },
+  {
+    id: 'pinterest',
+    fetchDaily: (account, range) => {
+      if (!account.accessToken || !account.externalId) {
+        const err = new Error('Pinterest account has no token');
+        err.name = 'MissingToken';
+        throw err;
+      }
+      return fetchPinterestDaily(account.externalId, account.accessToken, range);
+    },
+  },
+  {
+    id: 'reddit',
+    fetchDaily: (account, range) => {
+      if (!account.accessToken || !account.externalId) {
+        const err = new Error('Reddit account has no token');
+        err.name = 'MissingToken';
+        throw err;
+      }
+      return fetchRedditDaily(account.externalId, account.accessToken, range);
+    },
+  },
 ];
 
 function safeAdError(providerId: string, e: unknown): string {
@@ -73,6 +126,16 @@ function safeAdError(providerId: string, e: unknown): string {
     GoogleRejected: 'Google Ads rejected the request. Check the customer id and token.',
     TikTokRejected: 'TikTok rejected the request. Connect the account again.',
     TikTokAccountId: 'The TikTok advertiser id should be numeric.',
+    MicrosoftRejected: 'Microsoft Advertising rejected the request. Connect the account again.',
+    MicrosoftAccountId:
+      'The Microsoft Advertising account id is not valid. Connect the account again.',
+    MicrosoftNotConfigured: 'Microsoft Advertising is not configured on the server yet.',
+    SnapchatRejected: 'Snapchat rejected the request. Connect the account again.',
+    SnapchatAccountId: 'The Snapchat ad account id is not valid. Connect the account again.',
+    PinterestRejected: 'Pinterest rejected the request. Connect the account again.',
+    PinterestAccountId: 'The Pinterest ad account id should be numeric.',
+    RedditRejected: 'Reddit rejected the request. Connect the account again.',
+    RedditAccountId: 'The Reddit ad account id is not valid. Connect the account again.',
     TokenRefreshFailed: 'The platform sign-in has expired. Connect the account again.',
     MetaAccountId: 'The Meta ad account id should be the numeric id.',
     GoogleAccountId: 'The Google Ads customer id should be numeric.',
@@ -170,6 +233,10 @@ export async function syncAdAccounts(
         if (renewed) {
           await updateAdAccountTokens(deps.db, account, account.accountId, {
             encryptedAccessToken: deps.encrypt(renewed.accessToken),
+            // a platform that hands out a new refresh token each time (Microsoft) needs the new one kept
+            ...(renewed.refreshToken
+              ? { encryptedRefreshToken: deps.encrypt(renewed.refreshToken) }
+              : {}),
             tokenExpiresAt: renewed.expiresAt,
           });
           ready = { ...ready, accessToken: renewed.accessToken };

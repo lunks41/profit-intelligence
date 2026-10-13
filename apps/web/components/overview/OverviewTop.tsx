@@ -268,7 +268,7 @@ function ConnectedAccounts({ data }: { data: OverviewResponse }) {
       />
       <s-text color="subdued">
         {marketing
-          ? 'No ad account is connected. Connect Meta, Google or TikTok to see what advertising costs and what is left after it.'
+          ? 'No ad account is connected. Connect Meta, Google, TikTok, Microsoft, Snapchat, Pinterest or Reddit to see what advertising costs and what is left after it.'
           : 'Loading…'}
       </s-text>
     </Card>

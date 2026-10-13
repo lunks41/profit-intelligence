@@ -17,6 +17,7 @@ export const PLATFORM_MARKS: Record<string, PlatformMark> = {
 
 /** Which platform an account is: its own provider, or a guess from the name for a hand-entered one. */
 export function platformKey(provider: string, name: string): string | null {
+  if (provider === 'microsoft') return 'bing';
   if (PLATFORM_MARKS[provider]) return provider;
   const n = name.toLowerCase();
   if (/(meta|facebook|instagram)/.test(n)) return 'meta';
