@@ -59,67 +59,70 @@ export function AdAccountsCard({
                 key={a.id}
                 style={{
                   display: 'flex',
-                  alignItems: 'center',
-                  flexWrap: 'wrap',
-                  gap: '0.5rem 0.75rem',
-                  padding: '0.6rem 0.75rem',
+                  flexDirection: 'column',
+                  gap: '0.6rem',
+                  padding: '0.7rem 0.85rem',
                   border: '1px solid #e3e3e3',
                   borderRadius: '0.75rem',
                   background: '#fff',
                 }}
               >
-                {hasLogo(platformKey(a.provider, a.name)) ? (
-                  <PlatformLogo platform={platformKey(a.provider, a.name)!} size={2.25} />
-                ) : (
-                  <span
-                    aria-hidden="true"
-                    style={{
-                      flex: 'none',
-                      width: '2.25rem',
-                      height: '2.25rem',
-                      borderRadius: '50%',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      background: mark.background,
-                      color: mark.color ?? '#fff',
-                      fontWeight: 700,
-                      fontSize: '0.75rem',
-                    }}
-                  >
-                    {mark.text}
-                  </span>
-                )}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.4rem',
-                      flexWrap: 'wrap',
-                    }}
-                  >
-                    <s-text type="strong">{a.name}</s-text>
-                    {a.status === 'error' ? (
-                      <s-badge tone="critical">Needs attention</s-badge>
-                    ) : (
-                      <s-badge tone="success">Connected</s-badge>
-                    )}
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                  {hasLogo(platformKey(a.provider, a.name)) ? (
+                    <PlatformLogo platform={platformKey(a.provider, a.name)!} size={2.25} />
+                  ) : (
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        flex: 'none',
+                        width: '2.25rem',
+                        height: '2.25rem',
+                        borderRadius: '50%',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: mark.background,
+                        color: mark.color ?? '#fff',
+                        fontWeight: 700,
+                        fontSize: '0.75rem',
+                      }}
+                    >
+                      {mark.text}
+                    </span>
+                  )}
+                  <div style={{ flex: 1, minWidth: 0, display: 'grid', gap: '0.25rem' }}>
+                    <div>
+                      <s-badge tone="neutral">
+                        {a.lastSyncAt
+                          ? `Last import ${formatDate(a.lastSyncAt.slice(0, 10))}`
+                          : 'No import yet'}
+                      </s-badge>
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                        flexWrap: 'wrap',
+                      }}
+                    >
+                      <s-text type="strong">{a.name}</s-text>
+                      {a.status === 'error' ? (
+                        <s-badge tone="critical">Needs attention</s-badge>
+                      ) : (
+                        <s-badge tone="success">Connected</s-badge>
+                      )}
+                    </div>
+                    <s-text color="subdued">{PLATFORM[a.provider] ?? a.provider}</s-text>
                   </div>
-                  <s-text color="subdued">
-                    {PLATFORM[a.provider] ?? a.provider} ·{' '}
-                    {a.lastSyncAt
-                      ? `last import ${formatDate(a.lastSyncAt.slice(0, 10))}`
-                      : 'no import yet'}
-                  </s-text>
                 </div>
                 <div
                   style={{
-                    flex: '1 1 auto',
-                    display: 'flex',
-                    justifyContent: 'flex-end',
-                    gap: '1rem',
-                    textAlign: 'right',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+                    gap: '0.5rem',
+                    borderTop: '1px solid #ececec',
+                    paddingTop: '0.6rem',
                   }}
                 >
                   <div>

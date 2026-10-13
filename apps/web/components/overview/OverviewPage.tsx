@@ -3,26 +3,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { OverviewResponse, SessionResponse } from '@pi/contracts';
 import { apiGet, ApiRequestError } from '../../lib/api';
-import { buildListQuery, buildQuery } from '../../lib/query';
+import { buildQuery } from '../../lib/query';
 import { useApi } from '../profitability/shared';
 import { SyncNotice } from '../sync/SyncNotice';
 import { SyncSection } from '../sync/SyncSection';
 import { useSyncStatus } from '../sync/useSyncStatus';
-import { Opportunities } from './Opportunities';
 import { describeFreshness } from '../../lib/freshness';
 import { OverviewHeader } from './OverviewHeader';
 import { RecentOrders } from './RecentOrders';
-import { SecondaryInsights } from './SecondaryInsights';
 import { TopReturned } from './TopReturned';
 import { TopSelling } from './TopSelling';
 import { OverviewSkeleton, OverviewView, type Filters } from './OverviewView';
 import { todayInShop } from '../../lib/shop-time';
 
 const today = todayInShop;
-
-/** The period of the figures on screen, for the lists loaded beside them (never the filter being typed). */
-const detailQuery = (d: OverviewResponse) =>
-  buildListQuery({ preset: d.period.preset, from: d.period.from, to: d.period.to }, {});
 
 export function OverviewPage() {
   const [filters, setFilters] = useState<Filters>({
@@ -100,8 +94,6 @@ export function OverviewPage() {
             topSelling={<TopSelling page={data} />}
             topReturned={<TopReturned page={data} />}
             recentOrders={<RecentOrders page={data} />}
-            opportunities={<Opportunities data={data} query={detailQuery(data)} />}
-            insights={<SecondaryInsights data={data} query={detailQuery(data)} />}
           />
         </div>
       )}

@@ -121,16 +121,12 @@ export function OverviewView({
   topSelling,
   recentOrders,
   topReturned,
-  opportunities,
-  insights,
 }: {
   data: OverviewResponse;
   /** lists loaded beside the overview (kept out of this component so it needs only `data`) */
   topSelling?: ReactNode;
   recentOrders?: ReactNode;
   topReturned?: ReactNode;
-  opportunities?: ReactNode;
-  insights?: ReactNode;
 }) {
   const { summary } = data;
   const empty = summary.orders === 0;
@@ -177,8 +173,6 @@ export function OverviewView({
             topSelling={topSelling}
             topReturned={topReturned}
             recentOrders={recentOrders}
-            opportunities={opportunities}
-            insights={insights}
           />
         </>
       )}

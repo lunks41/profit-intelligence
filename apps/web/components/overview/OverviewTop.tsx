@@ -13,13 +13,10 @@ import { useApi } from '../profitability/shared';
 import { sparkSeries } from '../../lib/series';
 import { ChannelDonut } from './ChannelDonut';
 import { CostBreakdownCard } from './CostBreakdownCard';
-import { DataQualityCard } from './DataQualityCard';
 import { overviewKpis } from './KpiCards';
 import { MoneyFlow } from './MoneyFlow';
-import { ProfitBreakdown } from './ProfitBreakdown';
 import { Reminders } from './Reminders';
 import { TrendCard } from './TrendCard';
-import { WhatChangedCard } from './WhatChangedCard';
 
 /**
  * The Overview as a few bands that follow one another with no blank space: the figures across the top, the trend
@@ -32,15 +29,11 @@ export function OverviewBoard({
   topSelling,
   topReturned,
   recentOrders,
-  opportunities,
-  insights,
 }: {
   data: OverviewResponse;
   topSelling?: ReactNode;
   topReturned?: ReactNode;
   recentOrders?: ReactNode;
-  opportunities?: ReactNode;
-  insights?: ReactNode;
 }) {
   const k = overviewKpis(data);
   return (
@@ -69,8 +62,6 @@ export function OverviewBoard({
           <MoneyFlow data={data} />
           <ConnectedAccounts data={data} />
           <CostBreakdownCard page={data} />
-          <WhatChangedCard data={data} />
-          {opportunities}
           <MarketingSummaryCard
             period={data.period}
             currency={data.currency.code}
@@ -83,9 +74,6 @@ export function OverviewBoard({
           {topSelling}
           {topReturned}
           {recentOrders}
-          <ProfitBreakdown data={data} />
-          <DataQualityCard quality={data.dataQuality} issues={data.issues} />
-          {insights}
         </Masonry>
       </div>
     </div>
