@@ -2,7 +2,7 @@
 // Run: pnpm ads:check   (it loads .env itself; only the names of missing variables and the redirect addresses are printed)
 
 const PLATFORMS = [
-  { id: 'meta', name: 'Meta Ads', vars: ['META_APP_ID', 'META_APP_SECRET'] },
+  { id: 'meta', name: 'Meta Ads', vars: ['META_APP_ID', 'META_APP_SECRET'] }, // META_LOGIN_CONFIG_ID is optional
   {
     id: 'google',
     name: 'Google Ads',

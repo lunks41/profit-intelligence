@@ -47,15 +47,32 @@ The **redirect address** is the same pattern everywhere. With the production add
 
 ### Meta (Facebook and Instagram ads)
 
-1. Create an app at developers.facebook.com (type **Business**) and add the **Marketing API** product.
-2. Under Facebook Login for Business (or Facebook Login), add the redirect address above as a valid OAuth redirect.
-3. Request the **`ads_read`** permission. Meta requires App Review and Business Verification before merchants
-   other than your own team can sign in. Until it is approved, only people with a role on the app can connect.
-4. Put the App ID and App Secret in `.env`: `META_APP_ID`, `META_APP_SECRET`.
+Step by step for the live server (`APP_URL` = `https://profit.archipelago.ae`). Meta changes its screens often; if a label differs, look for the same setting nearby.
 
-The app asks only for `ads_read`. It exchanges the sign-in for a long-lived token (about 60 days) and renews it in
-its last week. If renewal fails after the token has ended, the card shows "Needs attention" and the merchant signs
-in again.
+1. **Create the app.** developers.facebook.com, **My Apps**, **Create App**. Pick the use case **Create & manage ads with Marketing API** (or "Other" then app type **Business**). Name it `Profit Intelligence`, give a contact email, and attach your Business portfolio if asked.
+2. **Basic settings** (Settings, Basic):
+   - App domains: `profit.archipelago.ae`
+   - Privacy policy URL: `https://profit.archipelago.ae/privacy`
+   - User data deletion: choose **Data deletion instructions URL** and enter `https://profit.archipelago.ae/support`
+   - Category: Business and pages
+3. **Add the login product.**
+   - If Meta offers plain **Facebook Login**: add it, open its Settings, switch on **Client OAuth login** and **Web OAuth login**, and add the valid OAuth redirect URI `https://profit.archipelago.ae/api/v1/marketing/oauth/meta/callback`.
+   - If Meta only offers **Facebook Login for Business** (common for Business apps): add it, add the same redirect URI in its Settings, then create a **Configuration** (Facebook Login for Business, Configurations, Create) with the login variation **General**, the permission **ads_read** only, and access token type **User access token**. Copy the configuration's ID.
+4. **Roles.** Settings, **App roles**: add yourself (and any tester) as Administrator or Tester. While the app is in **Development** mode only people with a role can sign in, and `ads_read` works for them without App Review.
+5. **Put the credentials in the server `.env`** (Settings, Basic shows the App ID and the App Secret; use a text editor on the server, do not paste them anywhere):
+   ```
+   META_APP_ID=...
+   META_APP_SECRET=...
+   META_LOGIN_CONFIG_ID=...      (only if you created a Login for Business configuration)
+   SHOPIFY_APP_HANDLE=profit-intelligence-4
+   ```
+   `SHOPIFY_APP_HANDLE` (the end of the app's address in Shopify Admin) is what brings the merchant back into the app after Meta signs them in; without it they would land on the public page.
+6. **Restart the API** on the server: `Stop-ScheduledTask -TaskName ProfitIntelligence-Api; Start-ScheduledTask -TaskName ProfitIntelligence-Api`. Then in the `app` folder: `node --env-file=.env ads-check.mjs` should say **Meta Ads READY**.
+7. **Try it.** In Shopify Admin open the app, Marketing, **Connect** on Meta Ads, sign in with an account that has a role on the Meta app and access to an ad account (a Meta test ad account is fine), choose the account, then press **Refresh spend now**. Compare the spend with Ads Manager.
+
+For merchants other than your own team, Meta requires **App Review** for `ads_read` and **Business Verification**; start those early (privacy policy, support contact, icon, and a short screen recording of how the app uses ad data).
+
+The app asks only for `ads_read`. It exchanges the sign-in for a long-lived token (about 60 days) and renews it in its last week. If renewal fails after the token has ended, the card shows "Needs attention" and the merchant signs in again.
 
 ### Google Ads
 

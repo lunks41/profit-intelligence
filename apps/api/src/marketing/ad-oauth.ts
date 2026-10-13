@@ -20,7 +20,8 @@ export const OAUTH_PROVIDERS: OAuthProviderId[] = [
 /** What the server knows about each platform's app. A platform without its values cannot be connected yet. */
 export interface AdOAuthConfig {
   appUrl: string | undefined;
-  meta?: { appId: string; secret: string };
+  /** loginConfigId: the "Facebook Login for Business" configuration, when the Meta app uses it instead of plain scopes */
+  meta?: { appId: string; secret: string; loginConfigId?: string };
   google?: { clientId: string; secret: string; developerToken: string };
   tiktok?: { appId: string; secret: string };
   microsoft?: { clientId: string; secret: string; developerToken: string };
@@ -33,6 +34,7 @@ export interface OAuthEnv {
   APP_URL?: string;
   META_APP_ID?: string;
   META_APP_SECRET?: string;
+  META_LOGIN_CONFIG_ID?: string;
   GOOGLE_OAUTH_CLIENT_ID?: string;
   GOOGLE_OAUTH_CLIENT_SECRET?: string;
   GOOGLE_ADS_DEVELOPER_TOKEN?: string;
@@ -52,7 +54,11 @@ export interface OAuthEnv {
 export function oauthConfigFromEnv(env: OAuthEnv): AdOAuthConfig {
   const cfg: AdOAuthConfig = { appUrl: env.APP_URL?.replace(/\/+$/, '') };
   if (env.META_APP_ID && env.META_APP_SECRET) {
-    cfg.meta = { appId: env.META_APP_ID, secret: env.META_APP_SECRET };
+    cfg.meta = {
+      appId: env.META_APP_ID,
+      secret: env.META_APP_SECRET,
+      ...(env.META_LOGIN_CONFIG_ID ? { loginConfigId: env.META_LOGIN_CONFIG_ID } : {}),
+    };
   }
   if (
     env.GOOGLE_OAUTH_CLIENT_ID &&
@@ -121,8 +127,12 @@ export function authorizeUrl(cfg: AdOAuthConfig, provider: OAuthProviderId, stat
         client_id: cfg.meta!.appId,
         redirect_uri: redirect,
         state,
-        scope: 'ads_read',
         response_type: 'code',
+        // a Business-type Meta app that uses Facebook Login for Business asks for its permissions through a
+        // configuration; any other app asks for the read-only ads permission directly
+        ...(cfg.meta!.loginConfigId
+          ? { config_id: cfg.meta!.loginConfigId, override_default_response_type: 'true' }
+          : { scope: 'ads_read' }),
       })}`;
     case 'google':
       return `https://accounts.google.com/o/oauth2/v2/auth?${q({

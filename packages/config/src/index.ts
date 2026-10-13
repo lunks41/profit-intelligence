@@ -39,6 +39,11 @@ export const envSchema = z.object({
    */
   META_APP_ID: z.string().min(3).max(100).optional(),
   META_APP_SECRET: z.string().min(8).max(200).optional(),
+  /** Facebook Login for Business configuration id; only when the Meta app uses it */
+  META_LOGIN_CONFIG_ID: z
+    .string()
+    .regex(/^\d{5,30}$/)
+    .optional(),
   GOOGLE_OAUTH_CLIENT_ID: z.string().min(8).max(200).optional(),
   GOOGLE_OAUTH_CLIENT_SECRET: z.string().min(8).max(200).optional(),
   GOOGLE_ADS_DEVELOPER_TOKEN: z.string().min(8).max(200).optional(),
