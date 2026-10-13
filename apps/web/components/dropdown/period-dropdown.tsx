@@ -1,6 +1,9 @@
 'use client';
 
 import type { PeriodPreset } from '@pi/contracts';
+import { planWith, usePlan } from '../../lib/plan';
+import { addDays, presetRange } from '../../lib/period-range';
+import { todayInShop } from '../../lib/shop-time';
 import { Dropdown } from './Dropdown';
 
 export const PERIOD_OPTIONS: Array<{ value: PeriodPreset; label: string }> = [
@@ -27,12 +30,22 @@ export function PeriodDropdown({
   onChange: (value: PeriodPreset) => void;
   chip?: boolean;
 }) {
+  const plan = usePlan();
+  const days = plan?.entitlements.historyDays;
+  const options = PERIOD_OPTIONS.map((o) => {
+    if (!plan || days === undefined || o.value === value) return o;
+    const range = presetRange(o.value, todayInShop());
+    const first = addDays(todayInShop(), -(days - 1));
+    if (!range || range.from >= first) return o;
+    const better = planWith(plan.plan, (e) => e.historyDays > days);
+    return { ...o, locked: true, hint: better ?? 'Not in plan' };
+  });
   return (
     <Dropdown
       chip={chip}
       label={label}
       value={value}
-      options={PERIOD_OPTIONS}
+      options={options}
       onChange={(v) => onChange(v as PeriodPreset)}
     />
   );

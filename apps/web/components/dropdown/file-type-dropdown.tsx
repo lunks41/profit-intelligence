@@ -1,5 +1,6 @@
 'use client';
 
+import { planWith, usePlan } from '../../lib/plan';
 import { Dropdown } from './Dropdown';
 
 export function FileTypeDropdown<T extends 'csv' | 'pdf'>({
@@ -17,8 +18,17 @@ export function FileTypeDropdown<T extends 'csv' | 'pdf'>({
   onChange: (value: T) => void;
   chip?: boolean;
 }) {
+  const plan = usePlan();
   const csv = { value: 'csv', label: csvLabel };
-  const pdf = { value: 'pdf', label: 'PDF' };
+  const pdf =
+    plan && !plan.entitlements.pdfExports && value !== 'pdf'
+      ? {
+          value: 'pdf',
+          label: 'PDF',
+          locked: true,
+          hint: planWith(plan.plan, (e) => e.pdfExports) ?? 'Not in plan',
+        }
+      : { value: 'pdf', label: 'PDF' };
   return (
     <Dropdown
       chip={chip}

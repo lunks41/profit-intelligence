@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { BillingStatusResponse } from '@pi/contracts';
 import { apiPost } from '../../lib/api';
+import { forgetPlan } from '../../lib/plan';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormError, useAction } from './shared';
 
@@ -169,7 +170,10 @@ export function PlanTab() {
             <s-button
               disabled={act.busy}
               onClick={async () => {
-                if (await act.run(() => apiPost('/billing/refresh'))) setVersion((v) => v + 1);
+                if (await act.run(() => apiPost('/billing/refresh'))) {
+                  forgetPlan();
+                  setVersion((v) => v + 1);
+                }
               }}
             >
               Check my plan again
@@ -183,6 +187,7 @@ export function PlanTab() {
                     onClick={async () => {
                       if (await act.run(() => apiPost('/billing/cancel'))) {
                         setConfirmCancel(false);
+                        forgetPlan();
                         setVersion((v) => v + 1);
                       }
                     }}

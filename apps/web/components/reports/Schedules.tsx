@@ -8,6 +8,8 @@ import { apiDelete, apiPatch, apiPost } from '../../lib/api';
 import { longDate } from '../../lib/format';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormError, useAction, FormActions } from '../settings/shared';
+import { PlanLock } from '../common/PlanLock';
+import { planWith, usePlan } from '../../lib/plan';
 import { REPORTS } from './catalog';
 import { ScrollTable } from '../common/ScrollTable';
 
@@ -126,6 +128,8 @@ function Row({ s, onChanged }: { s: ScheduleRowResponse; onChanged: () => void }
 }
 
 function Create({ onCreated, timezone }: { onCreated: () => void; timezone?: string }) {
+  const plan = usePlan();
+  const full = plan !== null && plan.usage.activeSchedules >= plan.entitlements.scheduledReports;
   const [kind, setKind] = useState('profit_loss');
   const [format, setFormat] = useState('pdf');
   const [frequency, setFrequency] = useState<'weekly' | 'monthly'>('weekly');
@@ -148,6 +152,18 @@ function Create({ onCreated, timezone }: { onCreated: () => void; timezone?: str
   return (
     <s-section heading="Add a scheduled email">
       <s-stack gap="base">
+        {plan && full && (
+          <PlanLock
+            plan={planWith(
+              plan.plan,
+              (e) => e.scheduledReports > plan.entitlements.scheduledReports,
+            )}
+          >
+            {plan.entitlements.scheduledReports === 0
+              ? `Scheduled emails are not part of your ${plan.plan} plan.`
+              : `Your ${plan.plan} plan includes ${plan.entitlements.scheduledReports} scheduled ${plan.entitlements.scheduledReports === 1 ? 'email' : 'emails'} and they are all in use.`}
+          </PlanLock>
+        )}
         <s-grid gridTemplateColumns={GRID} gap="base" alignItems="end">
           <ReportDropdown value={kind} onChange={(v) => setKind(v)} />
           <FileTypeDropdown
@@ -201,8 +217,9 @@ function Create({ onCreated, timezone }: { onCreated: () => void; timezone?: str
         <FormActions>
           <s-button
             variant="primary"
-            disabled={act.busy}
+            disabled={act.busy || full}
             onClick={async () => {
+              if (full) return;
               setTouched(true);
               if (!listOk) return;
               const ok = await act.run(() =>

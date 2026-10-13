@@ -12,6 +12,8 @@ import { formatMoney, longDate } from '../../lib/format';
 import { readParam } from '../../lib/url-params';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormError, useAction, FormActions } from '../settings/shared';
+import { PlanLock } from '../common/PlanLock';
+import { planWith, usePlan } from '../../lib/plan';
 import { IntegrationList } from '../common/IntegrationList';
 import { PLATFORM_MARKS, platformKey } from '../common/platform-marks';
 import { AD_PLATFORM_NAME } from '../../lib/ad-platforms';
@@ -57,6 +59,8 @@ export function ConnectPlatforms({
   const disconnect = useAction();
   const refresh = useAction();
   const [queued, setQueued] = useState(false);
+  const plan = usePlan();
+  const atLimit = plan !== null && plan.usage.adAccounts >= plan.entitlements.adAccounts;
   const connectedCount = data.accounts.filter(
     (a) => a.provider !== 'manual' && a.status !== 'disconnected',
   ).length;
@@ -129,9 +133,13 @@ export function ConnectPlatforms({
         actions: available
           ? [
               {
-                label: mine.length > 0 ? 'Connect another' : 'Connect',
+                label: atLimit
+                  ? 'Plan limit reached'
+                  : mine.length > 0
+                    ? 'Connect another'
+                    : 'Connect',
                 variant: mine.length > 0 ? 'secondary' : 'primary',
-                disabled: start.busy,
+                disabled: start.busy || atLimit,
                 onClick: () => void connect(),
               },
             ]
@@ -149,6 +157,11 @@ export function ConnectPlatforms({
         read-only: we only read spend and campaign names, and we never change anything in your ad
         accounts.
       </s-text>
+      {plan && atLimit && (
+        <PlanLock plan={planWith(plan.plan, (e) => e.adAccounts > plan.entitlements.adAccounts)}>
+          {`Your ${plan.plan} plan includes ${plan.entitlements.adAccounts} advertising ${plan.entitlements.adAccounts === 1 ? 'account' : 'accounts'} and they are connected. Disconnect one to use another platform.`}
+        </PlanLock>
+      )}
       {connectedCount > 0 && (
         <s-stack direction="inline" gap="small" alignItems="center">
           <s-button

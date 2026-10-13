@@ -5,6 +5,10 @@ import { useEffect, useRef, useState } from 'react';
 export interface DropdownOption {
   value: string;
   label: string;
+  /** not in the merchant's plan: shown with a lock and a hint, and cannot be chosen */
+  locked?: boolean;
+  /** short words beside a locked option, e.g. the plan that has it */
+  hint?: string;
 }
 
 /** Closes the Polaris list. The page browser has no commandfor on a plain button. */
@@ -121,9 +125,11 @@ export function Dropdown({
                 type="button"
                 role="option"
                 aria-selected={selected}
+                aria-disabled={o.locked || undefined}
                 className="pi-dd-option"
                 aria-current={selected ? 'true' : undefined}
                 onClick={() => {
+                  if (o.locked) return;
                   onChange(o.value);
                   setOpen(false);
                 }}
@@ -136,10 +142,10 @@ export function Dropdown({
                   padding: '0.35rem 0.5rem',
                   border: selected ? '2px solid #2c6ecb' : '2px solid transparent',
                   borderRadius: '0.5rem',
-                  color: '#303030',
+                  color: o.locked ? '#8a8a8a' : '#303030',
                   font: 'inherit',
                   textAlign: 'left',
-                  cursor: 'pointer',
+                  cursor: o.locked ? 'not-allowed' : 'pointer',
                 }}
               >
                 <span
@@ -154,6 +160,12 @@ export function Dropdown({
                   {selected ? <s-icon type="check" size="small" /> : null}
                 </span>
                 <span>{o.label}</span>
+                {o.locked && (
+                  <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: '#616161' }}>
+                    <span aria-hidden="true">🔒 </span>
+                    {o.hint ?? 'Locked'}
+                  </span>
+                )}
               </button>
             );
           })}

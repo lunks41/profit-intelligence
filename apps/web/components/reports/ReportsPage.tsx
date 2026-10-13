@@ -10,6 +10,8 @@ import { readParam } from '../../lib/url-params';
 import { FilterBar, type Filters } from '../overview/OverviewView';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormError, useAction } from '../settings/shared';
+import { PlanLock } from '../common/PlanLock';
+import { forgetPlan, planWith, usePlan } from '../../lib/plan';
 import type { REPORTS } from './catalog';
 import { LtvReport } from './LtvReport';
 import { Notifications } from './Notifications';
@@ -92,6 +94,9 @@ function Preview() {
     orders ? null : `/reports/preview?${query}`,
   );
 
+  const plan = usePlan();
+  const exportsUsedUp =
+    plan !== null && plan.usage.exportsThisMonth >= plan.entitlements.exportsPerMonth;
   const [preparing, setPreparing] = useState(false);
   const [note, setNote] = useState<string | null>(null);
 
@@ -100,6 +105,7 @@ function Preview() {
    * it is ready. A big report can take a minute; after two minutes the merchant is told to try again.
    */
   async function downloadReport() {
+    if (exportsUsedUp) return;
     setNote(null);
     setPreparing(true);
     try {
@@ -133,6 +139,7 @@ function Preview() {
         setNote('The file is taking longer than usual. Try again in a minute.');
       }
     } finally {
+      forgetPlan();
       setPreparing(false);
     }
   }
@@ -182,13 +189,20 @@ function Preview() {
         <s-button
           variant="primary"
           loading={preparing}
-          disabled={preparing}
+          disabled={preparing || exportsUsedUp}
           onClick={() => void downloadReport()}
         >
           {preparing ? 'Preparing…' : 'Download'}
         </s-button>
       </FilterBar>
       <FormError message={download.error ?? note} />
+      {plan && exportsUsedUp && (
+        <PlanLock
+          plan={planWith(plan.plan, (e) => e.exportsPerMonth > plan.entitlements.exportsPerMonth)}
+        >
+          {`Your ${plan.plan} plan includes ${plan.entitlements.exportsPerMonth} report files a month and they are used. The reports stay on screen; downloads open again next month.`}
+        </PlanLock>
+      )}
       {lists && (
         <s-text color="subdued">
           Search, filter and sort change what you see here. A download always has every row.

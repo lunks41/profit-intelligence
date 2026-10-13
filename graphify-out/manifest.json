@@ -588,8 +588,8 @@
     "hash": "53d4e2a20c1f663d868acd2d0c8162c4"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\common\\IntegrationList.tsx": {
-    "mtime": 1791805151.4956858,
-    "hash": "d421004a4236cad3c9ed1236e6e96ea8"
+    "mtime": 1791868952.2484136,
+    "hash": "a59e6cc9d174e29b90f6d1e9de2b4b23"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\common\\kpi.tsx": {
     "mtime": 1791812710.2877748,
@@ -610,6 +610,10 @@
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\common\\Modal.tsx": {
     "mtime": 1791782156.494711,
     "hash": "bda7973167422054e279e3ffada16aa9"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\common\\PlanLock.tsx": {
+    "mtime": 1791869139.8931816,
+    "hash": "ab234cefdb78f9546a91286cc1097b6a"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\common\\platform-marks.ts": {
     "mtime": 1791867714.073797,
@@ -640,12 +644,12 @@
     "hash": "18ce9140d1b214e38e7eb8f73e1db544"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\dropdown\\Dropdown.tsx": {
-    "mtime": 1791793655.8091853,
-    "hash": "5e676b838121c52c04e180931ae325ab"
+    "mtime": 1791869188.3700821,
+    "hash": "432d19de101cdafee064605bbd3f8eb3"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\dropdown\\file-type-dropdown.tsx": {
-    "mtime": 1791609065.7017174,
-    "hash": "980603ef3075c2b7ae19545c9668ce19"
+    "mtime": 1791869188.3888104,
+    "hash": "e384658843a42c0dcaa74a8a2dccc7ad"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\dropdown\\filter-search.tsx": {
     "mtime": 1791611191.9150786,
@@ -656,8 +660,12 @@
     "hash": "9a2a0466fb9723771df1026011fec8a4"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\dropdown\\period-dropdown.tsx": {
-    "mtime": 1791576050.4047098,
-    "hash": "3e1891ad9b33b71b58e0d986de97267a"
+    "mtime": 1791869197.0639312,
+    "hash": "efeea285027a7310069a9b029751ea85"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\dropdown\\plan-locks.test.tsx": {
+    "mtime": 1791869548.310583,
+    "hash": "5ff555f9ec7237d10bca163f0f8da6a2"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\dropdown\\report-dropdown.tsx": {
     "mtime": 1791609063.7969458,
@@ -696,8 +704,8 @@
     "hash": "4410161fc893bbcd226b65b665502e1a"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\marketing\\ConnectPlatforms.tsx": {
-    "mtime": 1791867714.0844474,
-    "hash": "d17fb99b17b9090e982690a5c85d3698"
+    "mtime": 1791869224.852765,
+    "hash": "8fa998839f216f1a2ac962bcf7c4fb73"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\marketing\\MarketingPage.tsx": {
     "mtime": 1791867714.0768013,
@@ -860,16 +868,16 @@
     "hash": "7cdfd5eef6cc652b5a0b69e245329463"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\reports\\ReportsPage.tsx": {
-    "mtime": 1791810891.7389712,
-    "hash": "98d7177219e39fc1f4863e63b57d883e"
+    "mtime": 1791869225.547369,
+    "hash": "87d1ea662348f4ce73c94747c80f3392"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\reports\\ReportTable.tsx": {
     "mtime": 1791805857.9144564,
     "hash": "67a4179e5001aeb7f875727f036b3e78"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\reports\\Schedules.tsx": {
-    "mtime": 1791805525.97402,
-    "hash": "a5dd0a4dc46185fcc7f845ef6ec6bb44"
+    "mtime": 1791869225.609104,
+    "hash": "1e42a8f68f894a53dae5abc19881c260"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\settings\\AlertsTab.tsx": {
     "mtime": 1791783854.9611058,
@@ -892,8 +900,8 @@
     "hash": "e607b31854b87c7a4521ddddced2cae1"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\settings\\PlanTab.tsx": {
-    "mtime": 1791867714.0904117,
-    "hash": "840275d4e1db4ba8295cfae3ebf0f4d2"
+    "mtime": 1791869376.4579,
+    "hash": "1c9d0736ed47bd4bca09212e5bd72b82"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\components\\settings\\RuleCoverage.tsx": {
     "mtime": 1791615226.0283206,
@@ -1040,8 +1048,12 @@
     "hash": "1d828cd265c8ed3ea479028b1b70fd01"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\lib\\period-range.ts": {
-    "mtime": 1791805340.348965,
-    "hash": "082c4e066c3c13299a38b2ed2ee44644"
+    "mtime": 1791869167.6159291,
+    "hash": "4b89b41c966c9990ea2ca15ee72a615f"
+  },
+  "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\lib\\plan.ts": {
+    "mtime": 1791869139.800411,
+    "hash": "0537181e55acb1b9f351fe5d8b82f443"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\apps\\web\\lib\\pnl-help.ts": {
     "mtime": 1791791777.5233881,
@@ -1980,8 +1992,8 @@
     "hash": "b77e287a1f70ba45f37818e567a623d7"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\roadmap.md": {
-    "mtime": 1791867945.9129457,
-    "hash": "89d69d562304d43db4d57f54fabfc22f"
+    "mtime": 1791869981.003929,
+    "hash": "1b20e670edd1a9618dccfd604c49619c"
   },
   "D:\\Proj\\Work\\all-projects\\profit-intelligence\\docs\\architecture\\billing.md": {
     "mtime": 1791549276.7097468,
