@@ -6,6 +6,7 @@ import { formatCount, formatMoney, formatPercent } from '../../lib/format';
 import { Card } from '../common';
 import { CardHeader } from '../common/CardHeader';
 import { FigureTile, TILE_COLOR } from '../common/FigureTile';
+import { Masonry } from '../common/Masonry';
 import { AdAccountsCard } from '../marketing/AdAccountsCard';
 import { MarketingSummaryCard } from '../marketing/MarketingSummaryCard';
 import { useApi } from '../profitability/shared';
@@ -42,7 +43,6 @@ export function OverviewBoard({
   insights?: ReactNode;
 }) {
   const k = overviewKpis(data);
-  const item = (node: ReactNode) => <div className="pi-mason-item">{node}</div>;
   return (
     <div className="pi-board-wrap">
       <div className="pi-board">
@@ -64,31 +64,29 @@ export function OverviewBoard({
           <ChannelDonut page={data} />
         </div>
 
-        <div className="pi-mason pi-mason-narrow">
-          {item(<Reminders data={data} />)}
-          {item(<MoneyFlow data={data} />)}
-          {item(<ConnectedAccounts data={data} />)}
-          {item(<CostBreakdownCard page={data} />)}
-          {item(<WhatChangedCard data={data} />)}
-          {item(opportunities)}
-          {item(
-            <MarketingSummaryCard
-              period={data.period}
-              currency={data.currency.code}
-              showSpend={false}
-              showAccounts={false}
-            />,
-          )}
-        </div>
+        <Masonry min="28rem">
+          <Reminders data={data} />
+          <MoneyFlow data={data} />
+          <ConnectedAccounts data={data} />
+          <CostBreakdownCard page={data} />
+          <WhatChangedCard data={data} />
+          {opportunities}
+          <MarketingSummaryCard
+            period={data.period}
+            currency={data.currency.code}
+            showSpend={false}
+            showAccounts={false}
+          />
+        </Masonry>
 
-        <div className="pi-mason pi-mason-wide">
-          {item(topSelling)}
-          {item(topReturned)}
-          {item(recentOrders)}
-          {item(<ProfitBreakdown data={data} />)}
-          {item(<DataQualityCard quality={data.dataQuality} issues={data.issues} />)}
-          {item(insights)}
-        </div>
+        <Masonry min="38rem">
+          {topSelling}
+          {topReturned}
+          {recentOrders}
+          <ProfitBreakdown data={data} />
+          <DataQualityCard quality={data.dataQuality} issues={data.issues} />
+          {insights}
+        </Masonry>
       </div>
     </div>
   );
