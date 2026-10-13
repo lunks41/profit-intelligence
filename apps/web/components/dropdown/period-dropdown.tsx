@@ -37,7 +37,10 @@ export function PeriodDropdown({
     const range = presetRange(o.value, todayInShop());
     const first = addDays(todayInShop(), -(days - 1));
     if (!range || range.from >= first) return o;
-    const better = planWith(plan.plan, (e) => e.historyDays > days);
+    // the cheapest plan whose history reaches back far enough for this period
+    const needed =
+      Math.round((Date.parse(todayInShop()) - Date.parse(range.from)) / 86_400_000) + 1;
+    const better = planWith(plan.plan, (e) => e.historyDays >= needed);
     return { ...o, locked: true, hint: better ?? 'Not in plan' };
   });
   return (

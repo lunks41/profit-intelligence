@@ -3,6 +3,7 @@ import {
   MAX_HISTORY_DAYS,
   PLANS,
   PLAN_IDS,
+  annualPriceUsd,
   effectivePlan,
   planFor,
   planFromSubscriptionName,
@@ -101,5 +102,18 @@ describe('effectivePlan', () => {
     ] as const) {
       expect(effectivePlan('managed', 'pro', { plan: 'pro', status })).toBe('free');
     }
+  });
+
+  it('Basic is the nine dollar step between Free and Growth, and only Growth is marked popular', () => {
+    expect(PLAN_IDS).toEqual(['free', 'basic', 'growth', 'pro']);
+    expect(PLANS.basic.priceUsd).toBe(9);
+    expect(PLANS.basic.priceUsd).toBeGreaterThan(PLANS.free.priceUsd);
+    expect(PLANS.basic.priceUsd).toBeLessThan(PLANS.growth.priceUsd);
+    expect(PLAN_IDS.filter((id) => PLANS[id].popular)).toEqual(['growth']);
+  });
+
+  it('a year costs ten months', () => {
+    expect(annualPriceUsd(9)).toBe(90);
+    expect(annualPriceUsd(29)).toBe(290);
   });
 });

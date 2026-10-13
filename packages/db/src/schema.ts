@@ -1187,7 +1187,7 @@ export const sSubscription = pgTable(
       columns: [t.tenantId, t.shopId],
       foreignColumns: [mShop.tenantId, mShop.id],
     }),
-    check('ck_s_subscription_plan', sql`${t.plan} in ('free', 'growth', 'pro')`),
+    check('ck_s_subscription_plan', sql`${t.plan} in ('free', 'basic', 'growth', 'pro')`),
     check(
       'ck_s_subscription_status',
       sql`${t.status} in ('none', 'pending', 'active', 'frozen', 'cancelled', 'declined', 'expired')`,

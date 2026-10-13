@@ -9,6 +9,8 @@ import {
   EXTRA_ORDER_CENTS,
   EXTRA_ORDER_USD,
   PLANS,
+  TRIAL_DAYS,
+  annualPriceUsd,
   PLAN_IDS,
   MAX_HISTORY_DAYS,
 } from '@pi/contracts';
@@ -23,8 +25,8 @@ import type { AppEnv } from '../config/config.module.js';
 import { APP_ENV, DB, TOKEN_CRYPTO } from '../tokens.js';
 import { EntitlementsService } from './entitlements.service.js';
 
-const CREATE_MUTATION = `mutation Create($name: String!, $returnUrl: URL!, $test: Boolean, $lineItems: [AppSubscriptionLineItemInput!]!) {
-  appSubscriptionCreate(name: $name, returnUrl: $returnUrl, test: $test, lineItems: $lineItems) {
+const CREATE_MUTATION = `mutation Create($name: String!, $returnUrl: URL!, $test: Boolean, $trialDays: Int, $lineItems: [AppSubscriptionLineItemInput!]!) {
+  appSubscriptionCreate(name: $name, returnUrl: $returnUrl, test: $test, trialDays: $trialDays, lineItems: $lineItems) {
     confirmationUrl
     appSubscription { id status }
     userErrors { field message }
@@ -109,6 +111,8 @@ export class BillingService {
         id,
         name: PLANS[id].name,
         priceUsd: PLANS[id].priceUsd,
+        annualPriceUsd: annualPriceUsd(PLANS[id].priceUsd),
+        popular: PLANS[id].popular === true,
         approved: PLANS[id].approved,
         summary: PLANS[id].summary,
         entitlements: PLANS[id].entitlements,
@@ -148,7 +152,11 @@ export class BillingService {
    * plan page; with the Billing API it is the confirmation page of a subscription we create.
    * Nothing is charged until the merchant approves it on Shopify.
    */
-  async subscribe(scope: TenantContext, plan: PlanId): Promise<{ url: string }> {
+  async subscribe(
+    scope: TenantContext,
+    plan: PlanId,
+    interval: 'monthly' | 'annual' = 'monthly',
+  ): Promise<{ url: string }> {
     if (this.entitlements.billing.mode === 'off') {
       throw new BadRequestException({
         code: 'billing_not_enabled',
@@ -185,12 +193,19 @@ export class BillingService {
       name: PLANS[plan].name,
       returnUrl: `https://admin.shopify.com/store/${store}/apps/${handle}`,
       test: this.env.NODE_ENV !== 'production' || this.env.BILLING_TEST_MODE === 'true',
+      trialDays: TRIAL_DAYS,
       lineItems: [
         {
           plan: {
             appRecurringPricingDetails: {
-              price: { amount: PLANS[plan].priceUsd, currencyCode: 'USD' },
-              interval: 'EVERY_30_DAYS',
+              price: {
+                amount:
+                  interval === 'annual'
+                    ? annualPriceUsd(PLANS[plan].priceUsd)
+                    : PLANS[plan].priceUsd,
+                currencyCode: 'USD',
+              },
+              interval: interval === 'annual' ? 'ANNUAL' : 'EVERY_30_DAYS',
             },
           },
         },

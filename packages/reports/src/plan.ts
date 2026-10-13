@@ -47,7 +47,7 @@ interface ShopifySubscription {
   currentPeriodEnd: string | null;
 }
 
-const RANK: Record<PlanId, number> = { free: 0, growth: 1, pro: 2 };
+const RANK: Record<PlanId, number> = { free: 0, basic: 1, growth: 2, pro: 3 };
 
 /**
  * Reads the shop's subscription from Shopify (the source of truth), stores it, and brings the

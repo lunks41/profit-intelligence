@@ -40,7 +40,7 @@ export class BillingController {
     if (!r.success) {
       throw new BadRequestException({ code: 'invalid_input', message: 'plan: choose a plan' });
     }
-    return this.service.subscribe(t, r.data.plan);
+    return this.service.subscribe(t, r.data.plan, r.data.interval);
   }
 
   @Post('cancel')

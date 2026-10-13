@@ -4,10 +4,9 @@ import { useState } from 'react';
 import type { BillingStatusResponse } from '@pi/contracts';
 import { apiPost } from '../../lib/api';
 import { forgetPlan } from '../../lib/plan';
+import { PlanComparison } from './PlanComparison';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormError, useAction } from './shared';
-
-const GRID = 'repeat(auto-fit, minmax(15rem, 1fr))';
 
 /** What every plan has, so the cards below only need to say what differs. */
 const INCLUDED = [
@@ -108,8 +107,10 @@ export function PlanTab() {
   const act = useAction();
   const [confirmCancel, setConfirmCancel] = useState(false);
 
-  async function subscribe(plan: string) {
-    const r = await act.run(() => apiPost<{ url: string }>('/billing/subscribe', { plan }));
+  async function subscribe(plan: string, interval: 'monthly' | 'annual') {
+    const r = await act.run(() =>
+      apiPost<{ url: string }>('/billing/subscribe', { plan, interval }),
+    );
     // Shopify's page must open in the top window, not inside the embedded frame.
     if (r?.url) window.open(r.url, '_top');
   }
@@ -224,68 +225,11 @@ export function PlanTab() {
               </ul>
             </s-stack>
           </s-box>
-          <s-grid gridTemplateColumns={GRID} gap="base">
-            {data.plans.map((p) => (
-              <s-box key={p.id} padding="base" background="subdued" borderRadius="base">
-                <s-stack gap="small">
-                  <s-stack direction="inline" gap="small" alignItems="center">
-                    <s-text type="strong">{p.name}</s-text>
-                    {p.current && <s-badge tone="success">Current</s-badge>}
-                    {!p.approved && <s-badge tone="neutral">Draft</s-badge>}
-                  </s-stack>
-                  <s-heading>{p.priceUsd === 0 ? 'Free' : `$${p.priceUsd} / month`}</s-heading>
-                  <s-text color="subdued">{p.summary}</s-text>
-                  <ul style={{ margin: 0, paddingInlineStart: '1.25rem' }}>
-                    <li>
-                      {p.entitlements.ordersPerMonth.toLocaleString()} orders a month
-                      {p.id === 'free' ? '' : `, then $${data.extraOrderUsd} per extra order`}
-                    </li>
-                    <li>Last {p.entitlements.historyDays} days of history</li>
-                    <li>{p.entitlements.exportsPerMonth} reports a month</li>
-                    <li>{p.entitlements.pdfExports ? 'CSV and PDF reports' : 'CSV reports'}</li>
-                    <li>
-                      {p.entitlements.scheduledReports === 0
-                        ? 'No scheduled emails'
-                        : `${p.entitlements.scheduledReports} scheduled emails`}
-                    </li>
-                    <li>
-                      {p.entitlements.adAccounts} advertising{' '}
-                      {p.entitlements.adAccounts === 1 ? 'account' : 'accounts'}
-                    </li>
-                    <li>
-                      {p.entitlements.leakageFindings
-                        ? 'Profit leakage findings'
-                        : 'No leakage findings'}
-                    </li>
-                    <li>{p.entitlements.ltvReport ? 'LTV report' : 'No LTV report'}</li>
-                    <li>
-                      {p.entitlements.carrierInvoices
-                        ? 'Carrier invoice import'
-                        : 'No carrier invoice import'}
-                    </li>
-                    <li>
-                      {p.entitlements.bulkCostTools
-                        ? 'Cost CSV import and bulk edit'
-                        : 'Product costs one at a time'}
-                    </li>
-                  </ul>
-                  {p.id !== 'free' && (
-                    <s-button
-                      variant={p.current ? 'secondary' : 'primary'}
-                      disabled={act.busy || !p.available || p.current}
-                      onClick={() => void subscribe(p.id)}
-                    >
-                      {p.current
-                        ? 'Current plan'
-                        : p.available
-                          ? `Choose ${p.name}`
-                          : 'Not available yet'}
-                    </s-button>
-                  )}
-                </s-stack>
-              </s-box>
-            ))}
-          </s-grid>
+          <PlanComparison
+            data={data}
+            busy={act.busy}
+            onChoose={(plan, interval) => void subscribe(plan, interval)}
+          />
           <s-text color="subdued">
             Prices and limits marked Draft are proposals and can change before paid plans open.
             Shopify handles every payment; this app never sees card details.

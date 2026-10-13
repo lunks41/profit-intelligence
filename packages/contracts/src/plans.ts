@@ -7,7 +7,7 @@
  * plan the active subscription corresponds to.
  */
 
-export const PLAN_IDS = ['free', 'growth', 'pro'] as const;
+export const PLAN_IDS = ['free', 'basic', 'growth', 'pro'] as const;
 export type PlanId = (typeof PLAN_IDS)[number];
 
 export interface Entitlements {
@@ -40,6 +40,13 @@ export interface Entitlements {
 export const EXTRA_ORDER_USD = '0.10';
 export const EXTRA_ORDER_CENTS = 10;
 
+/** Days of free use before a paid plan is charged (Billing API mode; with Shopify App Pricing it is set in the Partner Dashboard). */
+export const TRIAL_DAYS = 14;
+
+/** A year of a plan costs ten months: two months free. Shopify bills it as one annual charge. */
+export const ANNUAL_MONTHS_CHARGED = 10;
+export const annualPriceUsd = (monthlyUsd: number) => monthlyUsd * ANNUAL_MONTHS_CHARGED;
+
 export interface Plan {
   id: PlanId;
   name: string;
@@ -48,6 +55,8 @@ export interface Plan {
   /** false while the price and limits are a proposal: such a plan cannot be bought */
   approved: boolean;
   summary: string;
+  /** shown as the one most merchants should pick */
+  popular?: boolean;
   entitlements: Entitlements;
 }
 
@@ -74,12 +83,32 @@ export const PLANS: Record<PlanId, Plan> = {
       ordersPerMonth: 50,
     },
   },
+  basic: {
+    id: 'basic',
+    name: 'Basic',
+    priceUsd: 9,
+    approved: false,
+    summary: 'A first step up: more history, cost imports and a scheduled email.',
+    entitlements: {
+      historyDays: 60,
+      exportsPerMonth: 20,
+      pdfExports: false,
+      scheduledReports: 1,
+      adAccounts: 2,
+      leakageFindings: false,
+      ltvReport: false,
+      carrierInvoices: false,
+      bulkCostTools: true,
+      ordersPerMonth: 200,
+    },
+  },
   growth: {
     id: 'growth',
     name: 'Growth',
     priceUsd: 29,
     approved: false,
-    summary: 'Longer history, PDF reports and scheduled emails.',
+    summary: 'Longer history, PDF reports, scheduled emails and the LTV report.',
+    popular: true,
     entitlements: {
       historyDays: MAX_HISTORY_DAYS,
       exportsPerMonth: 50,
@@ -90,7 +119,7 @@ export const PLANS: Record<PlanId, Plan> = {
       ltvReport: true,
       carrierInvoices: true,
       bulkCostTools: true,
-      ordersPerMonth: 500,
+      ordersPerMonth: 750,
     },
   },
   pro: {
@@ -109,7 +138,7 @@ export const PLANS: Record<PlanId, Plan> = {
       ltvReport: true,
       carrierInvoices: true,
       bulkCostTools: true,
-      ordersPerMonth: 2000,
+      ordersPerMonth: 2500,
     },
   },
 };

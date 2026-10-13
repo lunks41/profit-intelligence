@@ -58,7 +58,9 @@ export class EntitlementsService {
   async assertRange(scope: Scope, range: { from: string }, today: string): Promise<void> {
     const { entitlements } = await this.plan(scope);
     if (range.from < this.windowStart(entitlements, today)) {
-      const better = planFor((e) => e.historyDays >= entitlements.historyDays + 1);
+      // the cheapest plan whose history reaches back far enough for this period
+      const needed = Math.round((Date.parse(today) - Date.parse(range.from)) / 86_400_000) + 1;
+      const better = planFor((e) => e.historyDays >= needed);
       throw planLimit(
         `Your plan shows the last ${entitlements.historyDays} days. Choose a period within that.`,
         better?.id ?? null,

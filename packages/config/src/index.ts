@@ -20,7 +20,7 @@ export const envSchema = z.object({
   /** off (development and beta: every shop gets BILLING_OFF_PLAN), managed (Shopify App Pricing) or api (Billing API). */
   BILLING_MODE: z.enum(['off', 'managed', 'api']).default('off'),
   /** The plan every shop gets while billing is off. */
-  BILLING_OFF_PLAN: z.enum(['free', 'growth', 'pro']).default('pro'),
+  BILLING_OFF_PLAN: z.enum(['free', 'basic', 'growth', 'pro']).default('pro'),
   /** The app handle in the Partner Dashboard, for the Shopify-hosted plan page (managed pricing). */
   SHOPIFY_APP_HANDLE: z
     .string()

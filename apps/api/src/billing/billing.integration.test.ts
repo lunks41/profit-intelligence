@@ -142,6 +142,7 @@ afterEach(async () => {
   while (apps.length) await apps.pop()!.close();
   PLANS.growth.approved = false;
   PLANS.pro.approved = false;
+  PLANS.basic.approved = false;
 });
 afterAll(async () => {
   await admin.end();
@@ -720,6 +721,68 @@ describe('starting a subscription', () => {
     ]);
     // nothing is granted until Shopify says it is ACTIVE
     expect((await status(app)).plan).toBe('free');
+  });
+
+  it('billing API: Basic is the $9 plan, with a free trial; yearly is ten months in one annual charge', async () => {
+    PLANS.basic.approved = true;
+    const app = await start({ BILLING_MODE: 'api', SHOPIFY_APP_HANDLE: 'profit-intelligence' });
+    shopify.createResponse = {
+      confirmationUrl: 'https://admin.shopify.com/store/bill-a/charges/2/confirm',
+      appSubscription: { id: 'gid://shopify/AppSubscription/10', status: 'PENDING' },
+      userErrors: [],
+    };
+    const monthly = await json(app, 'POST', '/billing/subscribe', 'id-bill-a', { plan: 'basic' });
+    expect(monthly.res.statusCode).toBe(200);
+    expect(shopify.calls[0]!.variables).toMatchObject({ name: 'Basic', trialDays: 14 });
+    expect(shopify.calls[0]!.variables.lineItems).toEqual([
+      {
+        plan: {
+          appRecurringPricingDetails: {
+            price: { amount: 9, currencyCode: 'USD' },
+            interval: 'EVERY_30_DAYS',
+          },
+        },
+      },
+    ]);
+    const yearly = await json(app, 'POST', '/billing/subscribe', 'id-bill-a', {
+      plan: 'basic',
+      interval: 'annual',
+    });
+    expect(yearly.res.statusCode).toBe(200);
+    expect(shopify.calls[1]!.variables.lineItems).toEqual([
+      {
+        plan: {
+          appRecurringPricingDetails: {
+            price: { amount: 90, currencyCode: 'USD' },
+            interval: 'ANNUAL',
+          },
+        },
+      },
+    ]);
+  });
+
+  it('lists the four plans in order, with the annual price and the most popular one', async () => {
+    const app = await start({ BILLING_MODE: 'managed', SHOPIFY_APP_HANDLE: 'h' });
+    const plans = (await status(app)).plans;
+    expect(plans.map((p) => p.id)).toEqual(['free', 'basic', 'growth', 'pro']);
+    expect(plans.find((p) => p.id === 'basic')).toMatchObject({ priceUsd: 9, annualPriceUsd: 90 });
+    expect(plans.filter((p) => p.popular).map((p) => p.id)).toEqual(['growth']);
+  });
+
+  it('a Shopify subscription named Basic gives the Basic plan, and its limits are enforced', async () => {
+    const app = await start({ BILLING_OFF_PLAN: 'basic' });
+    const s = await status(app);
+    expect(s.plan).toBe('basic');
+    expect(s.entitlements.scheduledReports).toBe(1);
+    expect(s.entitlements.bulkCostTools).toBe(true);
+    expect(s.entitlements.ltvReport).toBe(false);
+    // Basic has cost import but not the LTV report
+    expect((await req(app, 'GET', '/customers/ltv?preset=30d', 'id-bill-a')).statusCode).toBe(403);
+    const imported = await json(app, 'POST', '/settings/costs/import', 'id-bill-a', {
+      csv: 'sku,cost\nA,1.00\n',
+      preview: true,
+    });
+    expect(imported.res.statusCode).not.toBe(403);
   });
 
   it('billing API: never hands the browser a URL that is not Shopify', async () => {

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { PLAN_IDS } from './plans.js';
 
 export const healthResponseSchema = z.object({
   status: z.literal('ok'),
@@ -1567,7 +1568,7 @@ export const entitlementsSchema = z.object({
 
 export const billingStatusSchema = z.object({
   mode: z.enum(['off', 'managed', 'api']),
-  plan: z.enum(['free', 'growth', 'pro']),
+  plan: z.enum(PLAN_IDS),
   entitlements: entitlementsSchema,
   usage: z.object({
     exportsThisMonth: z.number(),
@@ -1593,9 +1594,13 @@ export const billingStatusSchema = z.object({
   maxHistoryDays: z.number(),
   plans: z.array(
     z.object({
-      id: z.enum(['free', 'growth', 'pro']),
+      id: z.enum(PLAN_IDS),
       name: z.string(),
       priceUsd: z.number(),
+      /** one year of the plan, in dollars (two months free) */
+      annualPriceUsd: z.number(),
+      /** the plan most merchants should pick */
+      popular: z.boolean(),
       /** false while the price and limits are a proposal */
       approved: z.boolean(),
       summary: z.string(),
@@ -1609,7 +1614,11 @@ export const billingStatusSchema = z.object({
 });
 export type BillingStatusResponse = z.infer<typeof billingStatusSchema>;
 
-export const subscribeBodySchema = z.object({ plan: z.enum(['free', 'growth', 'pro']) });
+export const subscribeBodySchema = z.object({
+  plan: z.enum(PLAN_IDS),
+  /** how the merchant pays; monthly when not said */
+  interval: z.enum(['monthly', 'annual']).default('monthly'),
+});
 
 export const supportBodySchema = z.object({
   kind: z.enum(['feedback', 'question', 'problem']),

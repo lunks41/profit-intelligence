@@ -8,7 +8,7 @@ const rows = (res: { rows: unknown[] }) => res.rows as Row[];
 const str = (v: unknown) => (v === null || v === undefined ? null : String(v));
 
 export interface SubscriptionRow {
-  plan: 'free' | 'growth' | 'pro';
+  plan: 'free' | 'basic' | 'growth' | 'pro';
   status: 'none' | 'pending' | 'active' | 'frozen' | 'cancelled' | 'declined' | 'expired';
   shopifySubscriptionId: string | null;
   planName: string | null;
