@@ -28,8 +28,12 @@ export function AdAccountsCard({
 }) {
   const accounts = data.accounts.filter((a) => a.status !== 'disconnected');
   if (accounts.length === 0) return null;
-  const spendOf = (id: string) =>
-    data.channels.filter((c) => c.accountId === id).reduce((t, c) => t + Number(c.spend), 0);
+  const rowsOf = (id: string) => data.channels.filter((c) => c.accountId === id);
+  const spendOf = (id: string) => rowsOf(id).reduce((t, c) => t + Number(c.spend), 0);
+  const impressionsOf = (id: string) => rowsOf(id).reduce((t, c) => t + c.impressions, 0);
+  const clicksOf = (id: string) => rowsOf(id).reduce((t, c) => t + c.clicks, 0);
+  const compact = (n: number) =>
+    new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(n);
   return (
     <s-section>
       <s-stack gap="small">
@@ -56,7 +60,8 @@ export function AdAccountsCard({
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.75rem',
+                  flexWrap: 'wrap',
+                  gap: '0.5rem 0.75rem',
                   padding: '0.6rem 0.75rem',
                   border: '1px solid #e3e3e3',
                   borderRadius: '0.75rem',
@@ -108,20 +113,44 @@ export function AdAccountsCard({
                       : 'no import yet'}
                   </s-text>
                 </div>
-                <div style={{ flex: 'none', textAlign: 'right' }}>
-                  <s-text type="strong">
-                    {formatMoney(spendOf(a.id).toFixed(4), data.currency)}
-                  </s-text>
+                <div
+                  style={{
+                    flex: '1 1 auto',
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    gap: '1rem',
+                    textAlign: 'right',
+                  }}
+                >
                   <div>
-                    <s-text color="subdued">spend</s-text>
+                    <s-text type="strong">
+                      {formatMoney(spendOf(a.id).toFixed(4), data.currency)}
+                    </s-text>
+                    <div>
+                      <s-text color="subdued">spend</s-text>
+                    </div>
+                  </div>
+                  <div>
+                    <s-text type="strong">{compact(impressionsOf(a.id))}</s-text>
+                    <div>
+                      <s-text color="subdued">impressions</s-text>
+                    </div>
+                  </div>
+                  <div>
+                    <s-text type="strong">{compact(clicksOf(a.id))}</s-text>
+                    <div>
+                      <s-text color="subdued">clicks</s-text>
+                    </div>
                   </div>
                 </div>
               </div>
             );
           })}
         </div>
-        {accounts.length > 6 && (
-          <s-text color="subdued">and {accounts.length - 6} more on the Marketing screen</s-text>
+        {accounts.length > limit && (
+          <s-text color="subdued">
+            and {accounts.length - limit} more on the Marketing screen
+          </s-text>
         )}
       </s-stack>
     </s-section>
