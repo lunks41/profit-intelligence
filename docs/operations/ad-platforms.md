@@ -11,6 +11,22 @@ the whole product. Merchants never see these credentials.
 
 Run `pnpm ads:check` at any time: it lists which platforms are ready, which variables are missing (names only, never values) and the redirect address to register for each.
 
+## All the links, in one place
+
+Replace `APP_URL` with your public https address. The redirect address is what you paste into each platform's app settings. These pages can move; if one does, search the platform's developer documentation.
+
+| Platform  | Create the app and get the keys                                                                                                                                            | Redirect address to register                        |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| Meta      | https://developers.facebook.com/apps/                                                                                                                                      | `APP_URL/api/v1/marketing/oauth/meta/callback`      |
+| Google    | https://console.cloud.google.com/apis/credentials (OAuth client) and https://ads.google.com/aw/apicenter (developer token, in a manager account)                           | `APP_URL/api/v1/marketing/oauth/google/callback`    |
+| TikTok    | https://business-api.tiktok.com/portal/apps                                                                                                                                | `APP_URL/api/v1/marketing/oauth/tiktok/callback`    |
+| Microsoft | https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade (app registration) and https://developers.ads.microsoft.com/Account (developer token) | `APP_URL/api/v1/marketing/oauth/microsoft/callback` |
+| Snapchat  | https://business.snapchat.com (Business Details, OAuth Apps)                                                                                                               | `APP_URL/api/v1/marketing/oauth/snapchat/callback`  |
+| Pinterest | https://developers.pinterest.com/apps/                                                                                                                                     | `APP_URL/api/v1/marketing/oauth/pinterest/callback` |
+| Reddit    | https://www.reddit.com/prefs/apps (app) and https://ads-api.reddit.com/docs/v3/ (Ads API access)                                                                           | `APP_URL/api/v1/marketing/oauth/reddit/callback`    |
+
+`pnpm ads:check` prints the same links, with your own redirect addresses filled in.
+
 ## What you register with each platform
 
 The **redirect address** is the same pattern everywhere. With the production address `https://app.yourdomain.com`:

@@ -23,6 +23,23 @@ const PLATFORMS = [
   { id: 'reddit', name: 'Reddit Ads', vars: ['REDDIT_CLIENT_ID', 'REDDIT_CLIENT_SECRET'] },
 ];
 
+// where the owner creates the app (and gets a developer token); these pages can move, search the platform if one does
+const PORTALS = {
+  meta: ['https://developers.facebook.com/apps/'],
+  google: [
+    'https://console.cloud.google.com/apis/credentials',
+    'https://ads.google.com/aw/apicenter',
+  ],
+  tiktok: ['https://business-api.tiktok.com/portal/apps'],
+  microsoft: [
+    'https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade',
+    'https://developers.ads.microsoft.com/Account',
+  ],
+  snapchat: ['https://business.snapchat.com'],
+  pinterest: ['https://developers.pinterest.com/apps/'],
+  reddit: ['https://www.reddit.com/prefs/apps', 'https://ads-api.reddit.com/docs/v3/'],
+};
+
 const out = (line = '') => process.stdout.write(`${line}\n`);
 const env = process.env;
 const appUrl = (env.APP_URL ?? '').trim().replace(/\/+$/, '');
@@ -50,6 +67,8 @@ for (const p of PLATFORMS) {
   const ready = missing.length === 0 && /^https:\/\//.test(appUrl);
   out(`${p.name.padEnd(14)} ${ready ? 'READY: the Connect button is on' : 'not ready'}`);
   if (missing.length > 0) out(`               missing: ${missing.join(', ')}`);
+  for (const link of PORTALS[p.id] ?? [])
+    out(`               create the app / get the keys: ${link}`);
   if (appUrl)
     out(
       `               redirect address to register: ${appUrl}/api/v1/marketing/oauth/${p.id}/callback`,

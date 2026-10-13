@@ -21,6 +21,17 @@ describe('pnpm ads:check', () => {
       'missing: GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET, GOOGLE_ADS_DEVELOPER_TOKEN',
     );
     expect(r.stdout).toContain('https://app.example.com/api/v1/marketing/oauth/meta/callback');
+    for (const link of [
+      'developers.facebook.com',
+      'console.cloud.google.com',
+      'business-api.tiktok.com',
+      'entra.microsoft.com',
+      'business.snapchat.com',
+      'developers.pinterest.com',
+      'reddit.com/prefs/apps',
+    ]) {
+      expect(r.stdout).toContain(link);
+    }
     expect(r.stdout).not.toContain('ID-VALUE-123');
     expect(r.stdout).not.toContain('SECRET-VALUE-456');
   });
