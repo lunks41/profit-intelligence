@@ -9,6 +9,8 @@ A platform only shows a working **Connect** button once the server has that plat
 then its card says "Not available yet". Each platform needs a developer app in **your** name, created once for
 the whole product. Merchants never see these credentials.
 
+Run `pnpm ads:check` at any time: it lists which platforms are ready, which variables are missing (names only, never values) and the redirect address to register for each.
+
 ## What you register with each platform
 
 The **redirect address** is the same pattern everywhere. With the production address `https://app.yourdomain.com`:
