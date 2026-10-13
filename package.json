@@ -41,6 +41,7 @@
     "seed:marketing": "pnpm --filter @pi/seed marketing",
     "seed:shipping": "pnpm --filter @pi/seed shipping",
     "ads:check": "node --env-file=.env scripts/ads-check.mjs",
+    "pack:deploy": "node scripts/pack-deploy.mjs",
     "sync:verify": "pnpm --filter @pi/seed verify",
     "profit:verify": "pnpm --filter @pi/seed profit-verify",
     "audit:secrets": "node scripts/secrets.mjs",

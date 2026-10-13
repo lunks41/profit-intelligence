@@ -23,3 +23,7 @@ backups-test/
 
 # load-test output
 apps/api/src/load/out/
+
+# release package built by pnpm pack:deploy
+.deploy/
+.deploy-pack.log

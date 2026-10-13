@@ -5,3 +5,4 @@ pnpm-lock.yaml
 prompt
 graphify-out
 .shopify
+.deploy
