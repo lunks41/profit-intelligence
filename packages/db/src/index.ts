@@ -14,6 +14,8 @@ export {
   ADS_QUEUE,
   FX_QUEUE,
   ALERT_EMAIL_QUEUE,
+  SUPPORT_MAIL_QUEUE,
+  enqueueSupportMail,
   MONITOR_QUEUE,
   LEAKAGE_QUEUE,
   DELIVER_QUEUE,
@@ -44,6 +46,7 @@ export type {
   ExportJobPayload,
   ProfitJobPayload,
   PurgeJobPayload,
+  SupportMailPayload,
   SyncJobPayload,
   WebhookJobPayload,
 } from './queue.js';

@@ -1,4 +1,5 @@
 import { PLANS, PLAN_IDS } from '@pi/contracts';
+import { enabledPlatformNames } from '../../lib/ad-platforms';
 import { InstallForm } from './InstallForm';
 
 const FEATURES: Array<[string, string]> = [
@@ -16,7 +17,7 @@ const FEATURES: Array<[string, string]> = [
   ],
   [
     'Ad spend counted in',
-    'Connect Meta, Google, TikTok, Microsoft, Snapchat, Pinterest and Reddit and see what is left after advertising.',
+    `Connect ${enabledPlatformNames()} and see what is left after advertising.`,
   ],
   [
     'Shipping and carriers',
@@ -51,8 +52,6 @@ const STEPS: Array<[string, string]> = [
   ],
 ];
 
-const PLATFORMS = ['Meta', 'Google', 'TikTok', 'Microsoft', 'Snapchat', 'Pinterest', 'Reddit'];
-
 /**
  * The public front page, shown to someone who opens the address in a browser (inside Shopify Admin the app itself
  * opens). It says what the app does, how it starts and what it costs, and sends the merchant to Shopify to install.
@@ -62,7 +61,7 @@ export function Landing({ clientId }: { clientId: string | undefined }) {
   return (
     <div className="pi-landing">
       <header className="pi-landing-top">
-        <span className="pi-landing-brand">Profit Intelligence</span>
+        <span className="pi-landing-brand">Tanvo Profit</span>
         <nav aria-label="Pages">
           <a href="#features">Features</a>
           <a href="#plans">Plans</a>
@@ -74,8 +73,8 @@ export function Landing({ clientId }: { clientId: string | undefined }) {
       <section className="pi-landing-hero">
         <h1>See the profit your Shopify store really makes</h1>
         <p>
-          Revenue is not profit. Profit Intelligence works out what is left after product cost,
-          payment fees, shipping, advertising and expenses, for every order and every product.
+          Revenue is not profit. Tanvo Profit works out what is left after product cost, payment
+          fees, shipping, advertising and expenses, for every order and every product.
         </p>
         <InstallForm clientId={clientId} />
         <p className="pi-landing-note">
@@ -132,7 +131,9 @@ export function Landing({ clientId }: { clientId: string | undefined }) {
             </li>
           ))}
         </ol>
-        <p className="pi-landing-platforms">Ad platforms: {PLATFORMS.join(' · ')}</p>
+        <p className="pi-landing-platforms">
+          Ad platforms: {enabledPlatformNames().replace(' and ', ', ').replace(/, /g, ' · ')}
+        </p>
       </section>
 
       <section id="plans" className="pi-landing-section">
@@ -170,7 +171,7 @@ export function Landing({ clientId }: { clientId: string | undefined }) {
       </section>
 
       <footer className="pi-landing-foot">
-        <span>Profit Intelligence</span>
+        <span>Tanvo Profit</span>
         <a href="/privacy">Privacy policy</a>
         <a href="/support">Support</a>
       </footer>

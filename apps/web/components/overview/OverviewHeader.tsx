@@ -19,7 +19,7 @@ export const QUICK_PERIODS: Array<{ value: PeriodPreset; label: string }> = [
 /**
  * The top of the page: a line saying whose figures these are and for which dates, the period
  * buttons (the only period filter on this page) and a refresh. Amounts are always in USD, so there is no
- * more than one. Refresh reloads the figures; it does not start an import from Shopify.
+ * more than one. Reload only re-reads the figures stored here; Sync from Shopify starts a new import.
  */
 export function OverviewHeader({
   storeName,
@@ -31,6 +31,9 @@ export function OverviewHeader({
   preset,
   onPreset,
   onRefresh,
+  onSync,
+  syncing,
+  syncMessage,
 }: {
   storeName: string | null;
   period: { from: string; to: string } | null;
@@ -42,6 +45,12 @@ export function OverviewHeader({
   preset: PeriodPreset;
   onPreset: (preset: PeriodPreset) => void;
   onRefresh: () => void;
+  /** starts a new import from Shopify */
+  onSync: () => void;
+  /** an import is queued or running, or the request is being sent */
+  syncing: boolean;
+  /** one line about the import in progress, when there is one */
+  syncMessage: string | null;
 }) {
   const facts = [
     period ? periodLabel(period.from, period.to) : null,
@@ -64,6 +73,7 @@ export function OverviewHeader({
             : "Here's what's happening with your store."}
         </s-text>
         <s-text color="subdued">{facts.length > 0 ? facts.join('  ·  ') : 'Loading…'}</s-text>
+        {syncMessage && <s-text tone="info">{syncMessage}</s-text>}
       </s-stack>
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem 1rem' }}>
         {freshness && (
@@ -89,10 +99,20 @@ export function OverviewHeader({
           icon="refresh"
           loading={loading}
           disabled={loading}
-          accessibilityLabel="Refresh the figures"
+          accessibilityLabel="Reload the figures stored here"
           onClick={onRefresh}
         >
-          Refresh
+          Reload figures
+        </s-button>
+        <s-button
+          variant="secondary"
+          icon="import"
+          loading={syncing}
+          disabled={syncing}
+          accessibilityLabel="Import the latest orders and products from Shopify"
+          onClick={onSync}
+        >
+          Sync from Shopify
         </s-button>
         <div
           role="group"

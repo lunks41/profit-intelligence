@@ -7,6 +7,7 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "dev": "tsx watch --env-file=../../.env src/main.ts",
+    "dev:support": "tsx watch --env-file=../../.env src/support-only.ts",
     "start": "node --env-file=../../.env dist/main.js"
   },
   "dependencies": {

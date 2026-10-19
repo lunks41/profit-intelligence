@@ -7,7 +7,6 @@ import { NotificationPanel } from './NotificationPanel';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { NotificationListResponse, SessionResponse } from '@pi/contracts';
 import { apiGet, apiPost } from '../lib/api';
-import { newTabUrl } from '../lib/new-tab-url';
 
 const REFRESH_MS = 60_000;
 
@@ -193,16 +192,6 @@ export function TopBar() {
           <s-icon type="settings" size="base" />
         </span>
       </s-link>
-      {shop && (
-        <IconButton
-          icon="external"
-          label="Open this page in a new tab"
-          onClick={() => {
-            const url = newTabUrl(shop, process.env.NEXT_PUBLIC_SHOPIFY_API_KEY, window.location);
-            if (url) window.open(url, '_blank');
-          }}
-        />
-      )}
     </div>
   );
 }

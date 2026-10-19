@@ -4,7 +4,7 @@ Draft for the owner. Check each claim against the live app before submitting. Sc
 
 ## Name and tagline
 
-**Profit Intelligence**: see your real profit, not just your sales.
+**Tanvo Profit** (12 of 30 characters). Subtitle: the profit your store really makes, after every cost.
 
 ## Short description (under 100 characters)
 
@@ -15,7 +15,7 @@ True profit per order and product, after product cost, fees, shipping, ads and e
 - **One honest profit number.** Revenue less product cost, payment fees and shipping is contribution profit; advertising and other operating expenses then give estimated operating profit once expenses are set up. Every figure says whether it is confirmed, estimated or missing; an unknown cost is never shown as zero.
 - **Profit per product and per order.** Find the products and orders that lose money, with every figure explained in plain language.
 - **Fees and shipping you can trust.** Shopify Payments fees are read from Shopify. Other gateways and carrier costs use rules you set (by country, weight and zone), clearly labelled as estimates.
-- **Ads in the same picture.** Daily spend from Meta and Google Ads, with blended return next to profit.
+- **Ads in the same picture.** Daily spend from Meta and Google Ads, with blended return next to profit. (Other platforms stay hidden until each is tested with a real account: NEXT_PUBLIC_AD_PLATFORMS.)
 - **Alerts and reports.** Weekly or monthly profit reports by email, and alerts when margin drops, refunds rise or costs go missing.
 - **Built for privacy.** No customer names, emails or addresses are stored.
 
@@ -31,7 +31,7 @@ True profit per order and product, after product cost, fees, shipping, ads and e
 
 ## Pricing text
 
-Fill in after the owner approves prices (see `docs/architecture/billing.md`).
+Draft, until the owner approves (see `docs/architecture/billing.md`, `packages/contracts/src/plans.ts`): Free, Basic $9, Growth $29, Pro $79 a month, 14 day trial on paid plans, yearly = 10 months. No per-order charge. Pricing goes only in the Pricing details section, never in images.
 
 ## Permissions and why (for the review form)
 
@@ -50,3 +50,16 @@ Fill in after the owner approves prices (see `docs/architecture/billing.md`).
 ## Screenshots to capture (real data)
 
 Overview, Orders with a fee-source column, Product profitability with the missing-cost banner, Settings rule check, Expenses monthly profit and loss, a report CSV opened in a spreadsheet.
+
+## Categories
+
+Primary: Store management > Operations > **Analytics**. Optional secondary: Store management > Finances > **Accounting** (expenses). Up to 25 structured features per category.
+
+## Review rules to keep in mind (from Shopify's pages)
+
+- No statistics, data, guarantees, superlatives ("best", "only"), reviews or testimonials in the text or images; no pricing or Shopify logos in images; icon 1200x1200 PNG with no text and no pricing (files are in `docs/brand`; the current icon has the name on it, so make a text-free version for the Shopify icon).
+- Introduction up to 100 characters, details up to 500, features up to 80 characters each; 3 to 6 screenshots at 1600x900 of the real UI, each different; feature media or video; demo screencast in English; a demo development store with data.
+- Test instructions and credentials that open the full feature set; emergency developer contact (email and phone), submission email and API contact email without the word "Shopify"; allow noreply@shopify.com.
+- Request protected customer data and read_all_orders before submitting (not possible while under review).
+- Billing: Shopify billing only; upgrade and downgrade work; BILLING_TEST_MODE=false before submitting.
+- After approval: reply to a quality check within 7 days, make required changes within 30 days.

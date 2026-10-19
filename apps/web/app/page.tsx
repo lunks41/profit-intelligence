@@ -17,11 +17,11 @@ async function standalone() {
 export async function generateMetadata() {
   return (await standalone())
     ? {
-        title: 'Profit Intelligence: the profit your Shopify store really makes',
+        title: 'Tanvo Profit: the profit your Shopify store really makes',
         description:
           'Real profit for every order and product after costs, fees, shipping, ads and expenses. A Shopify app.',
       }
-    : { title: 'Profit Intelligence' };
+    : { title: 'Tanvo Profit' };
 }
 
 export default async function Overview() {

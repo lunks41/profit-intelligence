@@ -4,7 +4,10 @@ export interface Mail {
   to: string;
   subject: string;
   text: string;
-  attachments: Array<{ filename: string; content: Buffer; contentType: string }>;
+  /** optional formatted version; text stays as the plain fallback */
+  html?: string;
+  replyTo?: string;
+  attachments?: Array<{ filename: string; content: Buffer; contentType: string }>;
 }
 
 export interface MailSender {
@@ -31,15 +34,17 @@ export function createMailSender(env: { SMTP_URL?: string; MAIL_FROM?: string })
     };
   }
   const transport = nodemailer.createTransport(env.SMTP_URL);
-  const from = env.MAIL_FROM ?? 'Profit Intelligence <no-reply@localhost>';
+  const from = env.MAIL_FROM ?? 'Tanvo Profit <no-reply@localhost>';
   return {
     async send(mail) {
       await transport.sendMail({
         from,
         to: mail.to,
+        ...(mail.replyTo ? { replyTo: mail.replyTo } : {}),
         subject: mail.subject,
         text: mail.text,
-        attachments: mail.attachments,
+        ...(mail.html ? { html: mail.html } : {}),
+        ...(mail.attachments ? { attachments: mail.attachments } : {}),
       });
     },
   };

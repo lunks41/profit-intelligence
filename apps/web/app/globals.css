@@ -1,10 +1,10 @@
 /*
- * The interface is 20% smaller than the default so more data fits on a screen. Polaris sizes its
+ * The interface is 12% smaller than the default so more data fits on a screen. Polaris sizes its
  * type, spacing and controls in rem, so one root size scales all of it together; sizes written by
  * hand in this app are in rem too, so they follow.
  */
 html {
-  font-size: 80%;
+  font-size: 88%;
   -webkit-text-size-adjust: 100%;
 }
 

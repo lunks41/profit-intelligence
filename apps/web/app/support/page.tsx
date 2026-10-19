@@ -1,4 +1,4 @@
-export const metadata = { title: 'Support - Profit Intelligence' };
+export const metadata = { title: 'Support - Tanvo Profit' };
 
 const email = process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? '';
 

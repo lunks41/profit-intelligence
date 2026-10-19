@@ -138,7 +138,7 @@ export class MarketingService {
   }
 
   /** The address to send the merchant to. The state proves, when they come back, who started it. */
-  async startConnect(scope: TenantContext, provider: OAuthProviderId) {
+  async startConnect(scope: TenantContext, provider: OAuthProviderId, popup = false) {
     const cfg = this.oauth;
     if (!isConfigured(cfg, provider)) {
       throw new BadRequestException({
@@ -153,6 +153,7 @@ export class MarketingService {
         s: scope.shopId,
         u: scope.userId ?? null,
         p: provider,
+        w: popup,
         e: Date.now() + 10 * 60_000,
         n: randomBytes(8).toString('hex'),
       }),
@@ -169,8 +170,10 @@ export class MarketingService {
     provider: OAuthProviderId,
     q: { code?: string; state?: string; error?: string },
   ): Promise<string> {
+    // a sign-in started in a pop-up window returns to a small page that tells the app and closes itself
+    let popup = false;
     const back = (params: Record<string, string>, shopDomain?: string) =>
-      this.returnUrl(shopDomain, params);
+      popup ? this.popupReturnUrl(params) : this.returnUrl(shopDomain, params);
     let ids: { t: string; s: string; u: string | null } | null = null;
     try {
       const s = JSON.parse(this.crypto.decrypt(q.state ?? '')) as {
@@ -179,8 +182,12 @@ export class MarketingService {
         u: string | null;
         p: string;
         e: number;
+        w?: boolean;
       };
-      if (s.p === provider && s.e > Date.now()) ids = { t: s.t, s: s.s, u: s.u };
+      if (s.p === provider && s.e > Date.now()) {
+        ids = { t: s.t, s: s.s, u: s.u };
+        popup = s.w === true;
+      }
     } catch {
       ids = null;
     }
@@ -217,6 +224,11 @@ export class MarketingService {
       if (!(e instanceof OAuthError)) throw e;
       return back({ connect: provider, connect_error: 'failed' }, domain);
     }
+  }
+
+  /** The page a pop-up window lands on when the sign-in is over (it posts a message to the app and closes). */
+  private popupReturnUrl(params: Record<string, string>): string {
+    return `${this.env.APP_URL ?? ''}/connect-done?${new URLSearchParams(params).toString()}`;
   }
 
   /** Back into the app inside the Shopify admin (the sign-in happened on a full page, outside the frame). */

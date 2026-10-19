@@ -64,6 +64,8 @@ for (const f of readdirSync(join(root, 'deploy', 'windows'))) {
   cpSync(join(root, 'deploy', 'windows', f), target);
 }
 cpSync(join(root, 'scripts', 'ads-check.mjs'), join(app, 'ads-check.mjs'));
+// the Shopify CLI scans every folder for web configs; a copy inside .deploy would break shopify app dev
+rmSync(join(app, 'apps', 'web', 'shopify.web.toml'), { force: true });
 
 say('Zipping');
 const zip = join(out, 'profit-intelligence-deploy.zip');

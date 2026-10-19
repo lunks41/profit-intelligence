@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-export const metadata = { title: 'Privacy policy - Profit Intelligence' };
+export const metadata = { title: 'Privacy policy - Tanvo Profit' };
 
 const company = process.env.NEXT_PUBLIC_COMPANY_NAME ?? '';
 const email = process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? '';
@@ -15,8 +15,8 @@ export default function Privacy() {
     <main style={{ maxWidth: '46rem', margin: '0 auto', padding: '2rem 1rem', lineHeight: 1.6 }}>
       <h1 style={{ fontSize: '1.5rem' }}>Privacy policy</h1>
       <p>
-        Profit Intelligence{company ? `, operated by ${company},` : ''} shows Shopify merchants
-        their real profit. This page explains what it stores and for how long.
+        Tanvo Profit{company ? `, operated by ${company},` : ''} shows Shopify merchants their real
+        profit. This page explains what it stores and for how long.
       </p>
       <H>What the app collects</H>
       <ul>

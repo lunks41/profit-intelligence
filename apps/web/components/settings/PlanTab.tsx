@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { BillingStatusResponse } from '@pi/contracts';
 import { apiPost } from '../../lib/api';
+import { enabledPlatformNames } from '../../lib/ad-platforms';
 import { forgetPlan } from '../../lib/plan';
 import { PlanComparison } from './PlanComparison';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
@@ -15,7 +16,7 @@ const INCLUDED = [
   'Profit and loss, refund and missing-cost reports on screen',
   'Your product costs, payment fee rules and shipping rules, applied to past orders',
   'Operating expenses, and estimated operating profit',
-  'Marketing: connect Meta, Google, TikTok, Microsoft, Snapchat, Pinterest and Reddit, and see profit after ads',
+  `Marketing: connect ${enabledPlatformNames()}, and see profit after ads`,
 ];
 
 function Usage({ label, used, limit }: { label: string; used: number; limit: number }) {
@@ -36,15 +37,11 @@ function OrderMeter({
   used,
   included,
   extra,
-  charge,
-  price,
   free,
 }: {
   used: number;
   included: number;
   extra: number;
-  charge: string;
-  price: string;
   free: boolean;
 }) {
   const pct = included > 0 ? Math.min(100, Math.round((used / included) * 100)) : 0;
@@ -74,27 +71,13 @@ function OrderMeter({
           style={{ width: `${pct}%`, height: '100%', background: over ? '#d72c0d' : '#005bd3' }}
         />
       </div>
-      {over && !free && (
+      {over && (
         <s-text color="subdued">
-          {extra.toLocaleString()} extra {extra === 1 ? 'order' : 'orders'} at ${price} each is $
-          {charge} so far this month. Nothing stops working. This is an estimate: paid plans are not
-          open yet, so nothing is charged today.
+          You are over the {included.toLocaleString()} orders in your plan. Nothing stops working
+          and nothing extra is charged.{free ? ' Upgrade to include more orders.' : ''}
         </s-text>
       )}
-      {over && free && (
-        <s-text color="subdued">
-          You are over the {included.toLocaleString()} orders in the Free plan. Nothing stops
-          working, but upgrade to include more orders (extra orders cost ${price} each on a paid
-          plan).
-        </s-text>
-      )}
-      {!over && (
-        <s-text color="subdued">
-          {free
-            ? 'Upgrade to include more orders.'
-            : `Orders beyond the included ones cost $${price} each. Nothing stops working.`}
-        </s-text>
-      )}
+      {!over && free && <s-text color="subdued">Upgrade to include more orders.</s-text>}
     </s-stack>
   );
 }
@@ -145,8 +128,6 @@ export function PlanTab() {
               used={data.usage.ordersThisMonth}
               included={e.ordersPerMonth}
               extra={data.usage.extraOrders}
-              charge={data.usage.extraChargeUsd}
-              price={data.extraOrderUsd}
               free={data.plan === 'free'}
             />
             <Usage

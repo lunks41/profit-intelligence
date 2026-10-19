@@ -28,7 +28,7 @@ export async function renderPdf(report: ReportTable): Promise<Buffer> {
     margin: MARGIN,
     info: {
       Title: `${report.title} (${report.from} to ${report.to})`,
-      Creator: 'Profit Intelligence',
+      Creator: 'Tanvo Profit',
     },
   });
   const chunks: Buffer[] = [];

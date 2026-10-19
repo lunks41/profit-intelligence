@@ -181,8 +181,13 @@ const json = async (...args: Parameters<typeof call>) => {
 };
 
 /** Starts a connection as the merchant would, and returns the state the platform will send back. */
-async function start(provider: string, token = 'id-adc-a') {
-  const { res, body } = await json('POST', `/connect/${provider}/start`, token, {});
+async function start(provider: string, token = 'id-adc-a', popup = false) {
+  const { res, body } = await json(
+    'POST',
+    `/connect/${provider}/start`,
+    token,
+    popup ? { popup: true } : {},
+  );
   expect(res.statusCode).toBe(200);
   const url = new URL(adConnectStartResponseSchema.parse(body).url);
   return { url, state: url.searchParams.get('state')! };
@@ -290,6 +295,22 @@ describe('connecting Meta by signing in', () => {
     );
     expect(url.toString()).not.toContain('meta-app-secret');
     expect(state.length).toBeGreaterThan(20);
+  });
+
+  it('a sign-in started in a pop-up window returns to the small page that closes it', async () => {
+    const { state } = await start('meta', 'id-adc-a', true);
+    const res = await callback('meta', `code=CODE&state=${encodeURIComponent(state)}`);
+    expect(res.statusCode).toBe(302);
+    expect(res.headers.location).toBe('https://app.example.com/connect-done?connect=meta');
+    expect(await pending()).toHaveLength(1);
+  });
+
+  it('a denied pop-up sign-in still returns to the small page, with the problem', async () => {
+    const { state } = await start('meta', 'id-adc-a', true);
+    const res = await callback('meta', `error=access_denied&state=${encodeURIComponent(state)}`);
+    expect(res.headers.location).toBe(
+      'https://app.example.com/connect-done?connect=meta&connect_error=denied',
+    );
   });
 
   it('after sign-in the accounts wait to be chosen, and no token is ever returned', async () => {

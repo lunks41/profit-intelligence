@@ -1,47 +1,40 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { SessionResponse } from '@pi/contracts';
 import { SetupGuide } from './SetupGuide';
 import { Notice } from './notices/Notice';
 
 type Step = SessionResponse['onboarding']['steps'][number];
 
-const DISMISS_KEY = 'pi-setup-dismissed';
-const GUIDE_KEY = 'pi-guide-seen';
+// Nothing is kept in browser storage: Shopify's review does not allow third-party cookies or local storage in
+// an embedded app. These live for the page session only, so a dismissed card or a closed guide stays gone while
+// the merchant moves between screens and returns on the next visit.
+const session = { dismissed: false, guideOffered: false };
 
 /**
  * The setup card at the top of the Overview. While a required step is open it shows the progress and the next
  * two things to do, each with a link, and cannot be dismissed (those steps change the figures). Once the
  * required steps are done it stays only for the optional ones, such as connecting the ad platforms, and the
  * merchant can say "Not now". It is gone when everything is done.
+ *
+ * The guide opens by itself only on a fresh install, when no required step has been done yet, and once per page
+ * session. Otherwise it opens from the button.
  */
 export function GetStarted({ steps, onChanged }: { steps: Step[]; onChanged?: () => void }) {
   const [open, setOpen] = useState(false);
   const [guide, setGuide] = useState(false);
-  const offered = useRef(false);
-  const [dismissed, setDismissed] = useState(false);
-  useEffect(() => {
-    try {
-      setDismissed(window.localStorage.getItem(DISMISS_KEY) === '1');
-    } catch {
-      // storage can be blocked; the card then simply shows
-    }
-  }, []);
+  const [dismissed, setDismissed] = useState(session.dismissed);
 
-  // the first time, while a required step is open, the guide is offered once; closing it loses nothing
+  // on a fresh install the guide is offered once; closing it loses nothing
   useEffect(() => {
-    if (offered.current) return;
-    try {
-      if (
-        window.localStorage.getItem(GUIDE_KEY) !== '1' &&
-        steps.some((s) => !s.optional && s.status === 'pending' && s.id !== 'import_orders')
-      ) {
-        offered.current = true;
-        setGuide(true);
-      }
-    } catch {
-      // no storage: the card still has the button
+    if (session.guideOffered) return;
+    const required = steps.filter(
+      (s) => !s.optional && s.id !== 'import_orders' && s.id !== 'connected',
+    );
+    if (required.length > 0 && required.every((s) => s.status === 'pending')) {
+      session.guideOffered = true;
+      setGuide(true);
     }
   }, [steps]);
 
@@ -53,18 +46,7 @@ export function GetStarted({ steps, onChanged }: { steps: Step[]; onChanged?: ()
     ...steps.filter((s) => s.optional && s.status === 'pending'),
   ];
   const guideEl = guide && (
-    <SetupGuide
-      steps={steps}
-      onChanged={() => onChanged?.()}
-      onClose={() => {
-        setGuide(false);
-        try {
-          window.localStorage.setItem(GUIDE_KEY, '1');
-        } catch {
-          // not remembered
-        }
-      }}
-    />
+    <SetupGuide steps={steps} onChanged={() => onChanged?.()} onClose={() => setGuide(false)} />
   );
   if (pending.length === 0) return guideEl || null;
   const onlyOptional = pendingRequired.length === 0;
@@ -94,12 +76,8 @@ export function GetStarted({ steps, onChanged }: { steps: Step[]; onChanged?: ()
         <s-button
           variant="tertiary"
           onClick={() => {
+            session.dismissed = true;
             setDismissed(true);
-            try {
-              window.localStorage.setItem(DISMISS_KEY, '1');
-            } catch {
-              // not remembered; it comes back next time
-            }
           }}
         >
           Not now

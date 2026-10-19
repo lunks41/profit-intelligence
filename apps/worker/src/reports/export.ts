@@ -105,7 +105,7 @@ export async function deliverExport(
       await deps.mail.send({
         to: d.recipient,
         subject: `${title}: ${d.periodFrom} to ${d.periodTo}`,
-        text: `Your ${title.toLowerCase()} for ${d.periodFrom} to ${d.periodTo} is attached.\n\nSent by Profit Intelligence.`,
+        text: `Your ${title.toLowerCase()} for ${d.periodFrom} to ${d.periodTo} is attached.\n\nSent by Tanvo Profit.`,
         attachments: [
           {
             filename: `${safeName(title)}-${d.periodFrom}-to-${d.periodTo}.${file.format}`,

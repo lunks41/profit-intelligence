@@ -15,6 +15,7 @@ export function useSyncStatus() {
   const [status, setStatus] = useState<SyncStatusResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
+  const [requestedAt, setRequestedAt] = useState<number | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = useCallback(async () => {
@@ -41,6 +42,7 @@ export function useSyncStatus() {
     setStarting(true);
     try {
       await apiPost('/sync');
+      setRequestedAt(Date.now());
       if (timer.current) clearTimeout(timer.current);
       await load();
     } catch {
@@ -50,5 +52,5 @@ export function useSyncStatus() {
     }
   }, [load]);
 
-  return { status, error, starting, resync };
+  return { status, error, starting, requestedAt, resync };
 }

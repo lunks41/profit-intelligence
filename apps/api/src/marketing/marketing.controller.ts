@@ -74,8 +74,15 @@ export class MarketingController {
 
   @Post('connect/:provider/start')
   @HttpCode(200)
-  startConnect(@Tenant() t: TenantContext, @Param('provider') provider: string) {
-    return this.service.startConnect(t, providerOf(provider));
+  startConnect(
+    @Tenant() t: TenantContext,
+    @Param('provider') provider: string,
+    @Body() body: unknown,
+  ) {
+    // popup: the sign-in runs in a small window that closes itself, so the merchant stays in the app
+    const popup =
+      typeof body === 'object' && body !== null && (body as { popup?: unknown }).popup === true;
+    return this.service.startConnect(t, providerOf(provider), popup);
   }
 
   @Post('sync')

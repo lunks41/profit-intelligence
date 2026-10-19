@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type {
   AdConnectStartResponse,
   AdProvidersResponse,
@@ -9,6 +9,7 @@ import type {
 } from '@pi/contracts';
 import { apiDelete, apiPost } from '../../lib/api';
 import { formatMoney, longDate } from '../../lib/format';
+import { isConnectMessage, POPUP_FEATURES, POPUP_NAME } from '../../lib/connect-popup';
 import { readParam } from '../../lib/url-params';
 import { ErrorBanner, Loading, useApi } from '../profitability/shared';
 import { FormError, useAction, FormActions } from '../settings/shared';
@@ -16,10 +17,10 @@ import { PlanLock } from '../common/PlanLock';
 import { planWith, usePlan } from '../../lib/plan';
 import { IntegrationList } from '../common/IntegrationList';
 import { PLATFORM_MARKS, platformKey } from '../common/platform-marks';
-import { AD_PLATFORM_NAME } from '../../lib/ad-platforms';
+import { AD_PLATFORM_NAME, ENABLED_AD_PLATFORMS } from '../../lib/ad-platforms';
 import type { Integration } from '../common/IntegrationList';
 
-const PLATFORMS = [
+const ALL_PLATFORMS = [
   'meta',
   'google',
   'tiktok',
@@ -28,7 +29,8 @@ const PLATFORMS = [
   'pinterest',
   'reddit',
 ] as const;
-type Platform = (typeof PLATFORMS)[number];
+type Platform = (typeof ALL_PLATFORMS)[number];
+const PLATFORMS = ALL_PLATFORMS.filter((p) => ENABLED_AD_PLATFORMS.includes(p));
 
 const NAME = AD_PLATFORM_NAME as Record<Platform, string>;
 
@@ -54,7 +56,29 @@ export function ConnectPlatforms({
   onChanged: () => void;
 }) {
   const pending = useApi<PendingAdConnectionsResponse>('/marketing/connections/pending');
-  const problem = readParam('connect_error');
+  const [popupProblem, setPopupProblem] = useState<string | null>(null);
+  const problem = popupProblem ?? readParam('connect_error');
+
+  // Some platforms stop the window from talking back to this page, so also watch for it closing.
+  const watcher = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(
+    () => () => {
+      if (watcher.current) clearInterval(watcher.current);
+    },
+    [],
+  );
+
+  // the sign-in window tells this page when it is over: show the account choice, or what went wrong
+  useEffect(() => {
+    function onMessage(event: MessageEvent) {
+      if (!isConnectMessage(event, window.location.origin)) return;
+      setPopupProblem(event.data.error);
+      void pending.reload();
+      onChanged();
+    }
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [pending, onChanged]);
   const start = useAction();
   const disconnect = useAction();
   const refresh = useAction();
@@ -76,11 +100,32 @@ export function ConnectPlatforms({
       const sales = rows.reduce((t, c) => t + Number(c.platformReportedSales), 0);
       const available = !info || info.configured;
       const connect = async () => {
+        setPopupProblem(null);
+        // The platform's sign-in cannot run inside the Shopify frame, so it opens in a small window. The window
+        // must be opened right at the click (browsers block it otherwise) and pointed at the platform afterwards.
+        const popup = window.open('', POPUP_NAME, POPUP_FEATURES);
         const r = await start.run(() =>
-          apiPost<AdConnectStartResponse>(`/marketing/connect/${id}/start`, {}),
+          apiPost<AdConnectStartResponse>(`/marketing/connect/${id}/start`, {
+            popup: popup !== null,
+          }),
         );
-        // the platform's sign-in cannot run inside the Shopify frame, so open it on the whole page
-        if (r) window.open(r.url, '_top');
+        if (!r) {
+          popup?.close();
+          return;
+        }
+        // blocked by the browser: fall back to signing in on the whole page
+        if (!popup) {
+          window.open(r.url, '_top');
+          return;
+        }
+        popup.location.href = r.url;
+        if (watcher.current) clearInterval(watcher.current);
+        watcher.current = setInterval(() => {
+          if (!popup.closed) return;
+          if (watcher.current) clearInterval(watcher.current);
+          void pending.reload();
+          onChanged();
+        }, 1000);
       };
       return {
         id,

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import './globals.css';
 import { ShopTimeZone } from '../components/ShopTimeZone';
 
-export const metadata = { title: 'Profit Intelligence' };
+export const metadata = { title: 'Tanvo Profit' };
 
 const NAV = [
   ['/', 'Overview'],

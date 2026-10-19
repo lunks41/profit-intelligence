@@ -84,10 +84,9 @@ export function Reminders({ data }: { data: OverviewResponse }) {
             <div
               key={it.id}
               style={{
-                borderLeft: `4px solid ${it.accent}`,
-                border: '1px solid #e3e3e3',
-                borderLeftWidth: 4,
-                borderLeftColor: it.accent,
+                borderStyle: 'solid',
+                borderWidth: '1px 1px 1px 4px',
+                borderColor: `#e3e3e3 #e3e3e3 #e3e3e3 ${it.accent}`,
                 borderRadius: '0.5rem',
                 padding: '0.55rem 0.75rem',
                 background: '#fff',

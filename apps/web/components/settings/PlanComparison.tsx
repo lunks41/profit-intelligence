@@ -161,9 +161,7 @@ export function PlanComparison({
                     paddingTop: '0.4rem',
                     minHeight: '1.2em',
                   }}
-                >
-                  {p.id === 'free' ? '' : `then $${data.extraOrderUsd} for each extra order`}
-                </div>
+                ></div>
               </div>
               {p.id === 'free' ? (
                 <div style={{ minHeight: '1.75rem' }} />

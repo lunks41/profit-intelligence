@@ -2,18 +2,20 @@
 # Development runs on the separate test app (its own config file, see docs/operations/deploy-windows.md), so
 # `shopify app dev` never rewrites the URLs of this app.
 client_id = "3bbbd3e97c78785f41572acca98bc4d5"
-name = "Profit Intelligence"
+name = "Tanvo Profit"
+handle = "Tanvo Profit"
 application_url = "https://profit.archipelago.ae"
 embedded = true
 
 [build]
 automatically_update_urls_on_dev = false
 dev_store_url = "profit-intelligence-dev.myshopify.com"
+include_config_on_deploy = true
 
 [access_scopes]
 # Least privilege: read-only. The test-data seeder needs write scopes: see docs/development/test-data.md
 # (add them only for seeding a development store, never in a released version).
-scopes = "read_orders,read_products,read_inventory,read_shopify_payments_accounts,read_shopify_payments_payouts"
+scopes = "read_all_orders,read_orders,read_products,read_inventory,read_shopify_payments_accounts,read_shopify_payments_payouts"
 use_legacy_install_flow = false
 
 [auth]

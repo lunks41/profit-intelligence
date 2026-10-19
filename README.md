@@ -1,4 +1,4 @@
-# Profit Intelligence
+# Tanvo Profit
 
 Shopify embedded app that calculates real profit, detects profit leakage and recommends actions.
 

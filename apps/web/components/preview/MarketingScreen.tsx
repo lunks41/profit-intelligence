@@ -149,7 +149,7 @@ export function MarketingPreview() {
               head={['Account', 'Status', 'Last sync', 'Currency']}
               rows={[
                 [
-                  'Meta Ads, Profit Intelligence Dev',
+                  'Meta Ads, Tanvo Profit Dev',
                   <s-badge key="a" tone="success">
                     Connected
                   </s-badge>,

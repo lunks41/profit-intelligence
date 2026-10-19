@@ -35,7 +35,7 @@ export function composeAlertEmail(
       ? `Profit alert for ${shopName}: ${alerts[0]!.title}`
       : `${alerts.length} profit alerts for ${shopName}${critical > 0 ? ` (${critical} serious)` : ''}`;
   const lines = [
-    `Profit Intelligence found ${alerts.length === 1 ? 'something' : `${alerts.length} things`} to look at in ${shopName}.`,
+    `Tanvo Profit found ${alerts.length === 1 ? 'something' : `${alerts.length} things`} to look at in ${shopName}.`,
     '',
     ...alerts.flatMap((a) => [
       `${a.severity === 'critical' ? '[Serious] ' : ''}${a.title}`,

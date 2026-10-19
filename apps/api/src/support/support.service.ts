@@ -5,15 +5,20 @@ import {
   countRecentFeedback,
   createFeedback,
   createNotification,
+  enqueueSupportMail,
   listFeedback,
 } from '@pi/db';
 import type { Db } from '@pi/db';
 import type { TenantContext } from '../auth/installation.service.js';
-import { DB } from '../tokens.js';
+import type { PgBoss } from 'pg-boss';
+import { DB, QUEUE } from '../tokens.js';
 
 @Injectable()
 export class SupportService {
-  constructor(@Inject(DB) private readonly db: Db) {}
+  constructor(
+    @Inject(DB) private readonly db: Db,
+    @Inject(QUEUE) private readonly boss: PgBoss,
+  ) {}
 
   /**
    * Stores a message from the merchant. A few per hour is plenty for a person, and it stops a
@@ -46,6 +51,15 @@ export class SupportService {
       link: '/settings',
       dedupeKey: `support:${row.id}`,
     });
+    // mail to the support address is best effort: the message is already saved and listed
+    await enqueueSupportMail(this.boss, {
+      reference: row.id.replace(/-/g, '').slice(0, 8).toUpperCase(),
+      sentAt: new Date().toISOString(),
+      shopDomain: scope.shopDomain,
+      kind: body.kind,
+      message: body.message,
+      contactEmail: body.contactEmail ?? null,
+    }).catch(() => null);
     return row;
   }
 

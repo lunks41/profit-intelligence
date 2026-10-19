@@ -1,0 +1,21 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "6c46f181609e161093e1ba3bcac83192"
+application_url = "https://example.com"
+embedded = true
+name = "Tanvo Profit - test"
+
+[webhooks]
+api_version = "2026-10"
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "read_inventory,read_orders,read_products,read_shopify_payments_accounts,read_shopify_payments_payouts,write_orders,write_products,write_inventory,write_customers"
+optional_scopes = [ ]
+use_legacy_install_flow = false
+
+[auth]
+redirect_urls = [ ]
+
+[build]
+automatically_update_urls_on_dev = true

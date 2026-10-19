@@ -13,9 +13,9 @@ describe('the public front page', () => {
     expect(container.textContent).toContain('See the profit your Shopify store really makes');
     for (const id of PLAN_IDS) expect(container.textContent).toContain(PLANS[id].name);
     expect(container.textContent?.match(/Most popular/g)).toHaveLength(1);
-    expect(container.textContent).toContain(
-      'Meta · Google · TikTok · Microsoft · Snapchat · Pinterest · Reddit',
-    );
+    // only the platforms tested with a real account are offered at launch
+    expect(container.textContent).toContain('Ad platforms: Meta · Google');
+    expect(container.textContent).not.toContain('Reddit');
     // paid plans that are not approved yet are not sold: they say so
     expect(container.textContent).toContain('Opening soon');
   });

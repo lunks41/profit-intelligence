@@ -15,6 +15,7 @@ import { ChannelDonut } from './ChannelDonut';
 import { CostBreakdownCard } from './CostBreakdownCard';
 import { overviewKpis } from './KpiCards';
 import { MoneyFlow } from './MoneyFlow';
+import { enabledPlatformNames } from '../../lib/ad-platforms';
 import { Reminders } from './Reminders';
 import { TrendCard } from './TrendCard';
 
@@ -268,7 +269,7 @@ function ConnectedAccounts({ data }: { data: OverviewResponse }) {
       />
       <s-text color="subdued">
         {marketing
-          ? 'No ad account is connected. Connect Meta, Google, TikTok, Microsoft, Snapchat, Pinterest or Reddit to see what advertising costs and what is left after it.'
+          ? `No ad account is connected. Connect ${enabledPlatformNames().replace(' and ', ' or ')} to see what advertising costs and what is left after it.`
           : 'Loading…'}
       </s-text>
     </Card>

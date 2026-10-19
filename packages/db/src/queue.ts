@@ -58,6 +58,7 @@ export const CLEANUP_QUEUE = 'maintenance.cleanup';
 export const ADS_QUEUE = 'ads.sync';
 export const FX_QUEUE = 'fx.refresh';
 export const ALERT_EMAIL_QUEUE = 'alerts.email';
+export const SUPPORT_MAIL_QUEUE = 'support.mail';
 export const MONITOR_QUEUE = 'ops.monitor';
 export const LEAKAGE_QUEUE = 'leakage.scan';
 export const EXPORT_QUEUE = 'report.export';
@@ -173,6 +174,11 @@ export async function startQueue(connectionString: string): Promise<PgBoss> {
   await boss.createQueue(MONITOR_QUEUE, { retryLimit: 1, retryDelay: 60, expireInSeconds: 600 });
   await boss.createQueue(ADS_QUEUE, { retryLimit: 2, retryDelay: 120, expireInSeconds: 1800 });
   await boss.createQueue(FX_QUEUE, { retryLimit: 3, retryDelay: 600, expireInSeconds: 900 });
+  await boss.createQueue(SUPPORT_MAIL_QUEUE, {
+    retryLimit: 3,
+    retryDelay: 120,
+    expireInSeconds: 600,
+  });
   await boss.createQueue(ALERT_EMAIL_QUEUE, {
     retryLimit: 1,
     retryDelay: 120,
@@ -213,4 +219,23 @@ export async function enqueueProfitRecalc(
   payload: ProfitJobPayload,
 ): Promise<string | null> {
   return boss.send(PROFIT_QUEUE, payload);
+}
+
+export interface SupportMailPayload {
+  /** short reference the merchant and support both see (from the saved message id) */
+  reference: string;
+  shopDomain: string;
+  kind: 'feedback' | 'question' | 'problem';
+  message: string;
+  contactEmail: string | null;
+  /** when the message was sent (ISO) */
+  sentAt: string;
+}
+
+/** Asks the worker to email a merchant's message to the support address (and a receipt to the merchant). */
+export async function enqueueSupportMail(
+  boss: PgBoss,
+  payload: SupportMailPayload,
+): Promise<string | null> {
+  return boss.send(SUPPORT_MAIL_QUEUE, payload);
 }

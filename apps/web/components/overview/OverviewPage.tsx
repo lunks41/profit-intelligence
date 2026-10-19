@@ -7,8 +7,9 @@ import { buildQuery } from '../../lib/query';
 import { useApi } from '../profitability/shared';
 import { SyncNotice } from '../sync/SyncNotice';
 import { SyncSection } from '../sync/SyncSection';
-import { useSyncStatus } from '../sync/useSyncStatus';
+import { isImporting, useSyncStatus } from '../sync/useSyncStatus';
 import { describeFreshness } from '../../lib/freshness';
+import { describeSyncProgress } from '../../lib/sync-progress';
 import { OverviewHeader } from './OverviewHeader';
 import { RecentOrders } from './RecentOrders';
 import { TopReturned } from './TopReturned';
@@ -59,6 +60,29 @@ export function OverviewPage() {
     return () => clearTimeout(t);
   }, [filters, load]);
 
+  // While an import runs, re-read the figures every 10 seconds, and once more when it ends.
+  const importing = isImporting(sync.status);
+  const wasImporting = useRef(false);
+  useEffect(() => {
+    if (importing) {
+      const t = setInterval(() => void load(filters), 10_000);
+      wasImporting.current = true;
+      return () => clearInterval(t);
+    }
+    if (wasImporting.current) {
+      wasImporting.current = false;
+      void load(filters);
+    }
+    return undefined;
+  }, [importing, filters, load]);
+
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!importing) return undefined;
+    const t = setInterval(() => setNow(Date.now()), 5000);
+    return () => clearInterval(t);
+  }, [importing]);
+
   function change(next: Filters) {
     setFilters(next);
   }
@@ -75,6 +99,9 @@ export function OverviewPage() {
         preset={filters.preset}
         onPreset={(preset) => change({ ...filters, preset })}
         onRefresh={() => void load(filters)}
+        onSync={() => void sync.resync()}
+        syncing={sync.starting || importing}
+        syncMessage={describeSyncProgress(sync.status, sync.requestedAt, now)}
       />
       {error && (
         <s-banner tone="critical" heading="Overview unavailable">

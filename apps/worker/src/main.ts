@@ -8,6 +8,7 @@ import {
   ADS_QUEUE,
   FX_QUEUE,
   ALERT_EMAIL_QUEUE,
+  SUPPORT_MAIL_QUEUE,
   MONITOR_QUEUE,
   LEAKAGE_QUEUE,
   DELIVER_QUEUE,
@@ -29,6 +30,7 @@ import type {
   ExportJobPayload,
   ProfitJobPayload,
   PurgeJobPayload,
+  SupportMailPayload,
   SyncJobPayload,
   WebhookJobPayload,
 } from '@pi/db';
@@ -40,6 +42,7 @@ import { problemsOf, runMonitor } from './monitoring/monitor.js';
 import { scanLeakage } from './leakage/scan.js';
 import { deliverExport, processExport } from './reports/export.js';
 import { createMailSender } from './reports/mail.js';
+import { sendSupportMail } from './support/mail.js';
 import { runDueSchedules } from './reports/schedule.js';
 import { cleanupOldData, reconcileAllShops } from './maintenance/maintenance.js';
 import { recalculateProfit } from './profit/recalculate.js';
@@ -164,6 +167,15 @@ await boss.work(ALERT_EMAIL_QUEUE, { batchSize: 1 }, async () => {
   await emailAlerts({ db, log, mail, apiKey: env.SHOPIFY_API_KEY });
 });
 await boss.schedule(ALERT_EMAIL_QUEUE, '*/15 * * * *');
+// Support: a merchant's message from the app is emailed to the support address.
+await boss.work<SupportMailPayload>(SUPPORT_MAIL_QUEUE, { batchSize: 1 }, async ([job]) => {
+  if (job) {
+    await sendSupportMail(
+      { mail, supportEmail: process.env.SUPPORT_EMAIL ?? process.env.NEXT_PUBLIC_SUPPORT_EMAIL },
+      job.data,
+    );
+  }
+});
 // and now, so a fresh install has rates without waiting for the evening
 void refreshExchangeRates({ db, log });
 await boss.schedule(RECONCILE_QUEUE, '0 3 * * *');

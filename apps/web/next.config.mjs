@@ -15,7 +15,14 @@ export default {
   // The API key is public by design (it is also in the App Bridge meta tag).
   env: { NEXT_PUBLIC_SHOPIFY_API_KEY: process.env.SHOPIFY_API_KEY ?? '' },
   // Dev tunnels and Shopify Admin load the dev server from other origins.
-  allowedDevOrigins: ['*.trycloudflare.com', '*.shopifyapps.com', '*.myshopify.com'],
+  allowedDevOrigins: [
+    '*.trycloudflare.com',
+    '*.ngrok-free.dev',
+    '*.ngrok-free.app',
+    '*.ngrok.app',
+    '*.shopifyapps.com',
+    '*.myshopify.com',
+  ],
   async rewrites() {
     // Same-origin proxy: the browser only talks to the web app; the API stays internal.
     return [{ source: '/api/v1/:path*', destination: `${apiOrigin}/api/v1/:path*` }];
